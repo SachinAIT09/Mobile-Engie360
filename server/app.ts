@@ -32,7 +32,7 @@ export async function createApp(server: Server): Promise<{ handler: RequestHandl
     frontend = staticFiles(config.dist);
   } else {
     const { createServer } = await import('vite');
-    const vite = await createServer({ root: config.root, server: { middlewareMode: true, hmr: { server } }, appType: 'spa' });
+    const vite = await createServer({ root: config.root, server: { middlewareMode: true, ws: { server } }, appType: 'spa' });
     frontend = (req, res) => vite.middlewares(req, res);
     closeVite = () => vite.close();
   }
