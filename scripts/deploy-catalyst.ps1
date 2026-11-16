@@ -62,6 +62,6 @@ Next, in the Catalyst console (AppSail > $Name):
        PUBLIC_URL        the service URL, so the phone QR points at it
        VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY   fixed push keys (otherwise a new pair per restart,
                                               and phones must re-enable notifications)
-  2. Open <url>/start and check the portal (/), the staff app (/staff) and push on a phone.
+  2. Open <url> (start page) and check the portal (/app), the staff app (/staff) and push on a phone.
   3. When it looks right: Deploy to production.
 "@ -ForegroundColor Green

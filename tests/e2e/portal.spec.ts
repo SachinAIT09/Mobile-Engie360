@@ -26,7 +26,8 @@ test.describe('portal', () => {
 
   test('language and theme persist across reloads', async ({ page }) => {
     await fresh(page);
-    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    await page.getByRole('button', { name: /^Theme/ }).click();
+    await page.getByRole('menuitemradio', { name: 'Dark' }).click();
     await page.getByRole('button', { name: 'NL', exact: true }).click();
     await page.reload();
     await expect(page.locator('h1').first()).toHaveText(/^Goedemiddag/);
@@ -124,7 +125,7 @@ test.describe('presenter mode', () => {
     await page.locator('body').click({ position: { x: 600, y: 120 } });
     await page.keyboard.press('r');
     await expect(page.locator('.presenter')).toContainText('1/6');
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page).toHaveURL(/\/app$/);
     await page.reload();
     await expect(page.locator('.presenter')).toBeVisible(); // remembered
   });
@@ -132,13 +133,56 @@ test.describe('presenter mode', () => {
 
 test('the website widget demo is gone', async ({ page }) => {
   await fresh(page);
-  await expect(page.locator('.sidebar')).not.toContainText('Website widget');
+  await expect(page.locator('.rs-rail')).not.toContainText('Website widget');
   // Old links land on the portal home instead of a dead page.
   await page.goto('/website-demo');
-  await expect(page).toHaveURL(/\/$/);
-  expect((await page.request.get('/start')).ok()).toBe(true);
-  await page.goto('/start');
+  await expect(page).toHaveURL(/\/app$/);
+  await page.goto('/');
   await expect(page.locator('a[href="/website-demo"]')).toHaveCount(0);
+});
+
+test.describe('navigation like Hydro Mobile360', () => {
+  test('old portal links move under /app', async ({ page }) => {
+    await fresh(page, '/billing?adjust=1');
+    await expect(page).toHaveURL(/\/app\/billing\?adjust=1$/);
+    await expect(page.locator('.modal')).toBeVisible();
+  });
+
+  test('the icon rail widens on hover and "Ask Eva…" opens Eva', async ({ page }) => {
+    await fresh(page);
+    const slot = page.locator('.rs-slot');
+    const narrow = (await slot.boundingBox())!.width;
+    await slot.hover({ position: { x: 30, y: 200 } });
+    await expect.poll(async () => (await slot.boundingBox())!.width).toBeGreaterThan(narrow + 100);
+    await page.getByRole('link', { name: 'Ask Eva…' }).click();
+    await expect(page).toHaveURL(/\/app\/assistant$/);
+    await page.getByRole('link', { name: 'Energy consumption' }).click();
+    await expect(page).toHaveURL(/\/app\/energy$/);
+    await expect(page.getByRole('link', { name: 'Energy consumption' })).toHaveClass(/active/);
+  });
+
+  test('theme menu: Match system follows the device', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await fresh(page);
+    await page.getByRole('button', { name: /^Theme/ }).click();
+    await expect(page.getByRole('menuitemradio', { name: 'Light' })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('menuitemradio', { name: 'Match system' }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await page.emulateMedia({ colorScheme: 'light' });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'Theme: Match system' })).toBeVisible();
+  });
+
+  test('the staff app has the same rail, linked to its sections', async ({ page }) => {
+    await fresh(page, '/staff');
+    await expect(page.locator('.staff-conn')).toHaveClass(/live/, { timeout: 10_000 });
+    await page.getByRole('link', { name: 'Live activity' }).click();
+    await expect(page).toHaveURL(/\/staff#activity$/);
+    await expect(page.getByRole('link', { name: 'Live activity' })).toHaveClass(/active/);
+    await expect(page.getByRole('link', { name: 'Open MijnENGIE' })).toHaveAttribute('href', '/app');
+    await expect(page.getByRole('link', { name: 'Start page' })).toHaveAttribute('href', '/');
+  });
 });
 
 test('mobile preview shows the phone and a QR code', async ({ page }) => {

@@ -1,6 +1,6 @@
 # ENGIE360: ENGIE Netherlands CX demo
 
-PowerConnect.AI concept demo for ENGIE Netherlands: a MijnENGIE-style customer portal with Eva (a scripted AI assistant) and Net2Grid smart-energy features, plus an ENGIE staff app (`/staff`) linked to it live. One Node server runs everything on one port (:3000): API, SQLite database, live events, web push, the frontend and a start page (`/start`). All data is sample data. **It is built and working**; changes from here are iterations. Read `README.md` for screens and the demo script, `DEPLOY.md` for running and hosting, and `PLAN.md` for how it was built.
+PowerConnect.AI concept demo for ENGIE Netherlands: a MijnENGIE-style customer portal with Eva (a scripted AI assistant) and Net2Grid smart-energy features, plus an ENGIE staff app (`/staff`) linked to it live. One Node server runs everything on one port (:3000): API, SQLite database, live events, web push, the frontend and a start page at `/`. Like Hydro Mobile360: the portal lives under `/app` (router basename; routes inside stay short, e.g. `/energy`), the staff app at `/staff`; `src/main.tsx` picks the app and moves old portal links under `/app`. All data is sample data. **It is built and working**; changes from here are iterations. Read `README.md` for screens and the demo script, `DEPLOY.md` for running and hosting, and `PLAN.md` for how it was built.
 
 Sister project: `E:\hydro-one-ev-demo` (Hydro One). ENGIE360 borrows how that demo *works* (one server, live staff side, push, start page, Catalyst hosting), never its content. The assistant NLU, presenter mode, lint rules and test setup follow its patterns; look there before inventing something new.
 
@@ -12,6 +12,7 @@ Sister project: `E:\hydro-one-ev-demo` (Hydro One). ENGIE360 borrows how that de
 - `src/data/*`: seed/mock data, also used by the server. `src/lib/time.ts` holds the demo clock (`DEMO_NOW`, `DEMO_TZ` = Europe/Amsterdam). Use `zoned()` / `dayKey()`; never `getHours()` / `setDate()` on local time.
 - `src/api/`: API client, `LiveProvider` (server state + SSE, falls back to local data without a server), `httpAssistant.ts` (Eva via the server), `push.ts`.
 - `src/assistant/`: `nlu.ts` (pure matcher) → `intents.ts` (definitions, phrases, suggestions) → `answers.ts` (pure answers) → `mockProvider.ts`. UI in `ChatPanel.tsx`; portal session in `PortalAssistant.tsx` + `portalContext.ts`.
+- `src/components/RailShell.tsx`: the shared Hydro-style shell (top bar, hover-widening icon rail, phone drawer) used by the portal (`Layout.tsx`) and the staff app; `ThemeMenu.tsx` (Dark/Light/Match system).
 - `src/staff/`: the staff app. `src/pages/`: portal screens and the mobile preview. `public/sw.js`: push service worker.
 - `src/lib/`: i18n, theme, presenter script (6 steps), charging planner, live power simulation. `src/components/`: layout, UI kit, toasts, nav, charts, presenter bar, phone QR.
 - Tests: Vitest `src/**/*.spec.ts` and `server/**/*.spec.ts`; Playwright `tests/e2e/` (starts its own full server on :5190).
@@ -30,7 +31,7 @@ Sister project: `E:\hydro-one-ev-demo` (Hydro One). ENGIE360 borrows how that de
 
 ## Commands
 
-- `npm run dev`: everything on http://localhost:3000 with hot reload (start page `/start`). `start-demo.cmd`: install + build + start for Windows.
+- `npm run dev`: everything on http://localhost:3000 with hot reload (start page at `/`). `start-demo.cmd`: install + build + start for Windows.
 - `npm run build` / `npm start`: production on :3000. `npm run deploy:catalyst`: Docker image to Zoho Catalyst AppSail.
 - Demo day: Shift+P for the presenter bar (N/B/1–6/R/Esc). Phone push needs HTTPS (hosted URL) or localhost.
 - Use npm (global pnpm is broken on this machine). Port 5173 is often taken by another app; the server uses 3000.

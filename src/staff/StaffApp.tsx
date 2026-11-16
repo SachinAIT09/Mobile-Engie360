@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Activity as ActivityIcon,
   BellRing,
@@ -8,15 +7,15 @@ import {
   ExternalLink,
   Eye,
   Flame,
+  LayoutDashboard,
+  LayoutGrid,
   Mail,
   MessageSquareText,
-  Moon,
   PiggyBank,
   RotateCcw,
   Send,
   SlidersHorizontal,
   Smartphone,
-  Sun,
   Target,
   UserRound,
   Wallet,
@@ -25,10 +24,11 @@ import {
 } from 'lucide-react';
 import type { Activity, ActivityKind, Conversation, MessageTemplate, StaffOverview } from '../../shared/contract';
 import { Brand } from '../components/Layout';
+import { RailShell, type RailItem } from '../components/RailShell';
+import { ThemeMenu } from '../components/ThemeMenu';
 import { Card, DemoFlag, InsightIc, Kpi } from '../components/ui';
 import { useToast } from '../components/toast';
 import { useI18n, type Lang } from '../lib/i18n';
-import { useTheme } from '../lib/theme';
 import { brand } from '../brand';
 import { useStaffData, type Connection } from './useStaffData';
 import './staff.css';
@@ -77,37 +77,67 @@ function ConnectionBadge({ state }: { state: Connection }) {
   );
 }
 
-function TopBar({ connection, onReset }: { connection: Connection; onReset: () => void }) {
+function TopActions({ connection }: { connection: Connection }) {
   const { t, lang, setLang } = useI18n();
-  const { theme, setTheme } = useTheme();
-  const dark = theme === 'dark';
   return (
-    <header className="staff-top">
-      <Brand sub={t('Customer Service', 'Klantenservice')} />
+    <>
       <ConnectionBadge state={connection} />
-      <span className="staff-top-actions">
-        <Link className="btn btn-outline btn-sm" to="/" target="_blank" rel="noreferrer">
-          <ExternalLink size={15} /> <span className="hide-s">{t(`Open ${brand.portal}`, `Open ${brand.portal}`)}</span>
-        </Link>
-        <button className="btn btn-outline btn-sm" onClick={onReset} disabled={connection !== 'live'}>
-          <RotateCcw size={15} /> <span className="hide-s">{t('Reset demo', 'Demo resetten')}</span>
-        </button>
-        <span className="lang" role="group" aria-label={t('Language', 'Taal')}>
-          {(['nl', 'en'] as Lang[]).map((l) => (
-            <button key={l} className={lang === l ? 'on' : ''} aria-pressed={lang === l} onClick={() => setLang(l)}>
-              {l.toUpperCase()}
-            </button>
-          ))}
-        </span>
-        <button className="icon-btn" onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={dark ? t('Switch to light theme', 'Licht thema') : t('Switch to dark theme', 'Donker thema')}>
-          {dark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        <span className="avatar" aria-label={`${STAFF_NAME}, ${brand.name}`}>
-          {STAFF_NAME.slice(0, 1)}
-        </span>
+      <span className="lang" role="group" aria-label={t('Language', 'Taal')}>
+        {(['nl', 'en'] as Lang[]).map((l) => (
+          <button key={l} className={lang === l ? 'on' : ''} aria-pressed={lang === l} onClick={() => setLang(l)}>
+            {l.toUpperCase()}
+          </button>
+        ))}
       </span>
-    </header>
+      <ThemeMenu />
+      <span className="avatar" title={`${STAFF_NAME} · ${brand.name} ${t('Customer Service', 'Klantenservice')}`} aria-label={`${STAFF_NAME}, ${brand.name}`}>
+        {STAFF_NAME.slice(0, 1)}
+        <span className="online" />
+      </span>
+    </>
   );
+}
+
+const SECTIONS = [
+  { id: 'overview', icon: LayoutDashboard, en: 'Overview', nl: 'Overzicht' },
+  { id: 'customer', icon: UserRound, en: 'Customer', nl: 'Klant' },
+  { id: 'message', icon: Send, en: 'Message the customer', nl: 'Bericht aan de klant' },
+  { id: 'activity', icon: ActivityIcon, en: 'Live activity', nl: 'Live activiteit' },
+  { id: 'conversations', icon: MessageSquareText, en: `Conversations with ${brand.assistant.name}`, nl: `Gesprekken met ${brand.assistant.name}` },
+] as const;
+
+/** Which section is in view, for the rail highlight. */
+function useActiveSection(ready: boolean): string {
+  const [active, setActive] = useState<string>(SECTIONS[0].id);
+  useEffect(() => {
+    if (!ready) return;
+    // A clicked section wins over scroll tracking for a moment: sections sit side by side,
+    // so the scroll that follows the click can bring a neighbour into view first.
+    let pinnedUntil = 0;
+    const onHash = () => {
+      const id = window.location.hash.slice(1);
+      if (SECTIONS.some((x) => x.id === id)) {
+        pinnedUntil = Date.now() + 1200;
+        setActive(id);
+      }
+    };
+    window.addEventListener('hashchange', onHash);
+    const els = SECTIONS.map((x) => document.getElementById(x.id)).filter((el): el is HTMLElement => !!el);
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (Date.now() < pinnedUntil) return;
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: '-80px 0px -55% 0px' },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => {
+      window.removeEventListener('hashchange', onHash);
+      io.disconnect();
+    };
+  }, [ready]);
+  return active;
 }
 
 function CustomerCard({ o, now }: { o: StaffOverview; now: number }) {
@@ -117,6 +147,7 @@ function CustomerCard({ o, now }: { o: StaffOverview; now: number }) {
   const gap = o.installment.advised - (o.installment.pending?.amount ?? o.installment.current);
   return (
     <Card
+      id="customer"
       title={`${c.firstName} ${c.lastName}`}
       sub={`${t('Customer number', 'Klantnummer')} ${c.customerNo}`}
       action={
@@ -166,6 +197,7 @@ function ActivityFeed({ items, fresh }: { items: Activity[]; fresh: Set<string> 
   const list = onlyActions ? items.filter((a) => ACTION_KINDS.has(a.kind) || a.kind === 'chat') : items;
   return (
     <Card
+      id="activity"
       title={t('Live activity', 'Live activiteit')}
       sub={t(`What the customer does in ${brand.portal}, as it happens`, `Wat de klant doet in ${brand.portal}, op het moment zelf`)}
       action={
@@ -248,7 +280,7 @@ function Composer({ templates, pushDevices, disabled, onSend }: { templates: Mes
   };
 
   return (
-    <Card title={t('Message the customer', 'Bericht aan de klant')} sub={t('Appears in the app at once, and as a notification on the phone', 'Verschijnt direct in de app, en als melding op de telefoon')}>
+    <Card id="message" title={t('Message the customer', 'Bericht aan de klant')} sub={t('Appears in the app at once, and as a notification on the phone', 'Verschijnt direct in de app, en als melding op de telefoon')}>
       {templates.length > 0 && (
         <div className="staff-templates" role="group" aria-label={t('Templates', 'Sjablonen')}>
           {templates.map((tpl) => (
@@ -294,6 +326,7 @@ function Conversations({ list }: { list: Conversation[] }) {
   const preview = (c: Conversation) => [...c.entries].reverse().find((e) => e.role === 'user')?.text ?? '';
   return (
     <Card
+      id="conversations"
       title={t(`Conversations with ${brand.assistant.name}`, `Gesprekken met ${brand.assistant.name}`)}
       sub={t(`What customers ask ${brand.assistant.name} in ${brand.portal}, live`, `Wat klanten in ${brand.portal} aan ${brand.assistant.name} vragen, live`)}
       className="staff-conv-card"
@@ -359,6 +392,9 @@ export default function StaffApp() {
     };
   }, [t]);
 
+  const [navOpen, setNavOpen] = useState(false);
+  const activeSection = useActiveSection(!!o);
+
   const reset = () => {
     if (!window.confirm(t('Reset the demo? Messages, conversations and changes go back to the start.', 'Demo resetten? Berichten, gesprekken en wijzigingen gaan terug naar het begin.'))) return;
     data.reset().then(
@@ -382,9 +418,25 @@ export default function StaffApp() {
     [o, t, num, eur, settlement],
   );
 
+  const sections: RailItem[] = SECTIONS.map((x) => ({ key: x.id, icon: x.icon, label: t(x.en, x.nl), href: `#${x.id}`, active: activeSection === x.id }));
+  const demo: RailItem[] = [
+    { key: 'portal', icon: ExternalLink, label: t(`Open ${brand.portal}`, `Open ${brand.portal}`), href: '/app', newTab: true },
+    { key: 'start', icon: LayoutGrid, label: t('Start page', 'Startpagina'), href: '/' },
+    { key: 'reset', icon: RotateCcw, label: t('Reset demo', 'Demo resetten'), onClick: reset },
+  ];
+
   return (
+    <RailShell
+      logo={<Brand sub={t('Customer Service', 'Klantenservice')} />}
+      logoTo="/staff"
+      logoLabel={`${brand.name} ${t('Customer Service', 'Klantenservice')}`}
+      sections={sections}
+      demo={demo}
+      navOpen={navOpen}
+      setNavOpen={setNavOpen}
+      actions={<TopActions connection={data.connection} />}
+    >
     <div className="staff">
-      <TopBar connection={data.connection} onReset={reset} />
       <main className="staff-main">
         <div className="page-head">
           <div>
@@ -405,7 +457,7 @@ export default function StaffApp() {
 
         {o && (
           <>
-            <div className="grid g-4 staff-kpis">
+            <div className="grid g-4 staff-kpis" id="overview">
               {kpis.map((k) => (
                 <Kpi key={k.label} icon={k.icon} tone={k.tone} label={k.label} value={k.value} unit={k.unit} />
               ))}
@@ -426,5 +478,6 @@ export default function StaffApp() {
         </div>
       </main>
     </div>
+    </RailShell>
   );
 }

@@ -16,7 +16,6 @@ const loaders = {
   assistant: () => import('./pages/Assistant'),
   account: () => import('./pages/Account'),
   preview: () => import('./pages/MobilePreview'),
-  staff: () => import('./staff/StaffApp'),
 };
 const Dashboard = lazy(loaders.dashboard);
 const Energy = lazy(loaders.energy);
@@ -26,7 +25,6 @@ const SmartEnergy = lazy(loaders.smart);
 const Assistant = lazy(loaders.assistant);
 const Account = lazy(loaders.account);
 const MobilePreview = lazy(loaders.preview);
-const StaffApp = lazy(loaders.staff);
 
 
 export default function App() {
@@ -58,7 +56,6 @@ export default function App() {
           <Route path="account" element={<Account />} />
         </Route>
         <Route path="mobile-preview" element={<MobilePreview />} />
-        <Route path="staff" element={<StaffApp />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>

@@ -1,20 +1,34 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { CHART, THEME_KEY, ThemeCtx, readTheme, type Theme } from './theme';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { CHART, THEME_KEY, ThemeCtx, readPref, systemPrefersDark, type ThemePref } from './theme';
 
-/** Light by default; the choice is remembered and applied before paint by index.html. */
+/** Light by default; Dark, Light or Match system, remembered and applied before paint by index.html. */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(readTheme);
+  const [pref, setPrefState] = useState<ThemePref>(readPref);
+  const [systemDark, setSystemDark] = useState(systemPrefersDark);
 
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t);
-    document.documentElement.dataset.theme = t;
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mq) return;
+    const onChange = (e: MediaQueryListEvent) => setSystemDark(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const theme = pref === 'system' ? (systemDark ? 'dark' : 'light') : pref;
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
+  const setPref = useCallback((p: ThemePref) => {
+    setPrefState(p);
     try {
-      localStorage.setItem(THEME_KEY, t);
+      localStorage.setItem(THEME_KEY, p);
     } catch {
       /* ignore */
     }
   }, []);
 
-  const value = useMemo(() => ({ theme, setTheme, chart: CHART[theme] }), [theme, setTheme]);
+  const value = useMemo(() => ({ theme, pref, setPref, setTheme: setPref, chart: CHART[theme] }), [theme, pref, setPref]);
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
 }

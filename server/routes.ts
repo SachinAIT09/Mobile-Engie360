@@ -87,7 +87,7 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
     const icon = (b.icon === undefined ? 'bell' : str(b, 'icon')) as MessageIcon;
     if (!ICONS.includes(icon)) throw new HttpError(400, 'Unknown icon');
     const message = store.sendStaffMessage({ title: text(b, 'title'), body: text(b, 'body'), icon, to: str(b, 'to', true) || undefined, push: bool(b, 'push'), sender: str(b, 'sender', true) || undefined });
-    const pushed = bool(b, 'push') ? await push.send({ title: message.title.nl, body: message.body.nl, url: message.to, tag: message.id }) : 0;
+    const pushed = bool(b, 'push') ? await push.send({ title: message.title.nl, body: message.body.nl, url: `/app${message.to === '/' ? '' : message.to}`, tag: message.id }) : 0;
     return { message, pushed };
   });
 

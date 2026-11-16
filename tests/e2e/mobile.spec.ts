@@ -1,6 +1,6 @@
 import { ask, expect, fresh, noHorizontalScroll, test } from './fixtures';
 
-const ROUTES = ['/', '/energy', '/billing', '/insights', '/smart-energy', '/assistant', '/account'];
+const ROUTES = ['/', '/app', '/app/energy', '/app/billing', '/app/insights', '/app/smart-energy', '/app/assistant', '/app/account', '/staff'];
 
 test('no horizontal scrolling on any screen at 390 px', async ({ page }) => {
   await fresh(page);
@@ -17,8 +17,9 @@ test('tab bar, drawer and full-screen assistant', async ({ page }) => {
   await page.locator('.tabbar a', { hasText: 'Bills' }).click();
   await expect(page).toHaveURL(/\/billing$/);
   await page.locator('.tabbar button', { hasText: 'More' }).click();
-  await expect(page.locator('.sidebar.open')).toBeVisible();
-  await page.locator('.sidebar a', { hasText: 'Smart Energy' }).click();
+  await expect(page.locator('.rs.nav-open .rs-rail')).toBeVisible();
+  await page.locator('.rs-rail a', { hasText: 'Smart Energy' }).click();
+  await expect(page.locator('.rs.nav-open')).toHaveCount(0);
   await expect(page).toHaveURL(/\/smart-energy$/);
   await page.locator('.chat-fab').click();
   await expect(page.locator('.chat-widget')).toBeVisible();

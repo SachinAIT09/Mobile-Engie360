@@ -4,6 +4,7 @@ import { ArrowLeft, RotateCw } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { Brand } from '../components/Layout';
 import { PhoneQr } from '../components/PhoneQr';
+import { portalUrl } from '../lib/routes';
 import './mobile-preview.css';
 import { brand } from '../brand';
 
@@ -46,7 +47,7 @@ export default function MobilePreview() {
         <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => setNonce((n) => n + 1)}>
           <RotateCw size={14} /> {t('Reload phone', 'Telefoon herladen')}
         </button>
-        <PhoneQr path={path} />
+        <PhoneQr path={portalUrl(path)} />
         <p className="xs muted">{t(`Tip: open ${brand.assistant.name} in the phone to show the full-screen chat.`, `Tip: open ${brand.assistant.name} in de telefoon om de chat op volledig scherm te laten zien.`)}</p>
       </aside>
       <div className="mp-stage">
@@ -61,7 +62,7 @@ export default function MobilePreview() {
                 <b />
               </span>
             </div>
-            <iframe key={`${path}-${nonce}`} src={path} title={t('Mobile preview', 'Mobiele preview')} />
+            <iframe key={`${path}-${nonce}`} src={portalUrl(path)} title={t('Mobile preview', 'Mobiele preview')} />
           </div>
         </div>
       </div>

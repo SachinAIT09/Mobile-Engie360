@@ -4,17 +4,17 @@ One server process serves everything on one port:
 
 | Path | What |
 |---|---|
-| `/start` | Start page: links to every app, the phone QR code, the demo script, Reset demo |
-| `/` | Customer portal (MijnENGIE, Sanne's account, Eva) |
+| `/` | Start page: links to both apps, the phone QR code, the demo script, Reset demo |
+| `/app` | Customer portal (MijnENGIE, Sanne's account, Eva) |
 | `/staff` | ENGIE staff app (customer service view, live) |
-| `/mobile-preview` | The portal in a phone frame |
+| `/app/mobile-preview` | The portal in a phone frame |
 | `/api/...` | API; live updates at `/api/events` (Server-Sent Events) |
 
 Data lives in a SQLite file (Node's built-in `node:sqlite`, nothing to install). **Reset demo** (start page, staff app, or presenter bar `R`) restores the starting state.
 
 ## On a laptop (Windows)
 
-Double-click **`start-demo.cmd`**. It installs, builds and starts, then opens http://localhost:3000/start. Keep the window open; close it to stop.
+Double-click **`start-demo.cmd`**. It installs, builds and starts, then opens http://localhost:3000. Keep the window open; close it to stop.
 
 Or by hand (Node.js 22.13+):
 
@@ -32,7 +32,7 @@ The start page's QR code points at this laptop's Wi-Fi address, so a phone on th
 ## Option A: Docker
 
 ```bash
-docker compose up -d --build        # http://<server>:3000/start
+docker compose up -d --build        # http://<server>:3000
 ```
 
 Settings (environment variables, all optional):

@@ -1,11 +1,14 @@
-import { CreditCard, Gauge, Headset, Home, Lightbulb, MessageCircle, Smartphone, User, Zap, type LucideIcon } from 'lucide-react';
+import { CreditCard, Gauge, Headset, Home, LayoutGrid, Lightbulb, MessageCircle, Smartphone, User, Zap, type LucideIcon } from 'lucide-react';
 
+/** Portal navigation. `to` is a route inside the portal (/app); `href` is a full-page link outside it. */
 export interface NavItem {
   to: string;
   icon: LucideIcon;
   en: string;
   nl: string;
   tag?: string;
+  href?: string;
+  newTab?: boolean;
 }
 
 export const NAV: NavItem[] = [
@@ -20,6 +23,6 @@ export const NAV: NavItem[] = [
 
 export const DEMO_NAV: NavItem[] = [
   { to: '/mobile-preview', icon: Smartphone, en: 'Mobile preview', nl: 'Mobiele preview' },
-  { to: '/staff', icon: Headset, en: 'Customer Service view', nl: 'Klantenservice-weergave' },
+  { to: '/staff', href: '/staff', newTab: true, icon: Headset, en: 'Customer Service view', nl: 'Klantenservice-weergave' },
+  { to: '/start', href: '/', icon: LayoutGrid, en: 'Start page', nl: 'Startpagina' },
 ];
-

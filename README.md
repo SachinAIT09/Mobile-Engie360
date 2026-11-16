@@ -6,13 +6,13 @@ Interactive demo of an ENGIE-style customer portal (MijnENGIE) with Eva, a scrip
 
 ## Run
 
-**Windows, easiest:** double-click `start-demo.cmd`. It installs, builds, starts everything on one port and opens http://localhost:3000/start.
+**Windows, easiest:** double-click `start-demo.cmd`. It installs, builds, starts everything on one port and opens http://localhost:3000 (the start page).
 
 By hand (Node.js 22.13+):
 
 ```bash
 npm install
-npm run dev          # everything on http://localhost:3000 with hot reload (start page: /start)
+npm run dev          # everything on http://localhost:3000 with hot reload
 ```
 
 | Command | What it does |
@@ -31,7 +31,11 @@ Hosting (Docker, Catalyst, phone push over HTTPS): see [DEPLOY.md](DEPLOY.md).
 
 ## Screens
 
-| Route | Screen |
+URLs work like the Hydro Mobile360 demo: `/` is the **start page** (both apps, phone QR, demo script, Reset), the **customer portal** is under `/app`, and the **staff app** is at `/staff`. Old portal links (`/energy`, `/billing`…) redirect under `/app`.
+
+Both apps share one shell: a top bar (language, theme menu Dark/Light/Match system, notifications with a live-connection dot, avatar) and a 72 px icon rail that widens on hover to show the labels, with **Ask Eva…** at the top. On phones the rail is a drawer behind the ☰ button; the portal also has a bottom tab bar.
+
+| Portal route (under `/app`) | Screen |
 |---|---|
 | `/` | Home dashboard: greeting, KPIs, energy overview chart, contract, quick actions, smart insights, live power |
 | `/energy` | Consumption analytics: hour/day/week/month, electricity/gas, comparisons, Net2Grid appliance breakdown, peak/off-peak, trend + table |
@@ -42,7 +46,9 @@ Hosting (Docker, Catalyst, phone push over HTTPS): see [DEPLOY.md](DEPLOY.md).
 | `/account` | Profile, contract, payment details, meter readings, preferences (language, theme) |
 | `/mobile-preview` | Phone frame showing the live app at 390 × 844, plus a QR code to open it on a real phone |
 
-The NL/EN switch translates the portal and the assistant. The sun/moon button switches light/dark (remembered).
+The NL/EN switch translates the portal and the assistant. The theme menu offers Dark, Light or Match system (remembered).
+
+The **staff app** (`/staff`) shows Sanne's KPIs, details, live activity and Eva conversations, and sends her messages (in-app banner plus optional phone push). Its rail jumps to each section.
 
 ## Presenting
 

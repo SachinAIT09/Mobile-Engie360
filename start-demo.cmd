@@ -19,9 +19,9 @@ call npm run build
 if errorlevel 1 goto :fail
 echo.
 echo [3/3] Starting the demo. Your browser opens the start page shortly:
-echo        http://localhost:3000/start
+echo        http://localhost:3000
 echo        Keep this window open while you use the demo. Close it to stop.
-start "" cmd /c "timeout /t 6 >nul & start http://localhost:3000/start"
+start "" cmd /c "timeout /t 6 >nul & start http://localhost:3000"
 call npm start
 goto :eof
 :fail

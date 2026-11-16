@@ -7,12 +7,9 @@ import {
   Settings,
   User,
   CheckCheck,
-  Moon,
-  Sun,
   HelpCircle,
 } from 'lucide-react';
 import { useI18n, type Lang } from '../lib/i18n';
-import { useTheme } from '../lib/theme';
 import { customer } from '../data/customer';
 import { DEMO_NOW } from '../lib/time';
 import type { InboxMessage } from '../../shared/contract';
@@ -20,6 +17,8 @@ import { useLive } from '../api/live';
 import { DEMO_NAV, NAV, type NavItem } from './nav';
 import { FloatingAssistant } from '../assistant/FloatingAssistant';
 import { InsightIc } from './ui';
+import { RailShell, type RailItem } from './RailShell';
+import { ThemeMenu } from './ThemeMenu';
 import { useToast } from './toast';
 import { brand } from '../brand';
 
@@ -64,17 +63,6 @@ function LangSwitch() {
   );
 }
 
-function ThemeSwitch() {
-  const { t } = useI18n();
-  const { theme, setTheme } = useTheme();
-  const dark = theme === 'dark';
-  return (
-    <button className="icon-btn" onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={dark ? t('Switch to light theme', 'Licht thema') : t('Switch to dark theme', 'Donker thema')} title={dark ? t('Light theme', 'Licht thema') : t('Dark theme', 'Donker thema')}>
-      {dark ? <Sun size={18} /> : <Moon size={18} />}
-    </button>
-  );
-}
-
 /** "1 hour ago" / "5 dagen geleden", measured on the demo clock for seeded items and the real clock for new ones. */
 function timeAgo(iso: string, lang: Lang): string {
   const then = new Date(iso).getTime();
@@ -91,7 +79,7 @@ function timeAgo(iso: string, lang: Lang): string {
 function Notifications() {
   const { t, tx, lang } = useI18n();
   const navigate = useNavigate();
-  const { messages: items, markRead, markAllRead } = useLive();
+  const { messages: items, markRead, markAllRead, online } = useLive();
   const [open, setOpen] = useState(false);
   const ref = useOutside<HTMLDivElement>(open, () => setOpen(false));
   const unread = items.filter((i) => !i.read).length;
@@ -107,6 +95,7 @@ function Notifications() {
       <button className="icon-btn" aria-label={t(`Notifications, ${unread} unread`, `Meldingen, ${unread} ongelezen`)} aria-expanded={open} onClick={() => setOpen(!open)}>
         <Bell size={19} />
         {unread > 0 && <span className="dot" />}
+        <span className={`conn-dot${online ? ' on' : ''}`} title={online ? t('Live updates connected', 'Live updates verbonden') : t('Offline: sample data', 'Offline: voorbeelddata')} />
       </button>
       {open && (
         <div className="popover">
@@ -155,7 +144,10 @@ function ProfileMenu() {
   return (
     <div className="pop-wrap" ref={ref}>
       <button className="profile-btn" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={t('Profile menu', 'Profielmenu')}>
-        <span className="avatar">{customer.initials}</span>
+        <span className="avatar">
+          {customer.initials}
+          <span className="online" />
+        </span>
         <span className="who">
           <b>
             {customer.firstName} {customer.lastName}
@@ -201,30 +193,6 @@ function ProfileMenu() {
   );
 }
 
-function SideNav({ onNavigate }: { onNavigate?: () => void }) {
-  const { t } = useI18n();
-  const link = (n: NavItem) => (
-    <NavLink key={n.to} to={n.to} end={n.to === '/'} onClick={onNavigate}>
-      <n.icon size={19} />
-      {t(n.en, n.nl)}
-      {n.tag && <span className="tag">{n.tag}</span>}
-    </NavLink>
-  );
-  return (
-    <>
-      <nav className="nav" aria-label={t('Main', 'Hoofdmenu')}>
-        {NAV.map(link)}
-        <div className="nav-label">{t('Demo', 'Demo')}</div>
-        {DEMO_NAV.map(link)}
-      </nav>
-      <div className="sidebar-foot">
-        <strong>{t('Prototype', 'Prototype')}</strong>
-        <span className="muted">{t(`Sample customer and data. Not connected to ${brand.name} systems.`, `Voorbeeldklant en -data. Niet gekoppeld aan ${brand.name}-systemen.`)}</span>
-      </div>
-    </>
-  );
-}
-
 const MOBILE_TABS: (NavItem & { short: [string, string] })[] = [
   { ...(NAV[0] as NavItem), short: ['Home', 'Home'] },
   { ...(NAV[1] as NavItem), short: ['Usage', 'Verbruik'] },
@@ -235,15 +203,7 @@ const MOBILE_TABS: (NavItem & { short: [string, string] })[] = [
 export function AppShell({ children }: { children?: ReactNode }) {
   const { t } = useI18n();
   const { pathname, hash } = useLocation();
-  const [drawer, setDrawer] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const current = [...NAV, ...DEMO_NAV].find((n) => (n.to === '/' ? pathname === '/' : pathname.startsWith(n.to)));
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (hash) {
@@ -256,52 +216,54 @@ export function AppShell({ children }: { children?: ReactNode }) {
     window.scrollTo(0, 0);
   }, [pathname, hash]);
 
-  return (
-    <div className="shell">
-      <aside className={`sidebar${drawer ? ' open' : ''}`}>
-        <NavLink to="/" onClick={() => setDrawer(false)} aria-label={`${brand.portal} home`}>
-          <Brand sub={brand.portal} />
-        </NavLink>
-        <SideNav onNavigate={() => setDrawer(false)} />
-      </aside>
-      {drawer && <div className="drawer-backdrop" onClick={() => setDrawer(false)} />}
+  const item = (n: NavItem): RailItem => ({
+    key: n.to,
+    icon: n.icon,
+    label: t(n.en, n.nl),
+    tag: n.tag,
+    ...(n.href ? { href: n.href, newTab: n.newTab } : { to: n.to, end: n.to === '/' }),
+  });
 
-      <div className="main">
-        <header className={`topbar${scrolled ? ' scrolled' : ''}`}>
-          <span className="mobile-brand row">
-            <button className="icon-btn" onClick={() => setDrawer(true)} aria-label={t('Open menu', 'Open menu')}>
-              <Menu size={20} />
-            </button>
-            <Brand />
-          </span>
-          <span className="crumb">{current ? t(current.en, current.nl) : ''}</span>
-          <span className="spacer" />
+  return (
+    <RailShell
+      logo={<Brand sub={brand.portal} />}
+      logoTo="/"
+      logoLabel={`${brand.portal} home`}
+      ask={{ label: t(`Ask ${brand.assistant.name}…`, `Vraag het ${brand.assistant.name}…`), to: '/assistant' }}
+      sections={NAV.map(item)}
+      demo={DEMO_NAV.map(item)}
+      navOpen={navOpen}
+      setNavOpen={setNavOpen}
+      actions={
+        <>
+          <span className="rs-welcome hide-m">{t(`Welcome ${customer.firstName}`, `Welkom ${customer.firstName}`)}</span>
           <LangSwitch />
-          <span className="hide-m">
-            <ThemeSwitch />
-          </span>
+          <ThemeMenu />
           <Notifications />
           <ProfileMenu />
-        </header>
-        <main className="content" key={pathname}>
-          <Suspense fallback={<div className="page-loading" aria-busy="true" />}>{children ?? <Outlet />}</Suspense>
-        </main>
-      </div>
-
-      <nav className="tabbar" aria-label={t('Mobile navigation', 'Mobiele navigatie')}>
-        {MOBILE_TABS.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.to === '/'}>
-            <n.icon size={21} />
-            {t(n.short[0], n.short[1])}
-          </NavLink>
-        ))}
-        <button onClick={() => setDrawer(true)}>
-          <Menu size={21} />
-          {t('More', 'Meer')}
-        </button>
-      </nav>
-
-      <FloatingAssistant />
-    </div>
+        </>
+      }
+      after={
+        <>
+          <nav className="tabbar" aria-label={t('Mobile navigation', 'Mobiele navigatie')}>
+            {MOBILE_TABS.map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.to === '/'}>
+                <n.icon size={21} />
+                {t(n.short[0], n.short[1])}
+              </NavLink>
+            ))}
+            <button onClick={() => setNavOpen(true)}>
+              <Menu size={21} />
+              {t('More', 'Meer')}
+            </button>
+          </nav>
+          <FloatingAssistant />
+        </>
+      }
+    >
+      <main className="content" key={pathname}>
+        <Suspense fallback={<div className="page-loading" aria-busy="true" />}>{children ?? <Outlet />}</Suspense>
+      </main>
+    </RailShell>
   );
 }

@@ -68,8 +68,14 @@ test.describe('customer ↔ staff, live', () => {
   });
 
   test('start page links every app and shows the phone QR', async ({ page }) => {
-    await fresh(page, '/start');
-    for (const href of ['/', '/staff', '/mobile-preview']) await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
-    await expect(page.locator('.qr svg')).toBeVisible();
+    await fresh(page, '/');
+    await expect(page.locator('h1')).toHaveText('ENGIE360 demo');
+    await expect(page.locator('img[alt="PowerConnect.AI"]')).toBeVisible();
+    for (const href of ['/staff', '/app', '/app/mobile-preview']) await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
+    await expect(page.locator('.phone svg')).toBeVisible();
+    await expect(page.locator('.phone code')).toContainText('/app');
+    // The old address still works.
+    await page.goto('/start');
+    await expect(page).toHaveURL(/\/$/);
   });
 });

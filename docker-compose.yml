@@ -1,5 +1,5 @@
 # ENGIE360 demo on any server with Docker:
-#   docker compose up -d --build        → http://<server>:3000/start
+#   docker compose up -d --build        → http://<server>:3000
 # APP_PORT=8080 docker compose up -d --build to use another port.
 # PUBLIC_URL makes the phone QR point at the public address (e.g. https://demo.example.com).
 services:

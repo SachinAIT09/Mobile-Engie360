@@ -46,9 +46,14 @@ export async function createApp(server: Server): Promise<{ handler: RequestHandl
           sendError(res, new HttpError(404, `No API route ${url.pathname}`));
           return;
         }
+        // Start page at the root, like Hydro Mobile360; the old /start address still works.
         if (url.pathname === '/start' || url.pathname === '/start/') {
+          res.writeHead(301, { Location: '/' }).end();
+          return;
+        }
+        if (url.pathname === '/') {
           const [first, ...rest] = phoneUrls(req);
-          const html = await startPage(`${first ?? `http://localhost:${config.port}`}/`, rest);
+          const html = await startPage(`${first ?? `http://localhost:${config.port}`}/app`, rest.map((u) => `${u}/app`));
           res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }).end(html);
           return;
         }

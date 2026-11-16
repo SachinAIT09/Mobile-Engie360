@@ -178,22 +178,6 @@ button {
 /* ------------------------------------------------------------------
    App shell
 ------------------------------------------------------------------- */
-.shell {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
-  min-height: 100%;
-}
-.sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  background: var(--surface);
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  padding: 18px 14px;
-  gap: 6px;
-}
 .brand {
   display: flex;
   align-items: center;
@@ -224,94 +208,6 @@ button {
   color: var(--muted);
   border-left: 1px solid var(--line);
   padding-left: 10px;
-}
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.nav-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  padding: 14px 12px 6px;
-}
-.nav a {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  color: var(--ink-2);
-  font-weight: 700;
-  font-size: 14px;
-  transition: background 0.15s, color 0.15s;
-}
-.nav a:hover {
-  background: var(--line-2);
-  color: var(--ink);
-}
-.nav a.active {
-  background: var(--blue-50);
-  color: var(--blue-700);
-}
-.nav a.active svg {
-  color: var(--blue);
-}
-.nav .tag {
-  margin-left: auto;
-  font-size: 10px;
-  font-weight: 900;
-  background: var(--green-50);
-  color: var(--green-700);
-  padding: 2px 6px;
-  border-radius: 999px;
-}
-.sidebar-foot {
-  margin-top: auto;
-  padding: 14px;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, var(--blue-50), var(--green-50));
-  font-size: 13px;
-}
-.sidebar-foot strong {
-  display: block;
-  margin-bottom: 4px;
-}
-
-.main {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  height: var(--topbar-h);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 28px;
-  background: var(--topbar-bg);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid transparent;
-}
-.topbar.scrolled {
-  border-bottom-color: var(--line);
-}
-.topbar .crumb {
-  font-weight: 700;
-  color: var(--muted);
-  font-size: 14px;
-}
-.topbar .spacer {
-  flex: 1;
-}
-.topbar .mobile-brand {
-  display: none;
 }
 .content {
   padding: 8px 28px 48px;
@@ -1236,31 +1132,6 @@ input[type='range'] {
   }
 }
 @media (max-width: 960px) {
-  .shell {
-    grid-template-columns: 1fr;
-  }
-  .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 90;
-    width: 280px;
-    transform: translateX(-100%);
-    transition: transform 0.25s var(--ease);
-    box-shadow: var(--shadow-lg);
-  }
-  .sidebar.open {
-    transform: none;
-  }
-  .topbar {
-    padding: 0 16px;
-  }
-  .topbar .crumb {
-    display: none;
-  }
-  .topbar .mobile-brand {
-    display: flex;
-  }
   .content {
     padding: 4px 16px 110px;
   }
@@ -1473,6 +1344,287 @@ input[type='range'] {
   }
   .presenter-dots,
   .presenter-text span {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   App shell (portal + staff): top bar, 72px icon rail that widens on hover,
+   off-canvas drawer on phones. Same behaviour as the Hydro Mobile360 shell.
+------------------------------------------------------------------- */
+:root {
+  --rail-w: 72px;
+  --rail-open-w: 252px;
+}
+.rs {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+}
+.skip-link:focus {
+  top: 12px;
+}
+.rs-main:focus {
+  outline: none;
+}
+.rs-top {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--topbar-h);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px 0 14px;
+  background: var(--topbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.rs-logo {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+}
+.rs-logo .brand {
+  padding: 8px 6px 0;
+}
+.rs-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rs-welcome {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.rs-toggle {
+  display: none;
+}
+.rs-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+/* On hover or keyboard focus the rail widens and the page shifts beside it (never under it). */
+.rs-slot {
+  width: var(--rail-w);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 35;
+  transition: width 0.25s var(--ease);
+}
+.rs-slot:hover,
+.rs-slot:focus-within {
+  width: var(--rail-open-w);
+}
+.rs-rail {
+  position: sticky;
+  top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  width: 100%;
+  overflow: hidden;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+}
+.rs-lbl {
+  opacity: 0;
+  white-space: nowrap;
+  transition: opacity 0.18s ease;
+}
+.rs-slot:hover .rs-lbl,
+.rs-slot:focus-within .rs-lbl {
+  opacity: 1;
+  transition-delay: 0.06s;
+}
+.rs-ask {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  margin-bottom: 10px;
+  padding: 0 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.rs-ask svg {
+  flex-shrink: 0;
+}
+.rs-ask:hover {
+  color: var(--ink);
+  border-color: var(--blue-100);
+}
+.rs-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rs-nav a,
+.rs-nav button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.rs-nav svg {
+  flex-shrink: 0;
+}
+.rs-nav a:hover,
+.rs-nav button:hover {
+  background: var(--line-2);
+  color: var(--ink);
+}
+.rs-nav a.active {
+  background: var(--blue);
+  color: #fff;
+}
+.rs-tag {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 900;
+  background: var(--green-50);
+  color: var(--green-700);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.rs-nav a.active .rs-tag {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.rs-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 10px 6px;
+  flex-shrink: 0;
+}
+.rs-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.rs-scrim {
+  display: none;
+}
+
+/* Live-connection dot on the bell, online dot on the avatar */
+.icon-btn .conn-dot {
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  border: 2px solid var(--surface);
+  box-sizing: content-box;
+}
+.icon-btn .conn-dot.on {
+  background: var(--ok);
+}
+.avatar {
+  position: relative;
+}
+.avatar .online {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ok);
+  border: 2px solid var(--surface);
+}
+.theme-menu .menu-item[aria-checked='true'] {
+  color: var(--blue-700);
+}
+.theme-menu .tick {
+  color: var(--blue);
+}
+
+@media (max-width: 960px) {
+  .rs-toggle {
+    display: inline-grid;
+  }
+  .rs-top {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .rs-actions {
+    gap: 6px;
+  }
+  .rs-slot,
+  .rs-slot:hover,
+  .rs-slot:focus-within {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: 0;
+    width: min(var(--rail-open-w), 86vw);
+    transform: translateX(-100%);
+    transition: transform 0.25s var(--ease);
+    z-index: 90;
+  }
+  .rs.nav-open .rs-slot {
+    transform: none;
+    box-shadow: var(--shadow-lg);
+  }
+  .rs-rail {
+    position: static;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .rs-lbl {
+    opacity: 1;
+  }
+  .rs-scrim {
+    display: block;
+    position: fixed;
+    inset: var(--topbar-h) 0 0 0;
+    background: rgba(11, 34, 64, 0.4);
+    z-index: 85;
+  }
+}
+@media (max-width: 420px) {
+  .rs-logo .brand-sub {
     display: none;
   }
 }

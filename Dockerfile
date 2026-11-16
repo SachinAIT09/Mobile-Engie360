@@ -1,5 +1,5 @@
-# ENGIE360 demo: one image serving the customer portal (/), staff app (/staff), mobile preview,
-# the API (/api, live events at /api/events) and the start page (/start), all on port 3000.
+# ENGIE360 demo: one image serving the start page (/), the customer portal (/app), the staff app (/staff),
+# the API (/api, live events at /api/events), all on port 3000.
 #
 # Database: Node's built-in SQLite, nothing to install or download. The file lives in DATA_DIR;
 # without a volume a restart starts from fresh demo data (fine for a demo).

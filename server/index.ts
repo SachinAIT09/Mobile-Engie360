@@ -22,7 +22,7 @@ server.listen(config.port, config.host, () => {
 const { createApp } = await import('./app.ts');
 const app = await createApp(server);
 handler = app.handler;
-console.log(`Ready: start page http://localhost:${config.port}/start · portal / · staff /staff`);
+console.log(`Ready: start page http://localhost:${config.port}/ · portal /app · staff /staff`);
 
 let closing = false;
 const shutdown = async () => {

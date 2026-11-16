@@ -19,7 +19,8 @@ export const test = base.extend<{ consoleErrors: string[] }>({
 export { expect };
 
 /** Fresh start: English, light theme, presenter hidden. */
-export async function fresh(page: Page, path = '/') {
+/** `path` is a full URL path: the portal lives under /app, the staff app at /staff, the start page at /. */
+export async function fresh(page: Page, path = '/app') {
   await page.addInitScript(() => {
     if (sessionStorage.getItem('e2e-init')) return;
     sessionStorage.setItem('e2e-init', '1');

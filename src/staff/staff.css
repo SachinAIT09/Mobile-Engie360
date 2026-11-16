@@ -4,28 +4,6 @@
   background: var(--bg);
   color: var(--ink);
 }
-.staff-top {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  height: var(--topbar-h);
-  padding: 0 28px;
-  background: var(--topbar-bg);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-}
-.staff-top .brand {
-  padding: 4px 0 0;
-}
-.staff-top-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 .staff-main {
   max-width: 1320px;
   margin: 0 auto;
@@ -284,36 +262,20 @@
   .staff-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .staff-top {
-    padding: 0 16px;
-    gap: 10px;
-  }
   .staff-main {
     padding: 20px 16px 56px;
   }
-  .staff-top .hide-s {
-    display: none;
-  }
-  .staff-top .brand-sub {
-    display: none;
-  }
 }
 @media (max-width: 560px) {
-  .staff-top {
-    gap: 8px;
-    padding: 0 12px;
-  }
-  .staff-top-actions {
-    gap: 6px;
-  }
-  .staff-top .avatar,
-  .staff-conn {
-    display: none;
-  }
   .staff-kpis {
     grid-template-columns: 1fr;
   }
   .staff-bubble {
     max-width: 94%;
   }
+}
+
+/* The page-wide .live pulse adds its own dot; the badge already has one. */
+.staff-conn.live::before {
+  display: none;
 }

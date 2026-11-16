@@ -1,6 +1,8 @@
 import { createContext, useContext } from 'react';
 
 export type Theme = 'light' | 'dark';
+/** What the user picked; "system" follows the device setting. */
+export type ThemePref = Theme | 'system';
 export const THEME_KEY = 'engie-demo-theme';
 
 /**
@@ -14,22 +16,28 @@ export const CHART = {
 
 export type ChartColors = (typeof CHART)[Theme];
 
-export function readTheme(): Theme {
+export function readPref(): ThemePref {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    if (v === 'light' || v === 'dark') return v;
+    if (v === 'light' || v === 'dark' || v === 'system') return v;
   } catch {
     /* storage unavailable */
   }
   return 'light';
 }
 
+export const systemPrefersDark = (): boolean => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+
 export interface ThemeState {
+  /** The theme in effect (system resolved). */
   theme: Theme;
+  pref: ThemePref;
+  setPref: (p: ThemePref) => void;
+  /** Shorthand for setPref with an explicit light/dark choice. */
   setTheme: (t: Theme) => void;
   chart: ChartColors;
 }
 
-export const ThemeCtx = createContext<ThemeState>({ theme: 'light', setTheme: () => {}, chart: CHART.light });
+export const ThemeCtx = createContext<ThemeState>({ theme: 'light', pref: 'light', setPref: () => {}, setTheme: () => {}, chart: CHART.light });
 
 export const useTheme = () => useContext(ThemeCtx);
