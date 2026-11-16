@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Hydro One (Concept)",
-    "slug": "hydro-one-ev-demo",
+    "name": "MijnENGIE (concept)",
+    "slug": "engie-360-demo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#007ACD",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -27,6 +27,6 @@
       "expo-router",
       "expo-font"
     ],
-    "scheme": "hydroonedemo"
+    "scheme": "mijnengiedemo"
   }
 }

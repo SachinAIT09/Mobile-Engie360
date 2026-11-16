@@ -62,7 +62,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setLive((prev) => prev ?? s.live);
         setSummaryError(null);
       },
-      (e: unknown) => setSummaryError(e instanceof Error ? e.message : 'Could not load your account'),
+      (e: unknown) => setSummaryError(e instanceof Error ? e.message : tr.current('Could not load your account', 'Je account kon niet worden geladen')),
     );
   }, [token]);
 
@@ -132,12 +132,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setMessagesVersion((v) => v + 1);
       if (e.status === 'ENDED') {
         showBanner({
-          title: 'Thanks for taking part — see your event result',
-          body: 'Your grid event has ended. Tap to see what you earned.',
+          title: tr.current('Thanks for taking part: see your result', 'Bedankt voor het meedoen: bekijk je resultaat'),
+          body: tr.current('The flex moment has ended. Tap to see what you earned.', 'Het flexmoment is afgelopen. Tik om te zien wat je hebt verdiend.'),
           route: `/flex-events/${e.id}/result`,
         });
       } else if (e.status === 'ACTIVE') {
-        showBanner({ title: 'Grid event has started', body: e.title, route: `/flex-events/${e.id}` });
+        showBanner({ title: tr.current('The flex moment has started', 'Het flexmoment is begonnen'), body: e.title, route: `/flex-events/${e.id}` });
       }
     });
     // Payload `{ keepSessions }` is optional: no payload = old behaviour (sessions were wiped → sign out).
@@ -146,7 +146,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         void refreshSummary();
         setMessagesVersion((v) => v + 1);
         router.replace('/' as never);
-        showBanner({ title: 'Demo was reset', body: 'Sample data is back to its starting point.', route: null });
+        showBanner({ title: tr.current('Demo was reset', 'Demo is gereset'), body: tr.current('Sample data is back to its starting point.', 'De voorbeelddata staat weer op het beginpunt.'), route: null });
         return;
       }
       void logout().then(() => router.replace('/login' as never));

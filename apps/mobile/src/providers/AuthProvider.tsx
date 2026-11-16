@@ -4,7 +4,7 @@ import { BRAND, type AuthUser } from '@engie/shared';
 import { api, setCurrentToken, setUnauthorizedHandler } from '../lib/config';
 import { trackActivity } from '../lib/useTrackView';
 
-const STORAGE_KEY = 'hydro-one-demo-auth';
+const STORAGE_KEY = 'mijnengie-demo-auth';
 
 interface AuthState {
   ready: boolean;

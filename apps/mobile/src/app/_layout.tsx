@@ -3,20 +3,14 @@ import { Platform, View } from 'react-native';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import {
-  useFonts,
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
-} from '@expo-google-fonts/plus-jakarta-sans';
+import { useFonts, Lato_400Regular, Lato_700Bold, Lato_900Black } from '@expo-google-fonts/lato';
 import { IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
 import { SessionProvider, useSession } from '../providers/SessionProvider';
 import { Banner } from '../components/Banner';
 import { Loading, OfflinePill } from '../components/ui';
 import { colors } from '../lib/theme';
+import { I18nProvider } from '../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Shows "Reconnecting…" / "Offline" under the banner while signed in and the live connection is down. */
@@ -34,7 +28,7 @@ function ConnectionPill() {
 }
 
 /** Routes reachable without signing in. */
-const PUBLIC_ROUTES = new Set(['login', 'outage-report']);
+const PUBLIC_ROUTES = new Set(['login']);
 
 function AuthGate() {
   const { ready, token } = useAuth();
@@ -72,11 +66,9 @@ function AuthGate() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
+    Lato_400Regular,
+    Lato_700Bold,
+    Lato_900Black,
     IBMPlexMono_500Medium,
   });
 
@@ -85,14 +77,16 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <StatusBar style="auto" />
       {/* On Expo Web, centre a phone-width column so the demo looks like a phone. */}
-      <View style={{ flex: 1, backgroundColor: isWeb ? '#0B1830' : colors.bg, alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: isWeb ? '#0B2240' : colors.bg, alignItems: 'center' }}>
         <View style={{ flex: 1, width: '100%', maxWidth: isWeb ? 480 : undefined, backgroundColor: colors.bg, overflow: 'hidden' }}>
           {fontsLoaded ? (
-            <AuthProvider>
-              <SessionProvider>
-                <AuthGate />
-              </SessionProvider>
-            </AuthProvider>
+            <I18nProvider>
+              <AuthProvider>
+                <SessionProvider>
+                  <AuthGate />
+                </SessionProvider>
+              </AuthProvider>
+            </I18nProvider>
           ) : (
             <Loading dark />
           )}

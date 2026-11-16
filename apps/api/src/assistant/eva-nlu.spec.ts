@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { INTENTS, PHRASES, type Intent } from './eva-intents.js';
+import { INTENTS, PERSONAL, PHRASES, SUGGESTIONS, type Intent } from './eva-intents.js';
 import { extractEntities, matchIntent, normalise } from './eva-nlu.js';
 
 const intentOf = (q: string, last?: string) => matchIntent(q, INTENTS, last).intent;
@@ -60,6 +60,10 @@ describe('ambiguities', () => {
     ['I want a fixed contract', 'CONTRACT'],
     ['Hoe stap ik over naar ENGIE?', 'SWITCH'],
     ['I want to talk to a person', 'HUMAN'],
+    ['Is there a flex moment today?', 'FLEX'],
+    ['Kan ik vanavond later laden?', 'FLEX'],
+    ['Tell me about Slim Laden', 'FLEX'],
+    ['Het net is druk, moet ik iets doen?', 'FLEX'],
     ['hoi', 'GREETING'],
     ['thanks!', 'THANKS'],
   ])('%s → %s', (q, id) => expect(intentOf(q)).toBe(id));
@@ -67,6 +71,21 @@ describe('ambiguities', () => {
   it('falls back on unrelated questions', () => {
     expect(intentOf('What is the capital of France?')).toBe('FALLBACK');
     expect(intentOf('blah blah')).toBe('FALLBACK');
+  });
+});
+
+describe('suggestions', () => {
+  it('every page lists known phrases, with a default and a visitor set', () => {
+    expect(Object.keys(SUGGESTIONS).sort()).toEqual(['/billing', '/insights', '/profile', '/smart-charging', '/usage', 'default', 'visitor']);
+    for (const ids of Object.values(SUGGESTIONS)) {
+      expect(ids.length).toBeGreaterThan(0);
+      for (const id of ids) expect(intentOf(PHRASES[id].en)).toBe(id);
+    }
+    expect(SUGGESTIONS['/smart-charging']).toContain('FLEX');
+  });
+  it('visitors are only offered questions that need no sign-in', () => {
+    for (const id of SUGGESTIONS.visitor.filter((x) => x !== 'BILL_WHY_HIGH')) expect(PERSONAL).not.toContain(id);
+    expect(PERSONAL).toContain('FLEX');
   });
 });
 
