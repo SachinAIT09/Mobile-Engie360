@@ -14,7 +14,7 @@ describe('buildPlan', () => {
     expect(Date.parse(p.nextStart!)).toBeGreaterThan(at(21, 18).getTime());
     expect(p.plannedKwh).toBe(30);
     expect(p.savings).toBeGreaterThan(0);
-    expect(p.avoidedDrWindows).toEqual([]);
+    expect(p.avoidedFlexWindows).toEqual([]);
     expect(p.boostUntil).toBeNull();
   });
 
@@ -30,8 +30,8 @@ describe('buildPlan', () => {
   it('lists only flex windows overlapping the session and charges around them', () => {
     const w = { start: at(21, 22), end: at(22, 1), title: 'Grid event' };
     const other = { start: at(23, 17), end: at(23, 20), title: 'Later' };
-    const p = buildPlan({ ...on, ratePlan: 'ULO' }, true, [w, other], null, at(21, 10), TZ);
-    expect(p.avoidedDrWindows).toEqual([{ start: w.start.toISOString(), end: w.end.toISOString(), title: 'Grid event' }]);
+    const p = buildPlan({ ...on, ratePlan: 'DUAL' }, true, [w, other], null, at(21, 10), TZ);
+    expect(p.avoidedFlexWindows).toEqual([{ start: w.start.toISOString(), end: w.end.toISOString(), title: 'Grid event' }]);
     for (const s of p.slots) expect(Date.parse(s.start) >= w.end.getTime() || Date.parse(s.end) <= w.start.getTime()).toBe(true);
   });
 
@@ -41,7 +41,7 @@ describe('buildPlan', () => {
     expect(p.slots).toEqual([]);
     expect(p.chargingNow).toBe(false);
     expect(p.savings).toBe(0);
-    expect(p.avoidedDrWindows).toEqual([]);
+    expect(p.avoidedFlexWindows).toEqual([]);
     expect(p.hourly).toHaveLength(24);
   });
 });

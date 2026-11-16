@@ -5,21 +5,23 @@ import { Icon, type IconName } from './icons';
 
 const ICON: Record<NotifyPreset, IconName> = {
   EV_DETECTED: 'car',
-  CHARGING_STARTED: 'bolt',
+  HEAT_PUMP_DETECTED: 'bolt',
+  NIGHT_USAGE: 'alert',
+  CHEAP_HOURS: 'clock',
   CHARGING_COMPLETE: 'check',
-  PEAK_SOON: 'clock',
   FLEX_REQUEST: 'stop',
   ENROLL_OFFER: 'sparkle',
-  BILL_READY: 'file',
-  HIGH_USAGE: 'chart',
-  OUTAGE: 'alert',
+  INSTALLMENT_ADVICE: 'chart',
+  ANNUAL_STATEMENT: 'file',
+  METER_READING: 'check',
 };
-const GROUPS: NotifyGroup[] = ['EV charging', 'Grid programs', 'Account'];
+const GROUPS: NotifyGroup[] = ['Net2Grid', 'Slim Laden', 'Account & billing'];
 
 function blockedReason(p: NotifyPresetInfo, c: DemoCustomer): string | null {
   const enrolled = c.evStatus === 'ENROLLED';
-  if (p.needs === 'ENROLLED' && !enrolled) return `${c.firstName} isn't enrolled`;
-  if (p.needs === 'NOT_ENROLLED' && enrolled) return `${c.firstName} is already enrolled`;
+  if (p.needs === 'ENROLLED' && !enrolled) return `${c.firstName} isn't in Slim Laden`;
+  if (p.needs === 'NOT_ENROLLED' && enrolled) return `${c.firstName} is already in Slim Laden`;
+  if (p.needs === 'INSTALLMENT_GAP' && !c.installmentGap) return `${c.firstName}'s installment matches the advice`;
   return null;
 }
 

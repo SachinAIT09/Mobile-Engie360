@@ -2,7 +2,7 @@ import type { AuditAction, BlindSpot, Campaign, FlexEvent, FlexEventStatus, Enro
 
 /**
  * Pure aggregations behind the Reports page. Everything here is derived from the
- * staff endpoints (campaigns, DR events, districts, gridAreas, blind spots); no fetching,
+ * staff endpoints (campaigns, flex events, districts, gridAreas, gaps); no fetching,
  * no DOM, so it is unit-tested in reports.spec.ts.
  */
 
@@ -64,7 +64,7 @@ export function campaignFunnel(campaigns: Campaign[], mode: FunnelMode): Campaig
   return { label: `All offers (${offers.length} campaign${offers.length === 1 ? '' : 's'})`, campaigns: offers.length, stages: funnelStages(offers) };
 }
 
-// ---------------------------------------------------------------- DR performance
+// ---------------------------------------------------------------- flex performance
 
 export interface DrPerformanceRow {
   campaignId: string;
@@ -80,13 +80,13 @@ export interface DrPerformanceRow {
   reminders: number;
   optedOut: number;
   peakReducedMw: number;
-  /** Status of the linked DR event, or null when the event is not in the list. */
+  /** Status of the linked flex event, or null when the event is not in the list. */
   status: FlexEventStatus | null;
   windowStart: string | null;
   windowEnd: string | null;
 }
 
-/** One row per sent FLEX_REQUEST campaign, newest first, with the linked DR event's status. */
+/** One row per sent FLEX_REQUEST campaign, newest first, with the linked flex event's status. */
 export function drPerformance(campaigns: Campaign[], flexEvents: FlexEvent[]): DrPerformanceRow[] {
   const byId = new Map(flexEvents.map((e) => [e.id, e]));
   return campaigns
@@ -193,7 +193,7 @@ export function gridAreaKnownTop(subs: GridAreaStat[], n = 8): GridAreaKnownRow[
     .map((s) => ({ code: s.code, region: s.region, evs: s.evs, knownPct: s.knownPct }));
 }
 
-// ---------------------------------------------------------------- blind spots
+// ---------------------------------------------------------------- gaps
 
 export interface BlindSpotBar {
   rank: number;
@@ -204,7 +204,7 @@ export interface BlindSpotBar {
   gapPct: number;
 }
 
-/** The worst `n` blind spots by gap (the API already ranks them; this re-sorts defensively). */
+/** The worst `n` gaps by gap (the API already ranks them; this re-sorts defensively). */
 export function blindSpotBars(blind: BlindSpot[], n = 8): BlindSpotBar[] {
   return [...blind]
     .sort((a, b) => b.gapPct - a.gapPct || a.rank - b.rank)
@@ -235,8 +235,8 @@ export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
   CAMPAIGN_CANCELLED: 'Cancelled campaign',
   CAMPAIGN_TEST_SENT: 'Sent test',
   CAMPAIGN_DISPATCHED: 'Sent scheduled campaign',
-  FLEX_STARTED: 'Started DR event',
-  FLEX_ENDED: 'Ended DR event',
+  FLEX_STARTED: 'Started flex event',
+  FLEX_ENDED: 'Ended flex event',
   DEMO_RESET: 'Reset demo',
 };
 

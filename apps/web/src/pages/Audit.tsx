@@ -30,7 +30,7 @@ export function AuditPage() {
 
   return (
     <main className="page">
-      <PageHeader title="Audit log" icon="clock" sub="Every campaign send, schedule, cancellation, DR start/end and demo reset, with who did it. Updates live." />
+      <PageHeader title="Audit log" icon="clock" sub="Every campaign send, schedule, cancellation, flex start/end and demo reset, with who did it. Updates live." />
       {error && <ErrorNotice message={error} onRetry={() => void reload()} />}
       <section className="card pad stack gap12">
         <CardHeader

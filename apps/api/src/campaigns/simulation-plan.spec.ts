@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SIMULATION_TICKS, SIMULATION_TICK_MS, planSimulation, seedFromId, type SimulationPlan } from './simulation-plan.js';
+import { SIMULATION_RATES, SIMULATION_TICKS, SIMULATION_TICK_MS, planSimulation, seedFromId, type SimulationPlan } from './simulation-plan.js';
 
 const N = 1000;
 const targets = Array.from({ length: N }, (_, i) => ({ id: i }));
@@ -17,7 +17,7 @@ describe('planSimulation', () => {
   });
 
   it('keeps every target, in order, and schedules within the tick budget', () => {
-    for (const type of ['ENROLL_OFFER', 'FLEX_REQUEST'] as const) {
+    for (const type of ['ENROLL_OFFER', 'FLEX_REQUEST', 'INSTALLMENT_ADVICE'] as const) {
       const plans = planSimulation(type, targets, SEED);
       expect(plans.map((p) => p.c)).toEqual(targets);
       for (const p of plans) {
@@ -29,7 +29,7 @@ describe('planSimulation', () => {
         if (p.open > 0) expect(p.open).toBeGreaterThanOrEqual(p.deliver);
         if (p.act > 0) expect(p.open).toBeGreaterThan(0);
         if (p.act > 0) expect(p.act).toBeGreaterThanOrEqual(p.open);
-        if (p.act > 0 && type === 'ENROLL_OFFER') expect(p.act).toBeGreaterThan(p.open);
+        if (p.act > 0 && type !== 'FLEX_REQUEST') expect(p.act).toBeGreaterThan(p.open);
         // Delivery lands on tick 1 or 2.
         if (p.deliver > 0) expect(p.deliver).toBeLessThanOrEqual(2);
       }
@@ -41,11 +41,20 @@ describe('planSimulation', () => {
     expect(share(plans, (p) => p.deliver > 0)).toBeCloseTo(0.98, 1);
     expect(Math.abs(share(plans, (p) => p.open > 0) - 0.62)).toBeLessThan(0.03);
     expect(Math.abs(share(plans, (p) => p.act > 0) - 0.18)).toBeLessThan(0.03);
-    // Offers never carry a DR response.
+    // Offers never carry a flex response.
     expect(plans.every((p) => p.response === undefined)).toBe(true);
   });
 
-  it('stop-charging requests over 1,000 targets land near 84% responded / 76% paused / 8% opted out', () => {
+  it('installment advice over 1,000 targets lands near 98% delivered / 71% opened / 34% changed', () => {
+    expect(SIMULATION_RATES.INSTALLMENT_ADVICE).toEqual({ opened: 0.71, changed: 0.34 });
+    const plans = planSimulation('INSTALLMENT_ADVICE', targets, SEED);
+    expect(share(plans, (p) => p.deliver > 0)).toBeCloseTo(0.98, 1);
+    expect(Math.abs(share(plans, (p) => p.open > 0) - 0.71)).toBeLessThan(0.03);
+    expect(Math.abs(share(plans, (p) => p.act > 0) - 0.34)).toBeLessThan(0.03);
+    expect(plans.every((p) => p.response === undefined)).toBe(true);
+  });
+
+  it('flex requests over 1,000 targets land near 84% responded / 76% paused / 8% opted out', () => {
     const plans = planSimulation('FLEX_REQUEST', targets, SEED);
     expect(share(plans, (p) => p.deliver > 0)).toBeCloseTo(0.98, 1);
     const responded = share(plans, (p) => p.act > 0);
@@ -75,7 +84,7 @@ describe('planSimulation', () => {
 
 describe('planSimulation rateScale', () => {
   it('a scale of 1 is identical to the default plan', () => {
-    for (const type of ['ENROLL_OFFER', 'FLEX_REQUEST'] as const) {
+    for (const type of ['ENROLL_OFFER', 'FLEX_REQUEST', 'INSTALLMENT_ADVICE'] as const) {
       expect(planSimulation(type, targets, SEED, SIMULATION_TICKS, 1)).toEqual(planSimulation(type, targets, SEED));
     }
   });
@@ -93,7 +102,7 @@ describe('planSimulation rateScale', () => {
     expect(Math.abs(acted(up) - 0.18 * 1.15)).toBeLessThan(0.03);
   });
 
-  it('keeps DR responses consistent at high scales', () => {
+  it('keeps flex responses consistent at high scales', () => {
     const plans = planSimulation('FLEX_REQUEST', targets, SEED, SIMULATION_TICKS, 1.15);
     expect(plans.every((p) => (p.act > 0) === (p.response !== undefined))).toBe(true);
     const paused = share(plans, (p) => p.response === 'PAUSE');

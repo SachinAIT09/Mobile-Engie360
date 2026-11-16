@@ -171,7 +171,7 @@ export function ReportsPage() {
       <PageHeader
         title="Reports"
         icon="chart"
-        sub={`Program and campaign results, updated live as customers act in the app. Enrollment, ${BRAND.partners.evDetection} visibility and demand-response performance from the pilot data set.`}
+        sub={`Program and campaign results, updated live as customers act in the app. Enrollment, ${BRAND.partners.disaggregation} visibility and demand-response performance from the pilot data set.`}
         actions={generated && <span className="small muted">Generated {generated}</span>}
       />
 
@@ -184,7 +184,7 @@ export function ReportsPage() {
           <Kpi label="Enrolled today" value={fmtInt(data.enrollments.today)} sub="new enrollments since midnight" icon="users" tone="accent" />
           <Kpi label="kWh shifted" value={fmtInt(Math.round(data.flexProgram.kwhShifted))} sub={`across ${data.flexProgram.eventsEnded} ended event${data.flexProgram.eventsEnded === 1 ? '' : 's'}`} icon="bolt" />
           <Kpi label="Peak reduced" value={`${data.flexProgram.peakReducedMw.toFixed(2)} MW`} sub={`${fmtInt(data.flexProgram.householdsPaused)} households paused`} icon="chart" dark />
-          <Kpi label="Campaigns sent" value={fmtInt(data.campaigns.total)} sub={`${data.campaigns.offers} offers · ${data.campaigns.flexRequests} DR requests · ${data.campaigns.testSends} tests`} icon="send" tone="ok" />
+          <Kpi label="Campaigns sent" value={fmtInt(data.campaigns.total)} sub={`${data.campaigns.offers} offers · ${data.campaigns.flexRequests} flex requests · ${data.campaigns.testSends} tests`} icon="send" tone="ok" />
         </section>
       )}
 
@@ -281,7 +281,7 @@ export function ReportsPage() {
             id="rep-funnel-h"
             icon="campaign"
             title="Campaign funnel"
-            sub={funnel ? funnel.label : 'Enrollment offers sent through Campaign 360.'}
+            sub={funnel ? funnel.label : 'Slim Laden offers sent through Campaign 360.'}
             actions={
               <>
                 <div className="toggle" role="group" aria-label="Funnel scope">
@@ -305,9 +305,9 @@ export function ReportsPage() {
           {campaigns.loading && !campaigns.data && <LoadingBlock rows={3} rowHeight={28} label="Loading campaigns" />}
           {campaigns.data && !funnel && (
             <EmptyState
-              title="No enrollment offers yet"
+              title="No Slim Laden offers yet"
               body="Send an offer to detected, unenrolled EVs and the funnel fills in here."
-              action={{ label: 'New enrollment offer', to: districtCampaignLink('ENROLL_OFFER', 'SUB-01-F1', 'UNENROLLED_EV') }}
+              action={{ label: 'New Slim Laden offer', to: districtCampaignLink('ENROLL_OFFER', '3581', 'UNENROLLED_EV') }}
             />
           )}
           {funnel && (
@@ -342,7 +342,7 @@ export function ReportsPage() {
               subRows.length > 0 && (
                 <ExportButton
                   label="Export known share by gridArea as CSV"
-                  onClick={() => downloadCsv('known-share-by-gridArea.csv', ['GridArea', 'Region', 'Matched EVs', 'Known %'], subRows.map((s) => [s.code, s.region, s.evs, s.knownPct]))}
+                  onClick={() => downloadCsv('slim-laden-share-by-grid-area.csv', ['Grid area', 'Province', 'Matched EVs', 'Known %'], subRows.map((s) => [s.code, s.region, s.evs, s.knownPct]))}
                 />
               )
             }
@@ -382,18 +382,18 @@ export function ReportsPage() {
           )}
         </Card>
 
-        {/* ---------------------------------------------------------------- DR event performance */}
+        {/* ---------------------------------------------------------------- Flex event performance */}
         <Card labelledBy="rep-dr-h" wide>
           <CardHeader
             id="rep-dr-h"
             icon="bolt"
             tone="warn"
-            title="DR event performance"
-            sub="Stop-charging requests: who responded, who paused, and the peak reduced."
+            title="Flex event performance"
+            sub="Flex requests: who responded, who shifted charging, and the peak reduced."
             actions={
               drRows.length > 0 && (
                 <ExportButton
-                  label="Export DR event performance as CSV"
+                  label="Export Flex event performance as CSV"
                   onClick={() =>
                     downloadCsv(
                       'flex-event-performance.csv',
@@ -408,9 +408,9 @@ export function ReportsPage() {
           {flexEvents.error && <ErrorNotice message={flexEvents.error} onRetry={() => void flexEvents.reload()} />}
           {campaigns.data && drRows.length === 0 && (
             <EmptyState
-              title="No DR events yet"
-              body="Send a stop-charging request to enrolled EVs on a district and its results land here."
-              action={{ label: 'New stop-charging request', to: districtCampaignLink('FLEX_REQUEST', 'SUB-01-F1', 'ENROLLED_EV') }}
+              title="No flex events yet"
+              body="Send a flex request to Slim Laden customers in a district and its results land here."
+              action={{ label: 'New flex request', to: districtCampaignLink('FLEX_REQUEST', '3581', 'ENROLLED_EV') }}
             />
           )}
           {drRows.length > 0 && (
@@ -457,31 +457,31 @@ export function ReportsPage() {
           )}
           {drRows.length > 0 && (
             <span className="small muted">
-              Peak reduced = paused households × 7.2 kW. <Link to="/events">Manage DR events ›</Link>
+              Peak reduced = households that shifted × 3.7 kW. <Link to="/events">Manage flex events ›</Link>
             </span>
           )}
         </Card>
 
-        {/* ---------------------------------------------------------------- blind spots */}
+        {/* ---------------------------------------------------------------- gaps */}
         <Card labelledBy="rep-blind-h" wide>
           <CardHeader
             id="rep-blind-h"
             icon="eye"
             tone="warn"
-            title="Worst blind spots"
+            title="Most EVs outside Slim Laden"
             sub="Districts where the largest share of detected EVs is invisible to enrollment."
             actions={
               gaps.length > 0 && (
                 <ExportButton
-                  label="Export worst blind spots as CSV"
+                  label="Export districts with most EVs outside Slim Laden as CSV"
                   onClick={() => downloadCsv('worst-blind-spots.csv', ['Rank', 'District', 'Region', 'Known', 'Unenrolled', 'Gap %'], gaps.map((g) => [g.rank, g.districtCode, g.region, g.known, g.unenrolled, g.gapPct]))}
                 />
               )
             }
           />
           {blind.error && <ErrorNotice message={blind.error} onRetry={() => void blind.reload()} />}
-          {blind.loading && !blind.data && <LoadingBlock rows={4} rowHeight={28} label="Loading blind spots" />}
-          {blind.data && gaps.length === 0 && <EmptyState title="No blind spots" body="Every district with 15 or more EVs has most of them enrolled." />}
+          {blind.loading && !blind.data && <LoadingBlock rows={4} rowHeight={28} label="Loading districts" />}
+          {blind.data && gaps.length === 0 && <EmptyState title="No gaps" body="Every district with 15 or more EVs has most of them enrolled." />}
           {gaps.length > 0 && (
             <div className="tablebox">
               <table className="tbl">

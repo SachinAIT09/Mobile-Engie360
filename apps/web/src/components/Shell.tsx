@@ -22,8 +22,9 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: '/districts', label: 'Dashboard', icon: 'dashboard' },
   { to: '/activity', label: 'Customer activity', icon: 'phone' },
   { to: '/campaigns', label: 'Campaign 360', icon: 'campaign' },
-  { to: '/events', label: 'DR events', icon: 'bolt' },
+  { to: '/events', label: 'Flex events', icon: 'bolt' },
   { to: '/reports', label: 'Reports', icon: 'chart' },
+  { to: '/assistant-insights', label: 'Assistant insights', icon: 'chat' },
   { to: '/assistant', label: 'AI Assistant', icon: 'bot' },
 ];
 const DEMO_NAV: { to: string; label: string; icon: IconName }[] = [
@@ -117,9 +118,7 @@ function ThemeMenu() {
 
 function TopBar({ navOpen, onToggleNav }: { navOpen: boolean; onToggleNav: () => void }) {
   const { user, status } = useClient();
-  const { theme } = useTheme();
   const conn = CONN[status];
-  const logo = theme === 'light' ? 'powerconnect-logo-trimmed.png' : 'powerconnect-logo-white.png';
   return (
     <header className="topbar">
       <button
@@ -133,7 +132,8 @@ function TopBar({ navOpen, onToggleNav }: { navOpen: boolean; onToggleNav: () =>
         <Icon name={navOpen ? 'close' : 'menu'} size={20} />
       </button>
       <Link to="/districts" className="topbar-logo" aria-label={`${BRAND.staffProductName} home`}>
-        <img src={`${import.meta.env.BASE_URL}brand/${logo}`} alt={`${BRAND.vendorName} logo`} />
+        <span className="wordmark">{BRAND.logoPlaceholder}</span>
+        <span className="product">{BRAND.staffProductName.replace(`${BRAND.utilityName} `, '')}</span>
       </Link>
       <div className="topbar-actions">
         <span className="welcome">

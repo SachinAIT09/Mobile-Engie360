@@ -69,7 +69,7 @@
 }
 .ai-compose textarea { flex: 1; min-width: 0; height: 24px; line-height: 24px; resize: none; border: 0; outline: none; background: transparent; color: var(--font-color); font: 400 14px var(--font); padding: 0; }
 .ai-compose textarea::placeholder { color: var(--muted-icon); }
-.ai-compose:focus-within { box-shadow: 0 0 0 2px rgba(96,165,250,0.25); }
+.ai-compose:focus-within { box-shadow: 0 0 0 2px rgba(91,200,255,0.25); }
 .ai-round { width: 44px; height: 44px; flex-shrink: 0; border-radius: 9999px; border: 0; background: var(--color-blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .ai-round:hover:not(:disabled) { background: var(--primary-dark); }
 .ai-round:disabled { opacity: 0.45; cursor: not-allowed; }

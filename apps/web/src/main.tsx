@@ -14,6 +14,7 @@ import { AuditPage } from './pages/Audit';
 import { ActivityPage } from './pages/Activity';
 import { CustomerPage } from './pages/Customer';
 import { AssistantPage } from './pages/Assistant';
+import { AssistantInsightsPage } from './pages/AssistantInsights';
 import { NotFoundPage } from './pages/NotFound';
 import { ReportsPage } from './pages/ReportsLazy';
 
@@ -38,6 +39,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
               }
             />
             <Route path="/assistant" element={<AssistantPage />} />
+            <Route path="/assistant-insights" element={<AssistantInsightsPage />} />
             <Route path="/demo" element={<DemoPage />} />
             <Route path="/audit" element={<AuditPage />} />
             <Route path="/activity" element={<ActivityPage />} />

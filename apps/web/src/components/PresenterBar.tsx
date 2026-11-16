@@ -74,21 +74,21 @@ function Bar({ onClose }: { onClose: () => void }) {
           break;
         case '2':
           void hotkey('Cluster', async () => {
-            const ev = await api.simCluster('SUB-01');
+            const ev = await api.simCluster('UT-OOST');
             return `${ev.headline} ${ev.summary}`;
           });
           break;
         case '3':
           void hotkey('Forecast', async () => {
-            const ev = await api.simForecast('SUB-01-F1');
+            const ev = await api.simForecast('3581');
             return `${ev.headline} ${ev.summary}`;
           });
           break;
         case 'e':
           void hotkey('End event', async () => {
             const ev = state?.activeFlexEvent;
-            if (!ev) throw new Error('no DR event to end');
-            return `Event ${(await api.drEnd(ev.id)).status.toLowerCase()}.`;
+            if (!ev) throw new Error('no flex event to end');
+            return `Event ${(await api.flexEnd(ev.id)).status.toLowerCase()}.`;
           });
           break;
         case 'r':

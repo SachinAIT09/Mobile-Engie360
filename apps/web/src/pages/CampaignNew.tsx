@@ -36,28 +36,40 @@ interface TypeDefaults {
   expiresInHours: number;
 }
 
+/** Default copy is Dutch: it is what customers read on their phone. Staff can edit it before sending. */
 const DEFAULTS: Record<CampaignType, TypeDefaults> = {
   ENROLL_OFFER: {
-    label: 'Enrollment offer',
-    sub: 'Target unenrolled EVs on this district',
+    label: 'Slim Laden offer',
+    sub: 'EVs Net2Grid detected that are not in Slim Laden',
     segment: 'UNENROLLED_EV',
-    trigger: 'EV detected / stopped charging',
-    title: `EV owners near you are saving with ${PROGRAM.name}`,
-    body: `Hi {first_name}, {neighbours_enrolled} EV owners in your area have already joined ${PROGRAM.name}. Join today and get {incentive}. You can opt out of any event.`,
-    cta: 'Enroll in 1 minute',
+    trigger: 'EV detected / evening-peak charging',
+    title: `Laad slimmer en goedkoper met ${PROGRAM.name.nl}`,
+    body: `Hoi {first_name}, {neighbours_enrolled} buren met een elektrische auto doen al mee aan ${PROGRAM.name.nl}. Meld je vandaag aan en ontvang {incentive}. Je kunt je voor elk flexmoment afmelden.`,
+    cta: 'Aanmelden in 1 minuut',
     sms: false,
     expiresInHours: 336,
   },
   FLEX_REQUEST: {
-    label: 'Stop-charging request',
-    sub: 'DR event for enrolled EVs on this district',
+    label: 'Flex request',
+    sub: 'Ask Slim Laden customers to shift charging out of a busy grid window',
     segment: 'ENROLLED_EV',
-    trigger: 'District load forecast above 90%',
-    title: 'Please pause EV charging {event_window} today',
-    body: `Hi {first_name}, demand on your local line is close to its limit this evening. Please pause EV charging during {event_window} and earn ${PROGRAM.perEventIncentive}. Can’t take part? Opt out in the app.`,
-    cta: 'Respond',
+    trigger: 'Grid operator congestion forecast above 90%',
+    title: 'Wil je vandaag {event_window} later laden?',
+    body: 'Hoi {first_name}, het stroomnet in jouw buurt is vanavond erg druk. Verschuif het laden van je auto buiten {event_window} en ontvang {incentive}. Lukt het niet? Meld je af in de app.',
+    cta: 'Reageer',
     sms: true,
     expiresInHours: 4,
+  },
+  INSTALLMENT_ADVICE: {
+    label: 'Installment advice',
+    sub: 'Customers whose monthly installment is below the advice',
+    segment: 'INSTALLMENT_GAP',
+    trigger: 'Installment €5 or more below the advised amount',
+    title: 'Je termijnbedrag past niet meer bij je verbruik',
+    body: 'Hoi {first_name}, je betaalt nu {installment} per maand. Op basis van je verbruik adviseren we {advised_installment}. Zo voorkom je bijbetalen bij je jaarnota.',
+    cta: 'Termijnbedrag aanpassen',
+    sms: false,
+    expiresInHours: 336,
   },
 };
 
@@ -72,14 +84,20 @@ const EXPIRY_OPTIONS: Record<CampaignType, { value: number; label: string }[]> =
     { value: 4, label: 'At event end' },
     { value: 12, label: '12 hours' },
   ],
+  INSTALLMENT_ADVICE: [
+    { value: 336, label: '14 days' },
+    { value: 168, label: '7 days' },
+    { value: 72, label: '3 days' },
+  ],
 };
 
 const SEGMENT_LABEL: Record<CampaignSegment, string> = {
-  UNENROLLED_EV: 'Detected, unenrolled EVs',
-  ENROLLED_EV: 'Enrolled EVs (DR program)',
+  UNENROLLED_EV: 'Detected EVs, not in Slim Laden',
+  ENROLLED_EV: 'Slim Laden customers',
+  INSTALLMENT_GAP: 'Installment below the advice',
 };
 
-const MERGE_FIELDS = ['{first_name}', '{incentive}', '{event_window}', '{neighbours_enrolled}'];
+const MERGE_FIELDS = ['{first_name}', '{incentive}', '{event_window}', '{neighbours_enrolled}', '{installment}', '{advised_installment}'];
 
 interface Copy {
   title: string;
@@ -102,7 +120,7 @@ export function CampaignNewPage() {
   const [type, setType] = useState<CampaignType>(initialType);
   const [segment, setSegment] = useState<CampaignSegment>(draft.segment ?? d0.segment);
   /** Either a district code or `live:<liveEventId>`. */
-  const [audienceKey, setAudienceKey] = useState<string>(qLive ? `live:${qLive}` : qDistrict || 'SUB-01-F1');
+  const [audienceKey, setAudienceKey] = useState<string>(qLive ? `live:${qLive}` : qDistrict || '3581');
   /** Multi-district audience (chips); null while a single district / live event is selected. */
   const [multi, setMulti] = useState<string[] | null>(draft.districts.length >= 2 ? draft.districts : null);
   const [exclusions, setExclusions] = useState<CampaignExclusions>({ optedOut: true, contactedLast7Days: true, lifeSupport: true });
@@ -130,7 +148,7 @@ export function CampaignNewPage() {
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const lastFocus = useRef<'title' | 'body'>('body');
 
-  const districts = useLoad((a) => a.gridAreaDistricts('SUB-01'));
+  const districts = useLoad((a) => a.gridAreaDistricts('UT-OOST'));
   const live = useLoad((a) => a.liveEvents());
   const demo = useLoad((a) => a.demoState());
 
@@ -146,7 +164,7 @@ export function CampaignNewPage() {
         ? { kind: 'LIVE_EVENT', liveEventId: audienceKey.slice(5), segment }
         : { kind: 'DISTRICT', districtCode: audienceKey, segment };
   const districtCode =
-    audience.kind === 'DISTRICT' ? audience.districtCode : audience.kind === 'DISTRICTS' ? audience.districtCodes[0] : liveEvent?.gridAreaCode ?? 'SUB-01';
+    audience.kind === 'DISTRICT' ? audience.districtCode : audience.kind === 'DISTRICTS' ? audience.districtCodes[0] : liveEvent?.gridAreaCode ?? 'UT-OOST';
   const districtStat = districts.data?.find((f) => f.code === districtCode);
 
   const districtOptions = useMemo(() => {
@@ -156,7 +174,7 @@ export function CampaignNewPage() {
         list.push({ value: extra, label: districts.data ? `${extra} (sample, no premise data)` : extra });
       }
     }
-    if (list.length === 0) list.push({ value: 'SUB-01-F1', label: 'SUB-01-F1' });
+    if (list.length === 0) list.push({ value: '3581', label: '3581' });
     return list;
   }, [districts.data, qDistrict, draft.districts]);
 
@@ -263,12 +281,14 @@ export function CampaignNewPage() {
 
   const demoUnenrolled = demo.data?.customers.find((c) => c.role === 'UNENROLLED_DEMO');
   const demoEnrolled = demo.data?.customers.find((c) => c.role === 'ENROLLED_DEMO');
-  const testCustomer = type === 'ENROLL_OFFER' ? demoUnenrolled : demoEnrolled;
+  const testCustomer = type === 'FLEX_REQUEST' ? demoEnrolled : demoUnenrolled;
 
   const win = upcomingWindow();
   const sample: Record<string, string> = {
-    '{first_name}': testCustomer?.firstName ?? 'Manny',
-    '{incentive}': PROGRAM.signupIncentive,
+    '{first_name}': testCustomer?.firstName ?? 'Sanne',
+    '{incentive}': (type === 'FLEX_REQUEST' ? PROGRAM.perEventIncentive : PROGRAM.signupIncentive).nl,
+    '{installment}': '€ 183',
+    '{advised_installment}': '€ 196',
     '{event_window}': fmtWindow(win.start, win.end),
     '{neighbours_enrolled}': districtStat?.known != null ? String(districtStat.known) : '[N]',
   };
@@ -329,7 +349,7 @@ export function CampaignNewPage() {
     if (!sent?.flexEventId) return;
     setDrBusy(true);
     try {
-      const ev = action === 'start' ? await api.drStart(sent.flexEventId) : await api.drEnd(sent.flexEventId);
+      const ev = action === 'start' ? await api.flexStart(sent.flexEventId) : await api.flexEnd(sent.flexEventId);
       setDrStatus(ev.status);
     } catch (e) {
       setSendErr(e instanceof Error ? e.message : 'Could not update the event');
@@ -343,7 +363,7 @@ export function CampaignNewPage() {
     audience.kind === 'LIVE_EVENT'
       ? liveEvent
         ? `the “${liveEvent.headline}” event on ${liveEvent.gridAreaCode}`
-        : `a live ${BRAND.partners.evDetection} event`
+        : `a live ${BRAND.partners.disaggregation} event`
       : audience.kind === 'DISTRICTS'
         ? audience.districtCodes.join(', ')
         : audience.districtCode;
@@ -379,7 +399,7 @@ export function CampaignNewPage() {
         icon="send"
         sub={
           <>
-            Audience built from {BRAND.partners.evDetection} EV detection on {audience.kind === 'LIVE_EVENT' ? audienceDesc : <span className="mono">{audienceDesc}</span>}. Messages go to the{' '}
+            Audience built from {BRAND.partners.disaggregation} EV detection on {audience.kind === 'LIVE_EVENT' ? audienceDesc : <span className="mono">{audienceDesc}</span>}. Messages go to the{' '}
             {BRAND.utilityName} app and the channels you pick.
           </>
         }
@@ -460,7 +480,7 @@ export function CampaignNewPage() {
                     <select className="fld" value={audienceKey} onChange={(e) => setAudienceKey(e.target.value)}>
                       {qLive && (
                         <option value={`live:${qLive}`}>
-                          {liveEvent ? `Live event: ${liveEvent.headline} (${liveEvent.gridAreaCode})` : `Live ${BRAND.partners.evDetection} event`}
+                          {liveEvent ? `Live event: ${liveEvent.headline} (${liveEvent.gridAreaCode})` : `Live ${BRAND.partners.disaggregation} event`}
                         </option>
                       )}
                       {districtOptions.map((o) => (
@@ -775,7 +795,7 @@ export function CampaignNewPage() {
                 <span className={`ic-tile ${drStatus === 'ACTIVE' ? 'warn' : drStatus === 'ENDED' ? 'ok' : ''}`}>
                   <Icon name="bolt" size={18} />
                 </span>
-                <h2 className="h2">DR event</h2>
+                <h2 className="h2">Flex event</h2>
                 <span className={`pill ${drStatus === 'ACTIVE' ? 'warn' : drStatus === 'ENDED' ? 'ok' : 'grey'}`}>{drStatus ?? 'SCHEDULED'}</span>
               </div>
               <div className="row gap8">
@@ -789,7 +809,7 @@ export function CampaignNewPage() {
                 </button>
               </div>
               <button type="button" className="linkbtn" style={{ alignSelf: 'flex-start' }} onClick={() => navigate('/events')}>
-                View all DR events
+                View all flex events
               </button>
             </div>
           )}

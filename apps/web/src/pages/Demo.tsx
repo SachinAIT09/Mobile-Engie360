@@ -46,7 +46,7 @@ export function DemoPage() {
       <PageHeader
         title="Demo control panel"
         icon="settings"
-        sub={`Fire any notification at the customer app with one click. ${BRAND.partners.evDetection} simulations, DR event start/end and demo reset are on the presenter bar (press Shift+P on any staff page). Not part of the product.`}
+        sub={`Fire any notification at the customer app with one click. ${BRAND.partners.disaggregation} simulations, flex event start/end and demo reset are on the presenter bar (press Shift+P on any staff page). Not part of the product.`}
         actions={
           <span className={`pill ${connected ? 'ok' : 'danger'}`}>
             Staff live updates {connected ? 'connected' : 'disconnected'} · {state.data?.staffSockets ?? 0} staff socket(s)

@@ -37,7 +37,7 @@ export function ActivityPage() {
       <PageHeader
         title="Customer activity"
         icon="phone"
-        sub="Everything customers do in the mobile app (sign-ins, payments, enrolment, DR responses, charging changes, outage reports, assistant questions and screen views) as it happens."
+        sub="Everything customers do in the mobile app (sign-ins, installment changes, Slim Laden sign-ups, flex responses, charging changes, assistant questions and screen views) as it happens."
       />
       {error && <ErrorNotice message={error} onRetry={() => void reload()} />}
       <section className="card pad stack gap12">
@@ -73,7 +73,7 @@ export function ActivityPage() {
         {data && rows.length === 0 && (
           <EmptyState
             title={category || customerId ? 'Nothing matches these filters' : 'No app activity yet'}
-            body={category || customerId ? undefined : 'Sign in on the phone and pay a bill or open a message; it appears here instantly.'}
+            body={category || customerId ? undefined : 'Sign in on the phone and change the installment or open a message; it appears here instantly.'}
           />
         )}
         {rows.length > 0 && (

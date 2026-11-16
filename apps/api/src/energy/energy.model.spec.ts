@@ -3,7 +3,7 @@ import { EV_CHARGE_KW, baseKw, historicalEvKw, point, solarKw } from './energy.m
 
 describe('solarKw', () => {
   it('is zero at night and at the dawn/dusk boundaries', () => {
-    for (const h of [0, 3, 6, 7.5, 17.5, 20, 23.99]) expect(solarKw(h, true)).toBe(0);
+    for (const h of [0, 3, 6, 7.5, 8, 17, 17.5, 20, 23.99]) expect(solarKw(h, true)).toBe(0);
   });
 
   it('is zero without panels, even at noon', () => {
@@ -19,9 +19,10 @@ describe('solarKw', () => {
 
   it('is symmetric around 12:30 and never negative', () => {
     expect(solarKw(9, true)).toBeCloseTo(solarKw(16, true), 10);
-    expect(solarKw(8, true)).toBeGreaterThan(0);
-    expect(solarKw(17, true)).toBeGreaterThan(0);
-    expect(solarKw(8, true)).toBeLessThan(solarKw(10, true));
+    expect(solarKw(8.25, true)).toBeGreaterThan(0);
+    expect(solarKw(16.75, true)).toBeGreaterThan(0);
+    expect(solarKw(8.25, true)).toBeLessThan(solarKw(10, true));
+    for (let h = 0; h < 24; h += 0.25) expect(solarKw(h, true)).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -89,8 +90,8 @@ describe('point', () => {
 
   it('a charging EV at noon turns the solar home into an importer', () => {
     const p = point(12.5, 1, { hasSolar: true, evKw: EV_CHARGE_KW });
-    expect(p.evKw).toBe(7.2);
+    expect(p.evKw).toBe(3.7);
     expect(p.gridExportKw).toBe(0);
-    expect(p.gridImportKw).toBeCloseTo(p.baseKw + 7.2 - p.solarKw, 10);
+    expect(p.gridImportKw).toBeCloseTo(p.baseKw + 3.7 - p.solarKw, 10);
   });
 });

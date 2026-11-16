@@ -142,6 +142,8 @@ describe('enrollment by district', () => {
   const district = (code: string, known: number | null, unenrolled: number | null): DistrictStat => ({
     code,
     gridAreaCode: 'SUB-01',
+    name: code,
+    installmentGap: null,
     evs: (known ?? 0) + (unenrolled ?? 0),
     known,
     unenrolled,
@@ -177,7 +179,7 @@ describe('enrollment sources', () => {
 });
 
 describe('gridAreas and blind spots', () => {
-  const sub = (code: string, evs: number, knownPct: number): GridAreaStat => ({ code, region: 'Central', evs, knownPct, penetrationPct: 10, districtCount: 7, interactive: false });
+  const sub = (code: string, evs: number, knownPct: number): GridAreaStat => ({ code, name: code, operator: 'Stedin', congestion: 'NONE', region: 'Utrecht', evs, knownPct, penetrationPct: 10, districtCount: 7, interactive: false });
 
   it('takes the n largest gridAreas and orders them by known share', () => {
     const subs = [sub('A', 100, 40), sub('B', 500, 10), sub('C', 300, 70), sub('D', 50, 99)];

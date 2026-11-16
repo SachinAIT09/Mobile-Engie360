@@ -63,9 +63,10 @@ describe('variantRateScale', () => {
 });
 
 describe('keyRate / pickWinner', () => {
-  it('uses enrolled/delivered for offers and paused/delivered for DR', () => {
+  it('uses acted/delivered for offers and installment advice, and paused/delivered for flex requests', () => {
     expect(keyRate('ENROLL_OFFER', st({ delivered: 50, acted: 10, paused: 40 }))).toBeCloseTo(0.2);
     expect(keyRate('FLEX_REQUEST', st({ delivered: 50, acted: 45, paused: 40 }))).toBeCloseTo(0.8);
+    expect(keyRate('INSTALLMENT_ADVICE', st({ delivered: 50, acted: 17, paused: 40 }))).toBeCloseTo(0.34);
     expect(keyRate('ENROLL_OFFER', st({ delivered: 0, acted: 3 }))).toBe(0);
   });
 
@@ -79,7 +80,9 @@ describe('keyRate / pickWinner', () => {
     expect(pickWinner('ENROLL_OFFER', { A: st({ sent: 100, delivered: 100, acted: 20 }), B: st({ sent: 100, delivered: 100, acted: 18 }) })).toBeNull();
     // A 20%, B 17% → 3 points: A.
     expect(pickWinner('ENROLL_OFFER', { A: st({ sent: 100, delivered: 100, acted: 20 }), B: st({ sent: 100, delivered: 100, acted: 17 }) })).toBe('A');
-    // DR: B pauses 80% vs A 70%.
+    // Flex: B pauses 80% vs A 70%.
     expect(pickWinner('FLEX_REQUEST', { A: st({ sent: 50, delivered: 50, paused: 35 }), B: st({ sent: 50, delivered: 50, paused: 40 }) })).toBe('B');
+    // Installment advice is judged on installments changed.
+    expect(pickWinner('INSTALLMENT_ADVICE', { A: st({ sent: 50, delivered: 50, acted: 20 }), B: st({ sent: 50, delivered: 50, acted: 15 }) })).toBe('A');
   });
 });

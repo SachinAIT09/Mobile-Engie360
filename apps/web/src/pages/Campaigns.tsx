@@ -44,16 +44,16 @@ export function CampaignsPage() {
       <PageHeader
         title="Campaign 360"
         icon="campaign"
-        sub={`District-level campaigns built from ${BRAND.partners.evDetection} EV detection. Results update live as customers act in the app.`}
+        sub={`District-level campaigns built from ${BRAND.partners.disaggregation} EV detection. Results update live as customers act in the app.`}
         actions={
           <>
-            <Link className="btn outline" to="/campaigns/new?type=FLEX_REQUEST&district=SUB-01-F1&segment=ENROLLED_EV">
+            <Link className="btn outline" to="/campaigns/new?type=FLEX_REQUEST&district=3581&segment=ENROLLED_EV">
               <Icon name="bolt" size={16} />
-              New stop-charging request
+              New flex request
             </Link>
-            <Link className="btn pri" to="/campaigns/new?type=ENROLL_OFFER&district=SUB-01-F1&segment=UNENROLLED_EV">
+            <Link className="btn pri" to="/campaigns/new?type=ENROLL_OFFER&district=3581&segment=UNENROLLED_EV">
               <Icon name="send" size={16} />
-              New enrollment offer
+              New Slim Laden offer
             </Link>
           </>
         }
@@ -66,14 +66,14 @@ export function CampaignsPage() {
           <span className="ks">including test sends{scheduledCount ? ` · ${scheduledCount} scheduled` : ''}</span>
         </div>
         <div className="card kpi">
-          <span className="kl">Enrollment offers</span>
+          <span className="kl">Slim Laden offers</span>
           <span className="kv">{data ? fmtInt(offers) : '—'}</span>
           <span className="ks">to detected, unenrolled EVs</span>
         </div>
         <div className="card kpi">
-          <span className="kl">Stop-charging requests</span>
+          <span className="kl">Flex requests</span>
           <span className="kv">{data ? fmtInt(requests) : '—'}</span>
-          <span className="ks">DR events for enrolled EVs</span>
+          <span className="ks">for Slim Laden customers</span>
         </div>
       </section>
 
@@ -91,7 +91,7 @@ export function CampaignsPage() {
             title="No campaigns yet"
             body={
               <>
-                Start from a district on the <Link to="/districts">Dashboard</Link> or a live {BRAND.partners.evDetection} event.
+                Start from a district on the <Link to="/districts">Dashboard</Link> or a live {BRAND.partners.disaggregation} event.
               </>
             }
             action={{ label: 'Open the Dashboard', to: '/districts' }}
@@ -120,7 +120,7 @@ export function CampaignsPage() {
                         {fmtDate(c.sentAt, { month: 'short', day: 'numeric' })} · {fmtTime(c.sentAt)}
                       </td>
                       <td>
-                        <span className={`pill ${c.type === 'ENROLL_OFFER' ? 'ev' : 'warn'}`}>{c.type === 'ENROLL_OFFER' ? 'Enrollment offer' : 'Stop-charging'}</span>
+                        <span className={`pill ${c.type === 'ENROLL_OFFER' ? 'ev' : c.type === 'FLEX_REQUEST' ? 'warn' : 'accent'}`}>{c.type === 'ENROLL_OFFER' ? 'Slim Laden offer' : c.type === 'FLEX_REQUEST' ? 'Flex request' : 'Installment advice'}</span>
                         {c.isTest && (
                           <span className="pill grey" style={{ marginLeft: 6 }}>
                             Test

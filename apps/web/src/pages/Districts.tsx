@@ -7,13 +7,14 @@ import { LiveEvents } from '../components/LiveEvents';
 import { PageHeader } from '../components/PageHeader';
 import { Icon, type IconName } from '../components/icons';
 import { LoadingBlock } from '../components/State';
-import { MapView } from '../components/MapView';
 
 const BAR_MAX_PX = 140;
 
-function shortDistrict(code: string, sub: string) {
-  return code.startsWith(`${sub}-`) ? code.slice(sub.length + 1) : code;
-}
+const CONGESTION: Record<GridAreaStat['congestion'], { label: string; tone: string }> = {
+  NONE: { label: 'No congestion', tone: 'ok' },
+  WATCH: { label: 'Watch', tone: 'warn' },
+  CONGESTED: { label: 'Congested', tone: 'danger' },
+};
 
 function Kpi({ label, value, sub, icon, tone, dark }: { label: string; value: string; sub: string; icon: IconName; tone?: string; dark?: boolean }) {
   return (
@@ -38,7 +39,6 @@ export function DistrictsPage() {
 
   const [pickedSub, setSubCode] = useState<string | null>(null);
   const [pickedDistrict, setDistrictCode] = useState<string | null>(null);
-  const [view, setView] = useState<'diagram' | 'map'>('diagram');
   const [region, setRegion] = useState('all');
   const [period, setPeriod] = useState<7 | 30 | 90>(30);
 
@@ -47,7 +47,7 @@ export function DistrictsPage() {
   const visibleSubs = useMemo(() => (subs.data ?? []).filter((s) => region === 'all' || s.region === region), [subs.data, region]);
   const visibleBlind = useMemo(() => (blind.data ?? []).filter((b) => region === 'all' || !b.region || b.region === region), [blind.data, region]);
 
-  // Default selection: first interactive gridArea (SUB-01 in the demo), else the largest.
+  // Default selection: the interactive grid area (Utrecht-Oost in the demo), else the largest.
   const subCode =
     (pickedSub && visibleSubs.some((s) => s.code === pickedSub) ? pickedSub : null) ?? (visibleSubs.find((s) => s.interactive) ?? visibleSubs[0])?.code ?? null;
 
@@ -78,13 +78,13 @@ export function DistrictsPage() {
       <PageHeader
         title="Dashboard"
         icon="dashboard"
-        sub={`You manage the EVs that signed up. This shows the ones that didn't: EVs detected by ${BRAND.partners.evDetection} from smart meter data, matched to gridArea and district, compared with program enrollment.`}
+        sub={`What ${BRAND.partners.disaggregation} recognises in ${BRAND.utilityName} smart-meter data, by grid area and postcode district: EVs charging outside Slim Laden, and customers whose installment no longer fits their usage.`}
         actions={
           <>
             <label className="filter">
-              Region
+              Province
               <select value={region} onChange={(e) => setRegion(e.target.value)}>
-                <option value="all">All regions</option>
+                <option value="all">All provinces</option>
                 {regions.map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -105,15 +105,15 @@ export function DistrictsPage() {
       />
 
       <section className="kpis" aria-label="Headline figures">
-        <Kpi label="GridAreas" value={ov ? fmtInt(ov.gridAreas) : '—'} sub="with matched EVs" icon="pylon" />
-        <Kpi label="Districts" value={ov ? fmtInt(ov.districts) : '—'} sub="with matched EVs" icon="bolt" tone="accent" />
-        <Kpi label="Known EVs" value={ov ? fmtInt(ov.knownEvs) : '—'} sub="enrolled in the program" icon="check" tone="solar" />
-        <Kpi label="Unenrolled EVs" value={ov ? fmtInt(ov.unenrolledEvs) : '—'} sub="detected, not enrolled" icon="car" />
-        <Kpi label="Invisible" value={ov ? `${ov.invisiblePct}%` : '—'} sub="of EVs invisible to enrollment" icon="eye" dark />
+        <Kpi label="Customers" value={ov ? fmtInt(ov.customers) : '—'} sub={ov ? `${fmtInt(ov.onDynamic)} on a dynamic contract` : ''} icon="users" />
+        <Kpi label="EVs in Slim Laden" value={ov ? fmtInt(ov.knownEvs) : '—'} sub="flexible, shift on request" icon="check" tone="solar" />
+        <Kpi label="EVs not in Slim Laden" value={ov ? fmtInt(ov.unenrolledEvs) : '—'} sub={`detected by ${BRAND.partners.disaggregation}`} icon="car" tone="accent" />
+        <Kpi label="Installment too low" value={ov ? fmtInt(ov.installmentGapCustomers) : '—'} sub={ov ? `avg. € ${ov.avgInstallmentGap} a month below advice` : ''} icon="chart" />
+        <Kpi label="Not flexible" value={ov ? `${ov.invisiblePct}%` : '—'} sub="of detected EVs charge unmanaged" icon="eye" dark />
       </section>
       {overview.error && <div className="notice err">Couldn't load figures: {overview.error}</div>}
       <p className="small muted" style={{ marginTop: -8 }}>
-        Headline figures cover all regions · Snapshot: Sep 2026 pilot{period !== 30 ? ` · live events: last ${period} days` : ''}
+        Headline figures cover all provinces · Sample data{period !== 30 ? ` · live events: last ${period} days` : ''}
       </p>
 
       <LiveEvents days={period} />
@@ -121,12 +121,12 @@ export function DistrictsPage() {
       <section className="three">
         <div className="card sublist" aria-labelledby="subs-h">
           <h2 id="subs-h" className="h2">
-            GridAreas, by total EVs
+            Grid areas, by detected EVs
           </h2>
           {subs.data && (
             <p className="small muted" style={{ padding: '0 20px 8px' }} aria-live="polite">
-              Showing {visibleSubs.length} gridArea{visibleSubs.length === 1 ? '' : 's'}
-              {region === 'all' ? ' in all regions' : ` in ${region}`}
+              Showing {visibleSubs.length} grid area{visibleSubs.length === 1 ? '' : 's'}
+              {region === 'all' ? ' in all provinces' : ` in ${region}`}
             </p>
           )}
           {visibleSubs.map((s) => (
@@ -138,18 +138,21 @@ export function DistrictsPage() {
               onClick={() => setSubCode(s.code)}
             >
               <span className="row between">
-                <span className="code mono">{s.code}</span>
+                <span className="code">{s.name}</span>
                 <span style={{ fontWeight: 600 }}>{fmtInt(s.evs)} EVs</span>
               </span>
-              <span className="small muted">
-                {s.knownPct}% known · {s.penetrationPct}% penetration
+              <span className="row between">
+                <span className="small muted">
+                  {s.operator} · {s.knownPct}% in Slim Laden
+                </span>
+                {s.congestion !== 'NONE' && <span className={`pill ${CONGESTION[s.congestion].tone}`}>{CONGESTION[s.congestion].label}</span>}
               </span>
               <span className="splitbar" aria-hidden="true">
                 <span style={{ width: `${s.knownPct}%` }} />
               </span>
             </button>
           ))}
-          {subs.loading && !subs.data && <LoadingBlock rows={4} rowHeight={40} label="Loading gridAreas" className="pad" />}
+          {subs.loading && !subs.data && <LoadingBlock rows={4} rowHeight={40} label="Loading grid areas" className="pad" />}
         </div>
 
         <div className="card pad diagram stack gap14">
@@ -159,38 +162,17 @@ export function DistrictsPage() {
                 <Icon name="pylon" size={18} />
               </span>
               <div>
-                <div className="lbl">Selected gridArea</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--navy)' }}>{sub?.code ?? '—'}</div>
-                <div className="small muted">{sub ? `${sub.districtCount} districts · ${fmtInt(sub.evs)} matched EVs` : ''}</div>
+                <div className="lbl">Selected grid area{sub ? ` · ${sub.operator}` : ''}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--navy)' }}>{sub?.name ?? '—'}</div>
+                <div className="small muted">{sub ? `${sub.districtCount} postcode districts · ${fmtInt(sub.evs)} detected EVs · ${CONGESTION[sub.congestion].label.toLowerCase()}` : ''}</div>
               </div>
-            </div>
-            <div className="toggle" role="group" aria-label="View">
-              <button type="button" className={view === 'diagram' ? 'on' : ''} aria-pressed={view === 'diagram'} onClick={() => setView('diagram')}>
-                Diagram
-              </button>
-              <button type="button" className={view === 'map' ? 'on' : ''} aria-pressed={view === 'map'} onClick={() => setView('map')}>
-                Map
-              </button>
             </div>
           </div>
 
-          {view === 'map' ? (
-            districts.data && districts.data.length > 0 && subCode ? (
-              <MapView districts={districts.data} selected={districtCode} onSelect={setDistrictCode} gridAreaCode={subCode} gridAreas={visibleSubs} onSelectGridArea={setSubCode} />
-            ) : (
-              <div className="mapph">
-                <span>
-                  <Icon name="map" size={28} />
-                  <br />
-                  {districts.loading ? 'Loading districts…' : `No district data to plot for this gridArea. Map view will plot districts and EV premises once ${BRAND.utilityName} GIS data is connected.`}
-                </span>
-              </div>
-            )
-          ) : (
-            <>
+          <>
               <div className="schematic" aria-hidden="true">
                 <span className="node" />
-                <span className="small muted">GridArea</span>
+                <span className="small muted">Grid area</span>
                 <span className="stem" />
               </div>
               <div className="bus" aria-hidden="true" />
@@ -205,7 +187,7 @@ export function DistrictsPage() {
                         type="button"
                         className={`fbtn ${f.code === districtCode ? 'sel' : ''}`}
                         aria-pressed={f.code === districtCode}
-                        aria-label={`${f.code}, ${f.evs} EVs${split ? `, ${f.known} enrolled, ${f.unenrolled} unenrolled` : ''}`}
+                        aria-label={`${f.code} ${f.name}, ${f.evs} EVs${split ? `, ${f.known} in Slim Laden, ${f.unenrolled} not` : ''}`}
                         onClick={() => setDistrictCode(f.code)}
                       >
                         <span className="fbar" aria-hidden="true">
@@ -219,7 +201,7 @@ export function DistrictsPage() {
                           )}
                         </span>
                         <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>
-                          {shortDistrict(f.code, f.gridAreaCode)}
+                          {f.code}
                         </span>
                         <span className="small muted">{f.evs} EVs</span>
                       </button>
@@ -228,17 +210,17 @@ export function DistrictsPage() {
                 </div>
               ) : (
                 <div className="mapph">
-                  {districts.loading ? 'Loading districts…' : 'District-level split is not available for this gridArea in the sample data.'}
+                  {districts.loading ? 'Loading districts…' : 'The per-district split is not available for this grid area in the sample data.'}
                 </div>
               )}
               <div className="legend">
                 <span>
                   <span className="sw" style={{ background: 'var(--solar)' }} />
-                  Known / enrolled
+                  In Slim Laden
                 </span>
                 <span>
                   <span className="sw" style={{ background: 'var(--ev)' }} />
-                  Detected, unenrolled
+                  Detected, not in Slim Laden
                 </span>
                 <span>
                   <span className="sw" style={{ background: 'var(--split-pending)' }} />
@@ -247,14 +229,13 @@ export function DistrictsPage() {
               </div>
               {sub && !sub.interactive && (
                 <p className="small muted">
-                  Only SUB-01 has premise-level data in this demo; other gridAreas show totals from the {BRAND.partners.evDetection} sample.
+                  Only Utrecht-Oost has customer-level data in this demo; other grid areas show totals from the {BRAND.partners.disaggregation} sample.
                 </p>
               )}
               {sub && sub.interactive && subTotalEvs !== sub.evs && (
-                <p className="small muted">District totals update live as EVs are detected and customers enroll.</p>
+                <p className="small muted">District totals update live as EVs are detected and customers join Slim Laden.</p>
               )}
-            </>
-          )}
+          </>
         </div>
 
         <DistrictDetail district={selected} />
@@ -267,10 +248,10 @@ export function DistrictsPage() {
           </span>
           <div className="stack gap4" style={{ flex: 1 }}>
             <h2 id="blind-h" className="h2">
-              Worst blind spots
+              Most EVs outside Slim Laden
             </h2>
             <p className="small muted" style={{ fontSize: 13 }}>
-              Districts with at least 15 EVs, ranked by the share invisible to enrollment.
+              Postcode districts with at least 15 detected EVs, ranked by the share charging outside Slim Laden.
             </p>
           </div>
         </div>
@@ -280,10 +261,10 @@ export function DistrictsPage() {
               <tr>
                 <th scope="col">#</th>
                 <th scope="col">District</th>
-                <th scope="col">Enrolled</th>
-                <th scope="col">Unenrolled</th>
+                <th scope="col">In Slim Laden</th>
+                <th scope="col">Not in Slim Laden</th>
                 <th scope="col">Penetration</th>
-                <th scope="col">Gap (% invisible)</th>
+                <th scope="col">Gap (% not flexible)</th>
                 <th scope="col">
                   <span className="sr-only">Action</span>
                 </th>
@@ -294,10 +275,10 @@ export function DistrictsPage() {
                 <tr key={b.districtCode}>
                   <td>{b.rank}</td>
                   <td className="mono" style={{ fontWeight: 600, color: 'var(--navy)' }}>
-                    {b.districtCode}
+                    {b.districtCode} <span className="muted" style={{ fontWeight: 400 }}>{b.name}</span>
                   </td>
-                  <td>{b.known} known</td>
-                  <td>{b.unenrolled} unenrolled</td>
+                  <td>{b.known}</td>
+                  <td>{b.unenrolled}</td>
                   <td>{b.penetrationText}</td>
                   <td>
                     <span className="gapbar" aria-hidden="true">
@@ -315,8 +296,8 @@ export function DistrictsPage() {
             </tbody>
           </table>
         </div>
-        {blind.loading && !blind.data && <LoadingBlock rows={3} label="Loading blind spots" />}
-        {blind.data && visibleBlind.length === 0 && <p className="sub">No blind spots in {region === 'all' ? 'the sample' : region}.</p>}
+        {blind.loading && !blind.data && <LoadingBlock rows={3} label="Loading districts" />}
+        {blind.data && visibleBlind.length === 0 && <p className="sub">No gaps in {region === 'all' ? 'the sample' : region}.</p>}
       </section>
 
       <section className="card pad stack gap10" aria-labelledby="dead-h">
@@ -325,19 +306,19 @@ export function DistrictsPage() {
             <Icon name="alert" size={18} />
           </span>
           <h2 id="dead-h" className="h2">
-            No observed EV activity
+            No EV signal yet
           </h2>
         </div>
         {ov && (
           <>
             <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--text-body)' }}>
-              {ov.deadGridAreas} gridAreas show no EV signal on any district, and {ov.partiallyDeadGridAreas} more have at
-              least one dead district ({ov.deadDistricts} districts, {fmtInt(ov.deadDistrictPremises)} premises). Check whether these are
-              truly zero EVs or a detection gap.
+              {ov.deadGridAreas} grid areas show no EV signal in any district, and {ov.partiallyDeadGridAreas} more have at
+              least one district without ({ov.deadDistricts} districts, {fmtInt(ov.deadDistrictPremises)} homes). Check whether these are
+              truly zero EVs or homes without a readable smart meter.
             </p>
             <p className="muted" style={{ fontSize: 13 }}>
-              Of {fmtInt(ov.matchedPremises)} matched premises, {fmtInt(ov.noSignalPremises)} show no EV signal.{' '}
-              {fmtInt(ov.noLocationPremises)} premises have no grid location yet and are excluded.
+              Of {fmtInt(ov.matchedPremises)} homes with smart-meter data, {fmtInt(ov.noSignalPremises)} show no EV signal.{' '}
+              {fmtInt(ov.noLocationPremises)} homes have no grid area yet and are excluded.
             </p>
           </>
         )}
@@ -346,9 +327,9 @@ export function DistrictsPage() {
             <table className="tbl" style={{ minWidth: 420 }}>
               <thead>
                 <tr>
-                  <th scope="col">GridArea (largest {Math.min(8, dead.data.length)} of {dead.data.length})</th>
+                  <th scope="col">Grid area</th>
                   <th scope="col">Districts</th>
-                  <th scope="col">Premises</th>
+                  <th scope="col">Homes</th>
                 </tr>
               </thead>
               <tbody>
@@ -358,7 +339,7 @@ export function DistrictsPage() {
                       {d.code}
                     </td>
                     <td>
-                      {d.districts} district{d.districts === 1 ? '' : 's'}, all dead
+                      {d.districts} district{d.districts === 1 ? '' : 's'}, no signal
                     </td>
                     <td>{d.premises}</td>
                   </tr>
@@ -368,7 +349,7 @@ export function DistrictsPage() {
           </div>
         )}
       </section>
-      <p className="small muted">{ov?.dataSourceNote ?? `District figures: ${BRAND.partners.evDetection} district EV visibility pilot, anonymized. Shown as sample data.`}</p>
+      <p className="small muted">{ov?.dataSourceNote ?? `${BRAND.partners.disaggregation} appliance recognition, anonymised. Shown as sample data.`}</p>
     </main>
   );
 }
@@ -390,27 +371,27 @@ function DistrictDetail({ district }: { district: DistrictStat | undefined }) {
           <Icon name="bolt" size={18} />
         </span>
         <div>
-          <div className="lbl">{district.gridAreaCode} district</div>
-          <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)' }}>
-            {district.code}
+          <div className="lbl">Postcode district</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--navy)' }}>
+            <span className="mono">{district.code}</span> {district.name}
           </div>
         </div>
       </div>
       <div className="stack">
         <div className="kvrow">
-          <span>Known, enrolled EVs</span>
+          <span>EVs in Slim Laden</span>
           <strong style={{ color: 'var(--known-text)' }}>{dash(district.known)}</strong>
         </div>
         <div className="kvrow">
-          <span>Detected, unenrolled EVs</span>
+          <span>Detected, not in Slim Laden</span>
           <strong style={{ color: 'var(--unenrolled-text)' }}>{dash(district.unenrolled)}</strong>
         </div>
         <div className="kvrow">
-          <span>Total matched EVs</span>
+          <span>Total detected EVs</span>
           <strong>{fmtInt(district.evs)}</strong>
         </div>
         <div className="kvrow">
-          <span>Also confirmed by enrollment</span>
+          <span>Slim Laden EVs also seen by Net2Grid</span>
           <strong>{dash(district.confirmedByEnrollment)}</strong>
         </div>
         <div className="kvrow">
@@ -418,8 +399,12 @@ function DistrictDetail({ district }: { district: DistrictStat | undefined }) {
           <strong>{dash(district.groundTruthValidated)}</strong>
         </div>
         <div className="kvrow">
-          <span>Premises on this district</span>
+          <span>Customers in this district</span>
           <strong>{dash(district.premises)}</strong>
+        </div>
+        <div className="kvrow">
+          <span>Installment below the advice</span>
+          <strong>{dash(district.installmentGap)}</strong>
         </div>
         <div className="kvrow">
           <span>EV penetration</span>
@@ -427,7 +412,7 @@ function DistrictDetail({ district }: { district: DistrictStat | undefined }) {
         </div>
         {district.forecastLoadPct !== null && district.forecastLoadPct >= 90 && (
           <div className="kvrow">
-            <span>Load forecast tonight</span>
+            <span>Grid forecast tonight</span>
             <strong style={{ color: 'var(--warning-text)' }}>{district.forecastLoadPct}% of capacity</strong>
           </div>
         )}
@@ -435,28 +420,33 @@ function DistrictDetail({ district }: { district: DistrictStat | undefined }) {
       <p className="notice info" style={{ margin: '4px 0' }}>
         {split ? (
           <>
-            <strong>{district.invisiblePct ?? 0}% invisible.</strong> Enrollment data accounts for {district.known} of {district.evs} EVs
-            here. The other {district.unenrolled} draw load with no enrollment, no notice and no way to curtail them today.
+            <strong>{district.invisiblePct ?? 0}% not flexible.</strong> {district.known} of {district.evs} EVs here are in Slim Laden.
+            The other {district.unenrolled} mostly charge at the evening peak: the most expensive hours for them and the busiest for the grid.
             {district.penetrationPct !== null && district.premises !== null
-              ? ` EVs sit on ${district.penetrationPct}% of the ${fmtInt(district.premises)} premises on this district.`
+              ? ` EVs sit at ${district.penetrationPct}% of the ${fmtInt(district.premises)} homes in this district.`
               : ''}
           </>
         ) : (
-          'The enrolled / unenrolled split for this district is not in the sample data.'
+          'The Slim Laden split for this district is not in the sample data.'
         )}
       </p>
       {split ? (
         <>
           <Link className="btn pri wrap" to={districtCampaignLink('ENROLL_OFFER', district.code, 'UNENROLLED_EV')}>
-            Target {district.unenrolled} unenrolled · enrollment offer
+            Slim Laden offer to {district.unenrolled} EV owners
           </Link>
           <Link className="btn outline wrap" to={districtCampaignLink('FLEX_REQUEST', district.code, 'ENROLLED_EV')}>
-            Stop-charging request to {district.known} enrolled
+            Flex request to {district.known} in Slim Laden
           </Link>
+          {!!district.installmentGap && (
+            <Link className="btn outline wrap" to={districtCampaignLink('INSTALLMENT_ADVICE', district.code, 'INSTALLMENT_GAP')}>
+              Installment advice to {district.installmentGap}
+            </Link>
+          )}
         </>
       ) : (
         <span className="btn sec" aria-disabled="true">
-          Targeting needs premise-level data
+          Targeting needs customer-level data
         </span>
       )}
     </div>

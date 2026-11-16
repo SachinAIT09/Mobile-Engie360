@@ -1,6 +1,6 @@
 /*
- * Global stylesheet for the staff app: the PowerConnect.AI dark dashboard look
- * (deep navy page gradient, translucent glass cards, solid #2563eb accents, no drop shadows).
+ * Global stylesheet for the staff app: the dark dashboard look in ENGIE blue
+ * (deep navy page gradient, translucent glass cards, solid #007acd accents, no drop shadows).
  * Spec tokens come first; the older token names below are mapped onto them so every
  * component keeps reading tokens and never hard-codes colours.
  */
@@ -12,18 +12,18 @@
   --muted-icon: #8aa0c4;
   --border-color: rgba(255,255,255,0.09);
   --border-strong: rgba(255,255,255,0.12);
-  --button-background: #2563eb;
-  --color-blue: #2563eb;
-  --accent-blue: #4f8ef7;
-  --accent-2: #00d4aa;
+  --button-background: #007acd;
+  --color-blue: #007acd;
+  --accent-blue: #00aaff;
+  --accent-2: #23d2b5;
   --container-background-gradient: rgba(255,255,255,0.035);
   --card-bg: rgba(255,255,255,0.045);
   --card-border: rgba(255,255,255,0.10);
   --tabs-container: rgba(255,255,255,0.05);
-  --profile-settings-background: linear-gradient(135deg,#2563eb,#3b82f6);
-  --glass-panel-background: linear-gradient(165deg,rgba(37,99,235,0.28) 0%,rgba(15,27,61,0.75) 45%,rgba(9,16,38,0.85) 100%);
-  --glass-panel-border: rgba(96,165,250,0.22);
-  --border-color-gradient: linear-gradient(97deg, rgba(59,130,246,0.35) -7.9%, #60a5fa 117.63%);
+  --profile-settings-background: linear-gradient(135deg,#007acd,#009de9);
+  --glass-panel-background: linear-gradient(165deg,rgba(0,122,205,0.28) 0%,rgba(15,27,61,0.75) 45%,rgba(9,16,38,0.85) 100%);
+  --glass-panel-border: rgba(91,200,255,0.22);
+  --border-color-gradient: linear-gradient(97deg, rgba(0,157,233,0.35) -7.9%, #5bc8ff 117.63%);
   --modal-background: linear-gradient(155.73deg, rgba(12,28,71,0.9) 1.72%, rgba(7,15,38,0.9) 103.97%);
   --modal-overlay: rgba(4,10,30,0.7);
   --popover-background: #0c1c47;
@@ -34,27 +34,27 @@
   --tooltip-shadow: 0 4px 8px rgba(0,0,0,0.54);
   --table-header-background: #13327f;
   --table-even-row: rgba(255,255,255,0.03);
-  --table-unread-row: rgba(59,130,246,0.16);
+  --table-unread-row: rgba(0,157,233,0.16);
   --table-loader-overlay: rgba(7,15,38,0.55);
   --color-green: #4ade80;  --color-green-border: #22c55e;  --color-green-background: rgba(34,197,94,.16);
   --color-orange: #fbbf24; --color-orange-border: rgba(245,158,11,.4); --color-orange-background: rgba(245,158,11,.16);
   --color-red: #f87171;    --color-pink-border: rgba(248,113,113,.4);  --color-pink-background: rgba(248,113,113,.16);
   --danger-strong: #ff4d6d; --warn: #f59e0b;
-  --toggle-switch-on: #2563eb; --toggle-switch-off: #717070;
+  --toggle-switch-on: #007acd; --toggle-switch-off: #717070;
   --scrollbar-color: rgba(148,163,184,.35);
   --legend-text: rgba(232,237,248,0.7);
   --page-bg-deep: #070f26;
   --page-bg:
-    radial-gradient(95% 80% at 82% -8%, rgba(37,99,235,0.42) 0%, rgba(37,99,235,0) 58%),
+    radial-gradient(95% 80% at 82% -8%, rgba(0,122,205,0.42) 0%, rgba(0,122,205,0) 58%),
     linear-gradient(180deg, #0c1c47 0%, #0a1538 48%, #070f26 100%);
   --topbar-bg: rgba(12,28,71,0.72);
   --table-header-text: #ffffff;
   --hover-strong: rgba(255,255,255,0.08);
   --icon-invert: invert(1) brightness(0.9);
-  --link: #60a5fa;
+  --link: #5bc8ff;
   /* Phone mock-ups (campaign preview) look like a real dark device in both themes. */
   --device-frame: #0c1c47;
-  --device-screen: linear-gradient(165deg,rgba(37,99,235,0.28) 0%,rgba(15,27,61,0.92) 45%,rgba(9,16,38,0.96) 100%);
+  --device-screen: linear-gradient(165deg,rgba(0,122,205,0.28) 0%,rgba(15,27,61,0.92) 45%,rgba(9,16,38,0.96) 100%);
   /* chart palette */
   --chart-lavender: #8b80d9; --chart-gray: #d9d9d9; --chart-deep-blue: #1677c2; --chart-sky: #1ea0e6;
   --chart-total: #8b5cf6; --chart-positive: #22c55e; --chart-negative: #ef4444;
@@ -64,7 +64,7 @@
   --navy-deep: #070f26;
   --navy-mid: #13327f;
   --primary: var(--color-blue);
-  --primary-dark: #3b82f6;
+  --primary-dark: #009de9;
   --primary-tint: var(--table-unread-row);
   --primary-soft: var(--tabs-container);
   --accent: var(--accent-blue);
@@ -108,7 +108,7 @@
   --shadow-card: none;
   --shadow-card-hover: none;
   --shadow-button: none;
-  --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
   --sidebar-w: 72px;
   --sidebar-open-w: 232px;
@@ -128,14 +128,14 @@
   --muted-icon: #55657e;
   --border-color: rgba(15,23,42,0.09);
   --border-strong: rgba(15,23,42,0.15);
-  --accent-blue: #2563eb;
+  --accent-blue: #007acd;
   --container-background-gradient: #f6f8fc;
   --card-bg: #ffffff;
   --card-border: rgba(15,23,42,0.09);
   --tabs-container: rgba(15,23,42,0.045);
   --glass-panel-background: linear-gradient(165deg,#e3ecff 0%,#f3f7ff 55%,#ffffff 100%);
-  --glass-panel-border: rgba(37,99,235,0.24);
-  --border-color-gradient: linear-gradient(97deg, rgba(37,99,235,0.35) -7.9%, #2563eb 117.63%);
+  --glass-panel-border: rgba(0,122,205,0.24);
+  --border-color-gradient: linear-gradient(97deg, rgba(0,122,205,0.35) -7.9%, #007acd 117.63%);
   --modal-background: linear-gradient(155.73deg, #ffffff 1.72%, #f6f8fc 103.97%);
   --modal-overlay: rgba(15,23,42,0.45);
   --popover-background: #ffffff;
@@ -147,7 +147,7 @@
   --table-header-background: #edf2fb;
   --table-header-text: #334155;
   --table-even-row: rgba(15,23,42,0.02);
-  --table-unread-row: rgba(37,99,235,0.08);
+  --table-unread-row: rgba(0,122,205,0.08);
   --table-loader-overlay: rgba(255,255,255,0.7);
   --color-green: #166534;  --color-green-border: rgba(22,163,74,.38);  --color-green-background: rgba(22,163,74,.10);
   --color-orange: #b45309; --color-orange-border: rgba(217,119,6,.38);  --color-orange-background: rgba(245,158,11,.13);
@@ -157,7 +157,7 @@
   --legend-text: rgba(30,41,59,0.72);
   --page-bg-deep: #eef2f8;
   --page-bg:
-    radial-gradient(95% 70% at 82% -8%, rgba(37,99,235,0.10) 0%, rgba(37,99,235,0) 58%),
+    radial-gradient(95% 70% at 82% -8%, rgba(0,122,205,0.10) 0%, rgba(0,122,205,0) 58%),
     linear-gradient(180deg, #f4f7fc 0%, #eef2f8 100%);
   --topbar-bg: rgba(255,255,255,0.86);
   --hover-strong: rgba(15,23,42,0.07);
@@ -205,7 +205,10 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--border-color); background: var(--topbar-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 .topbar-logo { display: flex; align-items: center; flex-shrink: 0; }
-.topbar-logo img { height: 40px; width: auto; display: block; }
+.topbar-logo { gap: 12px; text-decoration: none; }
+.topbar-logo .wordmark { position: relative; margin-top: 6px; font-weight: 900; font-size: 24px; letter-spacing: 0.03em; color: var(--accent-blue); }
+.topbar-logo .wordmark::before { content: ''; position: absolute; left: 1px; right: 1px; top: -7px; height: 11px; border-top: 3px solid currentColor; border-radius: 50% 50% 0 0; }
+.topbar-logo .product { font-size: 13px; font-weight: 700; color: var(--muted-icon); border-left: 1px solid var(--border-strong); padding-left: 12px; }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .welcome { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--font-color); white-space: nowrap; }
 .welcome svg { color: var(--muted-icon); }
@@ -546,7 +549,7 @@ table.tbl { border-collapse: collapse; width: 100%; min-width: 760px; }
   .nav-open .rail { transform: none; visibility: visible; }
   .nav-scrim { display: block; position: fixed; inset: var(--topbar-h) 0 0 0; z-index: 39; background: var(--modal-overlay); }
   .topbar { padding: 0 12px; gap: 10px; }
-  .topbar-logo img { height: 28px; }
+  .topbar-logo .product { display: none; }
   .topbar-actions { gap: 6px; }
   .lang { display: none; }
   .page-head h1 { font-size: 20px; }

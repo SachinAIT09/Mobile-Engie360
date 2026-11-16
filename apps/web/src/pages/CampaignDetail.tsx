@@ -19,7 +19,7 @@ const STATUS_PILL: Record<Campaign['status'], { tone: string; label: string }> =
 
 const when = (iso: string) => `${fmtDate(iso, { month: 'short', day: 'numeric' })} · ${fmtTime(iso)}`;
 
-/** /campaigns/:id: KPIs, per-variant funnel, copy, audience, timeline, audit trail and the DR event. Live over the socket. */
+/** /campaigns/:id: KPIs, per-variant funnel, copy, audience, timeline, audit trail and the flex event. Live over the socket. */
 export function CampaignDetailPage() {
   const { id = '' } = useParams();
   const api = useApi();
@@ -61,8 +61,8 @@ export function CampaignDetailPage() {
     setBusy(true);
     setActionErr(null);
     try {
-      if (action === 'start') await api.drStart(flexEventId);
-      else await api.drEnd(flexEventId);
+      if (action === 'start') await api.flexStart(flexEventId);
+      else await api.flexEnd(flexEventId);
       await reload();
     } catch (e) {
       setActionErr(e instanceof Error ? e.message : 'Could not update the event');
@@ -237,7 +237,7 @@ function DetailBody({ d, busy, onDr }: { d: CampaignDetail; busy: boolean; onDr:
               <CardHeader
                 icon="bolt"
                 tone={ev.status === 'ACTIVE' ? 'warn' : ev.status === 'ENDED' ? 'ok' : undefined}
-                title="DR event"
+                title="Flex event"
                 sub={`${evDistricts.length > 1 ? `${evDistricts[0]} +${evDistricts.length - 1}` : evDistricts[0]} · ${fmtWindow(ev.windowStart, ev.windowEnd)}`}
                 actions={<StatusPill kind="drStatus" value={ev.status} />}
               />
@@ -252,7 +252,7 @@ function DetailBody({ d, busy, onDr }: { d: CampaignDetail; busy: boolean; onDr:
                 </button>
               </div>
               <Link to="/events" className="linkbtn" style={{ alignSelf: 'flex-start' }}>
-                View all DR events
+                View all flex events
               </Link>
             </div>
           )}

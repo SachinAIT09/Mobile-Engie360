@@ -26,7 +26,7 @@ export function AssistantPage() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
-  const sugg = suggestions.data ?? (suggestions.error ? { greeting: 'Ask me about districts, blind spots, campaigns or DR events.', suggestions: [] } : null);
+  const sugg = suggestions.data ?? (suggestions.error ? { greeting: 'Ask me about postcode districts, EVs outside Slim Laden, campaigns or flex events.', suggestions: [] } : null);
 
   const scrollDown = useCallback(() => {
     const el = logRef.current;
@@ -62,7 +62,7 @@ export function AssistantPage() {
 
   return (
     <main className="page ai-page">
-      <PageHeader title="AI Assistant" icon="bot" sub="Ask about districts, blind spots, campaigns and DR events. Answers come from the live demo data." />
+      <PageHeader title="AI Assistant" icon="bot" sub="Ask about postcode districts, EVs outside Slim Laden, campaigns and flex events. Answers come from the live demo data." />
       <div className="ai-layout">
         <section className="ai-main" aria-label={ASSISTANT.staffName}>
           <div ref={logRef} className="ai-log" role="log" aria-live="polite" aria-label="Conversation">

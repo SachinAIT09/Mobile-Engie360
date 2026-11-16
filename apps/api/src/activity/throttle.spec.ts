@@ -10,12 +10,12 @@ describe('ViewThrottle', () => {
 
   it('drops a repeat view inside the window and allows it after', () => {
     const t = new ViewThrottle(30_000);
-    expect(t.allow('c1', 'VIEWED_BILL', 0)).toBe(true);
-    expect(t.allow('c1', 'VIEWED_BILL', 29_999)).toBe(false);
-    expect(t.allow('c1', 'VIEWED_BILL', 30_000)).toBe(true);
+    expect(t.allow('c1', 'VIEWED_BILLING', 0)).toBe(true);
+    expect(t.allow('c1', 'VIEWED_BILLING', 29_999)).toBe(false);
+    expect(t.allow('c1', 'VIEWED_BILLING', 30_000)).toBe(true);
   });
 
-  it('throttles message and DR opens like views', () => {
+  it('throttles message and flex opens like views', () => {
     const t = new ViewThrottle(30_000);
     expect(t.allow('c1', 'FLEX_OPENED', 0)).toBe(true);
     expect(t.allow('c1', 'FLEX_OPENED', 5_000)).toBe(false);
@@ -24,15 +24,15 @@ describe('ViewThrottle', () => {
 
   it('keys by customer and kind', () => {
     const t = new ViewThrottle(30_000);
-    expect(t.allow('c1', 'VIEWED_BILL', 0)).toBe(true);
-    expect(t.allow('c2', 'VIEWED_BILL', 1)).toBe(true);
+    expect(t.allow('c1', 'VIEWED_BILLING', 0)).toBe(true);
+    expect(t.allow('c2', 'VIEWED_BILLING', 1)).toBe(true);
     expect(t.allow('c1', 'VIEWED_ENERGY', 2)).toBe(true);
   });
 
   it('clear forgets everything', () => {
     const t = new ViewThrottle(30_000);
-    t.allow('c1', 'VIEWED_BILL', 0);
+    t.allow('c1', 'VIEWED_BILLING', 0);
     t.clear();
-    expect(t.allow('c1', 'VIEWED_BILL', 1)).toBe(true);
+    expect(t.allow('c1', 'VIEWED_BILLING', 1)).toBe(true);
   });
 });

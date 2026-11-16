@@ -6,8 +6,8 @@ import { campaignLink } from '../lib/links';
 import { Icon, type IconName } from './icons';
 
 function rowClass(kind: LiveEvent['kind']): string {
-  if (kind === 'STOPPED_CHARGING_CLUSTER') return 'cluster';
-  if (kind === 'DISTRICT_FORECAST_HIGH') return 'forecast';
+  if (kind === 'EV_CLUSTER') return 'cluster';
+  if (kind === 'CONGESTION_FORECAST') return 'forecast';
   return '';
 }
 
@@ -15,9 +15,9 @@ function rowIcon(kind: LiveEvent['kind']): { icon: IconName; tone: string } {
   switch (kind) {
     case 'EV_DETECTED':
       return { icon: 'car', tone: 'accent' };
-    case 'STOPPED_CHARGING_CLUSTER':
+    case 'EV_CLUSTER':
       return { icon: 'bolt', tone: '' };
-    case 'DISTRICT_FORECAST_HIGH':
+    case 'CONGESTION_FORECAST':
       return { icon: 'alert', tone: 'warn' };
     case 'CAMPAIGN_SENT':
       return { icon: 'send', tone: 'ok' };
@@ -54,13 +54,13 @@ export function LiveEvents({ limit = 6, days }: { limit?: number; days?: number 
           <Icon name="pylon" size={18} />
         </span>
         <h2 id="live-h" className="h2">
-          Live events from {BRAND.partners.evDetection}
+          Live events from {BRAND.partners.disaggregation}
         </h2>
         <span className="pill grey">Simulated</span>
       </div>
       {events.length === 0 && (
         <p className="sub">
-          No events yet. Use the <Link to="/demo">demo control panel</Link> to simulate {BRAND.partners.evDetection} events.
+          No events yet. Use the <Link to="/demo">demo control panel</Link> to simulate {BRAND.partners.disaggregation} events.
         </p>
       )}
       {events.map((e) => {

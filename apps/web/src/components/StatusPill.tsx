@@ -9,8 +9,9 @@ const DR_STATUS: Record<FlexEventStatus, { tone: PillTone; label: string }> = {
 };
 
 const CAMPAIGN_TYPE: Record<CampaignType, { tone: PillTone; label: string }> = {
-  ENROLL_OFFER: { tone: 'ev', label: 'Enrollment offer' },
-  FLEX_REQUEST: { tone: 'warn', label: 'Stop-charging' },
+  ENROLL_OFFER: { tone: 'ev', label: 'Slim Laden offer' },
+  FLEX_REQUEST: { tone: 'warn', label: 'Flex request' },
+  INSTALLMENT_ADVICE: { tone: 'accent', label: 'Installment advice' },
 };
 
 export type StatusPillProps =
@@ -18,7 +19,7 @@ export type StatusPillProps =
   | { kind: 'campaignType'; value: CampaignType; className?: string }
   | { kind: 'test'; className?: string };
 
-/** `.pill` with the tone that the rest of the staff app uses for DR statuses and campaign types. */
+/** `.pill` with the tone that the rest of the staff app uses for flex statuses and campaign types. */
 export function StatusPill(props: StatusPillProps) {
   let tone: PillTone = 'grey';
   let label: string;

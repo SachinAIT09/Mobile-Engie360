@@ -149,7 +149,7 @@ export interface Turn {
 
 /**
  * Transcript + request state for the assistant drawer. Each question is sent with the previous answer's
- * context (follow-ups like "and SUB-02-F1?"); the server stays stateless.
+ * context (follow-ups like "and 3582?"); the server stays stateless.
  */
 export function useAssistantChat(send: (b: AssistantRequest) => Promise<AssistantAnswer>) {
   const [turns, setTurns] = useState<Turn[]>([]);

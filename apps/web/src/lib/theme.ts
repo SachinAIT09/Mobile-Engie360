@@ -10,9 +10,9 @@ export const PALETTE = {
   /** --toggle-switch-off: split not in sample. */
   unknown: '#717070',
   /** --link: district routes on the dark map. */
-  route: '#60a5fa',
+  route: '#5bc8ff',
   /** --color-blue: the selected district. */
-  selected: '#2563eb',
+  selected: '#007acd',
   /** --popover-background: casing under lines and marker outlines, so they sit into the dark map. */
   casing: '#0c1c47',
   /** Light theme --popover-background: casing on the light map. */

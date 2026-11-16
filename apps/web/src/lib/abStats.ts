@@ -13,7 +13,7 @@ export interface VariantRow {
   title: string;
   stats: CampaignStats;
   stages: FunnelStage[];
-  /** Key rate (offers: enrolled / delivered; DR: paused / delivered), 0–100 with one decimal. */
+  /** Key rate (offers: enrolled / delivered; flex: paused / delivered), 0–100 with one decimal. */
   keyRate: number;
   keyLabel: string;
   leading: boolean;
@@ -21,7 +21,7 @@ export interface VariantRow {
 
 const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 1000) / 10 : 0);
 
-/** Funnel stages for one set of stats. Offers: sent → delivered → opened → enrolled; DR: sent → delivered → responded → paused. */
+/** Funnel stages for one set of stats. Offers: sent → delivered → opened → enrolled; flex: sent → delivered → responded → paused. */
 export function funnelStages(type: CampaignType, s: CampaignStats): FunnelStage[] {
   const rows: [string, number][] =
     type === 'ENROLL_OFFER'

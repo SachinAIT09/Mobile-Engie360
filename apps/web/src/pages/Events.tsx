@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/icons';
 import { EmptyState, ErrorNotice, LoadingBlock } from '../components/State';
 
-/** "SUB-01-F1" or "SUB-01-F1 +2" for a multi-district event. */
+/** "3581" or "3581 +2" for a multi-district event. */
 function districtText(e: Pick<FlexEvent, 'districtCode' | 'districtCodes'>): string {
   const n = e.districtCodes?.length ?? 0;
   return n > 1 ? `${e.districtCode} +${n - 1}` : e.districtCode;
@@ -16,7 +16,7 @@ function statusPill(st: FlexEventStatus | null) {
   return st === 'ACTIVE' ? 'warn' : st === 'ENDED' ? 'ok' : 'grey';
 }
 
-/** DR events list. Events are derived from stop-charging campaigns; live status comes from the socket. */
+/** flex events list. Events are derived from flex-request campaigns; live status comes from the socket. */
 export function EventsPage() {
   const api = useApi();
   const campaigns = useLoad((a) => a.campaigns());
@@ -55,7 +55,7 @@ export function EventsPage() {
     setBusy(id);
     setErr(null);
     try {
-      const ev = action === 'start' ? await api.drStart(id) : await api.drEnd(id);
+      const ev = action === 'start' ? await api.flexStart(id) : await api.flexEnd(id);
       setKnown((k) => ({ ...k, [ev.id]: ev }));
       void demo.reload();
     } catch (e) {
@@ -74,13 +74,13 @@ export function EventsPage() {
   return (
     <main className="page">
       <PageHeader
-        title="DR events"
+        title="Flex events"
         icon="bolt"
-        sub="Stop-charging requests sent through Campaign 360. Start or end an event to drive the demo."
+        sub="Flex requests sent through Campaign 360 when the grid operator forecasts congestion. Start or end an event to drive the demo."
         actions={
-          <Link className="btn outline" to="/campaigns/new?type=FLEX_REQUEST&district=SUB-01-F1&segment=ENROLLED_EV">
+          <Link className="btn outline" to="/campaigns/new?type=FLEX_REQUEST&district=3581&segment=ENROLLED_EV">
             <Icon name="bolt" size={16} />
-            New stop-charging request
+            New flex request
           </Link>
         }
       />
@@ -89,7 +89,7 @@ export function EventsPage() {
         <div className="card kpi">
           <span className="kl">Events</span>
           <span className="kv">{campaigns.data ? fmtInt(drCampaigns.length) : '—'}</span>
-          <span className="ks">stop-charging requests sent</span>
+          <span className="ks">flex requests sent</span>
         </div>
         <div className="card kpi">
           <span className="kl">Responded</span>
@@ -111,8 +111,8 @@ export function EventsPage() {
           <span className="kv">{reports.data ? fmtInt(reports.data.smartCharging.homes) : '—'}</span>
           <span className="ks">
             {reports.data
-              ? `${(reports.data.smartCharging.flexibleKw / 1000).toFixed(2)} MW of EV load shifted off-peak automatically`
-              : 'EV load scheduled off-peak'}
+              ? `${(reports.data.smartCharging.flexibleKw / 1000).toFixed(2)} MW of EV load shifted to cheap hours automatically`
+              : 'EV load scheduled in cheap hours'}
           </span>
         </div>
       </section>
@@ -150,14 +150,14 @@ export function EventsPage() {
           <span className="ic-tile">
             <Icon name="file" size={18} />
           </span>
-          <h2 className="h2">All stop-charging requests</h2>
+          <h2 className="h2">All flex requests</h2>
         </div>
         {campaigns.loading && !campaigns.data && <LoadingBlock rows={3} rowHeight={44} label="Loading events" />}
         {campaigns.data && drCampaigns.length === 0 ? (
           <EmptyState
-            title="No DR events yet"
-            body="A stop-charging request creates the first event."
-            action={{ label: 'Create a stop-charging request', to: '/campaigns/new?type=FLEX_REQUEST&district=SUB-01-F1&segment=ENROLLED_EV' }}
+            title="No flex events yet"
+            body="A flex request creates the first event."
+            action={{ label: 'Create a flex request', to: '/campaigns/new?type=FLEX_REQUEST&district=3581&segment=ENROLLED_EV' }}
           />
         ) : drCampaigns.length > 0 ? (
           <div className="tablebox">

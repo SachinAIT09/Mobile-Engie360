@@ -10,7 +10,7 @@ export type Theme = 'dark' | 'light';
 
 export const THEME_KEY = 'pc-theme';
 /** Dark is the default: it is the PowerConnect dashboard look the demo was designed in. */
-const DEFAULT_PREF: ThemePref = 'dark';
+const DEFAULT_PREF: ThemePref = 'light';
 
 const listeners = new Set<() => void>();
 const media = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;

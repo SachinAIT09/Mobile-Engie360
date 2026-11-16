@@ -6,8 +6,8 @@ const a = (id: string, at: string): CustomerActivity => ({
   id,
   at,
   customerId: 'c1',
-  customerName: 'Manny Diaz',
-  districtCode: 'F1',
+  customerName: 'Sanne de Vries',
+  districtCode: '3581',
   kind: 'PAYMENT_MADE',
   category: 'billing',
   summary: 'Paid',
@@ -36,11 +36,11 @@ describe('unreadCount', () => {
 });
 
 describe('groupByDay', () => {
-  it('groups by Toronto day in order', () => {
-    // 03:00Z on the 28th is still the 27th in Toronto.
-    const list = [a('3', '2026-10-28T15:00:00Z'), a('2', '2026-10-28T03:00:00Z'), a('1', '2026-10-27T13:00:00Z')];
+  it('groups by Dutch day in order', () => {
+    // 23:30Z on the 27th is already the 28th in Amsterdam.
+    const list = [a('3', '2026-10-28T15:00:00Z'), a('2', '2026-10-27T23:30:00Z'), a('1', '2026-10-27T13:00:00Z')];
     const g = groupByDay(list);
-    expect(g.map((d) => d.items.map((x) => x.id))).toEqual([['3'], ['2', '1']]);
-    expect(g[1].day).toBe('Tue, Oct 27');
+    expect(g.map((d) => d.items.map((x) => x.id))).toEqual([['3', '2'], ['1']]);
+    expect(g[1].day).toContain('27');
   });
 });

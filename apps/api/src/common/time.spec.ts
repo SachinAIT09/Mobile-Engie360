@@ -76,20 +76,20 @@ describe('nextEventWindow', () => {
 
 describe('fmtClock / fmtClockRange', () => {
   it('formats a Toronto clock time', () => {
-    expect(fmtClock(new Date('2026-10-23T21:30:00Z'), TZ)).toBe('5:30 PM');
+    expect(fmtClock(new Date('2026-10-23T21:30:00Z'), TZ)).toBe('17:30');
   });
 
-  it('shares the AM/PM suffix when both ends are in the same half of the day', () => {
+  it('joins two 24-hour clock times with the joiner', () => {
     const a = new Date('2026-10-24T01:30:00Z'); // 9:30 PM
     const b = new Date('2026-10-24T01:45:00Z'); // 9:45 PM
-    expect(fmtClockRange(a, b, 'and', TZ)).toBe('9:30 and 9:45 PM');
-    expect(fmtClockRange(a, b, 'to', TZ)).toBe('9:30 to 9:45 PM');
+    expect(fmtClockRange(a, b, 'and', TZ)).toBe('21:30 and 21:45');
+    expect(fmtClockRange(a, b, 'to', TZ)).toBe('21:30 to 21:45');
   });
 
-  it('keeps both suffixes across noon', () => {
+  it('needs no AM/PM suffix across noon', () => {
     const a = new Date('2026-10-23T15:30:00Z'); // 11:30 AM
     const b = new Date('2026-10-23T17:00:00Z'); // 1:00 PM
-    expect(fmtClockRange(a, b, 'and', TZ)).toBe('11:30 AM and 1:00 PM');
+    expect(fmtClockRange(a, b, 'and', TZ)).toBe('11:30 and 13:00');
   });
 });
 

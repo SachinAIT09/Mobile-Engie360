@@ -92,6 +92,8 @@ export function DraftCards({ draft, label, onNavigate }: { draft: CampaignDraft;
 
 function ActionButton({ action, onNavigate }: { action: AssistantAction; onNavigate: (to: string) => void }) {
   if (action.kind === 'campaignDraft') return <DraftCards draft={action.draft} label={action.label} onNavigate={onNavigate} />;
+  // Prompt and sign-in actions belong to the customer assistant; the staff assistant only sends routes.
+  if (action.kind !== 'route') return null;
   return (
     <button type="button" className="btn sec sm" onClick={() => onNavigate(action.route)}>
       {action.label}

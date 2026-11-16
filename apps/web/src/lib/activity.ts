@@ -41,7 +41,7 @@ export function unreadCount(items: CustomerActivity[], seenAt: string): number {
   return items.filter((a) => new Date(a.at).getTime() > t).length;
 }
 
-/** Groups an already sorted list by local (Ontario) day, keeping order: [{ day: "Tue, Oct 27", items }]. */
+/** Groups an already sorted list by local (Dutch) day, keeping order: [{ day: "Tue, Oct 27", items }]. */
 export function groupByDay(items: CustomerActivity[]): { day: string; items: CustomerActivity[] }[] {
   const out: { day: string; items: CustomerActivity[] }[] = [];
   for (const a of items) {
@@ -57,9 +57,8 @@ export const CATEGORY_ICON: Record<CustomerActivityCategory, IconName> = {
   account: 'users',
   billing: 'file',
   program: 'car',
-  dr: 'bolt',
+  flex: 'bolt',
   charging: 'bolt',
-  outage: 'alert',
   assistant: 'chat',
   view: 'eye',
 };
@@ -69,9 +68,8 @@ export const CATEGORY_TONE: Record<CustomerActivityCategory, 'ok' | 'warn' | 'ev
   account: 'accent',
   billing: 'ok',
   program: 'ev',
-  dr: 'warn',
+  flex: 'warn',
   charging: 'ev',
-  outage: 'danger',
   assistant: 'accent',
   view: 'grey',
 };

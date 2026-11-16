@@ -151,6 +151,7 @@ export function useScript(options: { poll?: boolean } = {}): ScriptController {
   useSocketEvent('district:statsChanged', () => onEvent({ name: 'district:statsChanged' }));
   useSocketEvent('campaign:statsChanged', (campaign) => onEvent({ name: 'campaign:statsChanged', campaign }));
   useSocketEvent('flexEvent:statusChanged', (event) => onEvent({ name: 'flexEvent:statusChanged', event }));
+  useSocketEvent('assistant:logged', (entry) => onEvent({ name: 'assistant:logged', entry }));
   useSocketEvent('demo:reset', () => onEvent({ name: 'demo:reset' }));
 
   const runAction = useCallback(async () => {
