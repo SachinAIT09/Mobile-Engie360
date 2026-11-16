@@ -12,7 +12,8 @@ test.describe('portal', () => {
   test('notifications, profile menu and account edit', async ({ page }) => {
     await fresh(page);
     await page.getByRole('button', { name: /Notifications/ }).click();
-    await page.locator('.pop-item').first().click();
+    // The inbox comes from the server, newest first; open the night-time alert specifically.
+    await page.locator('.pop-item', { hasText: 'Unusual night-time consumption' }).click();
     await expect(page).toHaveURL(/\/insights/);
     await page.getByRole('button', { name: 'Profile menu' }).click();
     await page.locator('.popover.narrow').getByRole('button', { name: 'My account' }).click();

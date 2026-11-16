@@ -74,7 +74,7 @@ D:\Mobile Engie360
 - [x] 1 contract (f4)
 - [x] 2a server (f4) · [x] 2b frontend + staff app (4d)
 - [x] 3 run/hosting (f4)
-- [ ] 4 checks + e2e (both)
+- [x] 4 checks + e2e (both)
 
 ## Changes
 
@@ -82,3 +82,4 @@ D:\Mobile Engie360
 - f4: contract adds the two endpoints 4d asked for: `banner` on `message:new`, and `GET /api/staff/conversations` + live `chat:message`.
 - f4: `npm run dev` = ONE server on :3000 (API + Vite middleware, hot reload). `npm run dev:client` = Vite alone. `npm start` = production (`tsx server/index.ts --prod`, serves dist/). Start page at `/start`.
 - f4: package.json gained `web-push`, `tsx` (dependency) and `engines.node >=22.13` (node:sqlite); vite.config tests include `server/**/*.spec.ts`; `.gitignore` adds `.data/` (SQLite file).
+- f4: final verification: `npm run check` 95 tests; e2e 20/20 on dev (twice, 40/40) and 20/20 on the production build; Docker image tested with Catalyst's port variable (ready in ~4 s, SSE closes at 25 s). Not automatable: real phone push (needs HTTPS + a person to allow notifications).

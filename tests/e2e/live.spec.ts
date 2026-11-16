@@ -61,6 +61,7 @@ test.describe('customer ↔ staff, live', () => {
     await fresh(page);
     await page.request.post('/api/installment', { data: { amount: 230 } });
     const staff = await staffPage(browser);
+    staff.once('dialog', (d) => void d.accept()); // "Reset the demo?" confirmation
     await staff.getByRole('button', { name: /Reset demo/ }).click();
     await expect.poll(async () => (await (await page.request.get('/api/billing')).json()).installment.pending).toBeNull();
     await staff.context().close();

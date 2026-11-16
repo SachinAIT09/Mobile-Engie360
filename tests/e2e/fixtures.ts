@@ -37,9 +37,9 @@ export async function ask(page: Page, question: string) {
   const before = await page.locator('.msg.bot').count();
   await page.locator('.chat-input textarea').fill(question);
   await page.keyboard.press('Enter');
-  await expect(page.locator('.typing')).toBeVisible();
-  await expect(page.locator('.typing')).toHaveCount(0, { timeout: 5000 });
-  await expect(page.locator('.msg.bot')).toHaveCount(before + 1);
+  // Wait for the reply itself; the typing dots can come and go between two checks under load.
+  await expect(page.locator('.msg.bot')).toHaveCount(before + 1, { timeout: 8000 });
+  await expect(page.locator('.typing')).toHaveCount(0);
   return page.locator('.msg.bot .bubble').last();
 }
 
