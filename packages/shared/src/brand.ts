@@ -65,7 +65,10 @@ export const DEMO_RATE_PER_KWH = 0.25;
 /** Scripted assistant naming and copy. */
 export const ASSISTANT = {
   staffName: 'Klantinzicht Assistant',
-  customerName: { en: 'ENGIE Assistant', nl: 'ENGIE Assistent' } as Text,
+  /** The customer chatbot's name, in the app and on the website. */
+  customerName: { en: 'Eva', nl: 'Eva' } as Text,
+  customerIntro: { en: 'Hi! I’m Eva, the ENGIE digital assistant.', nl: 'Hoi! Ik ben Eva, de digitale assistent van ENGIE.' } as Text,
+  askLabel: { en: 'Ask Eva', nl: 'Vraag het Eva' } as Text,
   disclosure: 'Scripted demo assistant · answers from live demo data',
   disclosureCustomer: {
     en: 'Demo assistant: scripted answers from sample data, no AI backend connected.',

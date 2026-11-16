@@ -38,16 +38,16 @@ import { CampaignsService } from './campaigns.service.js';
 
 class AudienceDto {
   @IsIn(['DISTRICT', 'LIVE_EVENT', 'DISTRICTS']) kind: 'DISTRICT' | 'LIVE_EVENT' | 'DISTRICTS';
-  @ValidateIf((o: AudienceDto) => o.kind === 'DISTRICT') @IsString() @Matches(/^SUB-\d+-F\d+$/) districtCode?: string;
+  @ValidateIf((o: AudienceDto) => o.kind === 'DISTRICT') @IsString() @Matches(/^\d{4}$/) districtCode?: string;
   @ValidateIf((o: AudienceDto) => o.kind === 'LIVE_EVENT') @IsMongoId() liveEventId?: string;
   @ValidateIf((o: AudienceDto) => o.kind === 'DISTRICTS')
   @IsArray()
   @ArrayMinSize(2)
   @ArrayMaxSize(10)
   @IsString({ each: true })
-  @Matches(/^SUB-\d+-F\d+$/, { each: true })
+  @Matches(/^\d{4}$/, { each: true })
   districtCodes?: string[];
-  @IsIn(['UNENROLLED_EV', 'ENROLLED_EV']) segment: CampaignSegment;
+  @IsIn(['UNENROLLED_EV', 'ENROLLED_EV', 'INSTALLMENT_GAP']) segment: CampaignSegment;
 }
 
 class ExclusionsDto {
@@ -83,7 +83,7 @@ class PreviewDto {
 }
 
 class CreateCampaignDto {
-  @IsIn(['ENROLL_OFFER', 'FLEX_REQUEST']) type: CampaignType;
+  @IsIn(['ENROLL_OFFER', 'FLEX_REQUEST', 'INSTALLMENT_ADVICE']) type: CampaignType;
   @ValidateNested() @Type(() => AudienceDto) audience: AudienceDto;
   @ValidateNested() @Type(() => ExclusionsDto) exclusions: ExclusionsDto;
   @IsString() @MinLength(3) @MaxLength(140) title: string;
@@ -132,7 +132,7 @@ export class CampaignsController {
     return this.campaigns.get(id);
   }
 
-  /** Campaign + DR event + audit trail + timeline for the detail page. */
+  /** Campaign + flex event + audit trail + timeline for the detail page. */
   @Get(':id/detail')
   detail(@Param('id') id: string): Promise<CampaignDetail> {
     return this.campaigns.detail(id);

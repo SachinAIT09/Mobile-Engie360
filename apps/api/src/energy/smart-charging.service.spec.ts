@@ -27,7 +27,7 @@ describe('buildPlan', () => {
     expect(boosted.boostUntil).toBe(at(21, 11).toISOString());
   });
 
-  it('lists only DR windows overlapping the session and charges around them', () => {
+  it('lists only flex windows overlapping the session and charges around them', () => {
     const w = { start: at(21, 22), end: at(22, 1), title: 'Grid event' };
     const other = { start: at(23, 17), end: at(23, 20), title: 'Later' };
     const p = buildPlan({ ...on, ratePlan: 'ULO' }, true, [w, other], null, at(21, 10), TZ);

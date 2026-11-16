@@ -55,6 +55,7 @@ export class DemoController {
           evStatus: (await this.customers.evStatus(c)).status,
           role: (c.demoRole ?? 'UNENROLLED_DEMO') as 'UNENROLLED_DEMO' | 'ENROLLED_DEMO',
           online: this.realtime.isOnline(String(c._id)),
+          installmentGap: c.contract.advisedInstallment - c.contract.installment >= 5,
         })),
     );
     return {

@@ -21,7 +21,7 @@ describe('push payload', () => {
     expect(p).toEqual({ title: 'Your EV started charging', body: 'Hi Priya, charging started.', url: '/app/messages/m1', tag: 'CHARGING-m1' });
   });
 
-  it('notifies DR event start and end, not scheduling', () => {
+  it('notifies flex event start and end, not scheduling', () => {
     expect(flexEventPayload({ id: 'e1', status: 'SCHEDULED', title: 'Pause charging' })).toBeNull();
     expect(flexEventPayload({ id: 'e1', status: 'ACTIVE', title: 'Pause charging 5–8 PM' })?.url).toBe('/app/flex-events/e1');
     expect(flexEventPayload({ id: 'e1', status: 'ENDED', title: 'x' })?.url).toBe('/app/flex-events/e1/result');

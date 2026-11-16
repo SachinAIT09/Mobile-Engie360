@@ -245,8 +245,8 @@ export function createApi(opts: ApiOptions) {
     demoReset: (b?: DemoResetRequest) => post<{ ok: true }>(ApiPaths.demoReset, b ?? {}),
     demoPhone: () => get<DemoPhone>(ApiPaths.demoPhone),
     simEvDetected: (customerId: string) => post<LiveEvent>(ApiPaths.simEvDetected, { customerId }),
-    simCluster: (districtCode: string) => post<LiveEvent>(ApiPaths.simCluster, { districtCode }),
-    simForecast: (gridAreaCode: string) => post<LiveEvent>(ApiPaths.simForecast, { gridAreaCode }),
+    simCluster: (gridAreaCode: string) => post<LiveEvent>(ApiPaths.simCluster, { gridAreaCode }),
+    simForecast: (districtCode: string) => post<LiveEvent>(ApiPaths.simForecast, { districtCode }),
     simNotify: (b: SimNotifyRequest) => post<SimNotifyResult>(ApiPaths.simNotify, b),
     // web push
     pushKey: () => get<PushKey>(ApiPaths.pushKey),

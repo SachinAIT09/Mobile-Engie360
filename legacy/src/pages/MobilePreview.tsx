@@ -13,7 +13,7 @@ const SCREENS = [
   { path: '/billing', en: 'Bills', nl: 'Nota’s' },
   { path: '/insights', en: 'Insights', nl: 'Inzichten' },
   { path: '/smart-energy', en: 'Smart Energy', nl: 'Slimme Energie' },
-  { path: '/assistant', en: 'Assistant', nl: 'Assistent' },
+  { path: '/assistant', en: 'Eva', nl: 'Eva' },
   { path: '/account', en: 'Account', nl: 'Account' },
   { path: '/website-demo', en: 'Website widget', nl: 'Website-widget' },
 ];
@@ -48,7 +48,7 @@ export default function MobilePreview() {
           <RotateCw size={14} /> {t('Reload phone', 'Telefoon herladen')}
         </button>
         <PhoneQr path={path} />
-        <p className="xs muted">{t('Tip: open the assistant in the phone to show the full-screen chat.', 'Tip: open de assistent in de telefoon om de chat op volledig scherm te laten zien.')}</p>
+        <p className="xs muted">{t(`Tip: open ${brand.assistant.name} in the phone to show the full-screen chat.`, `Tip: open ${brand.assistant.name} in de telefoon om de chat op volledig scherm te laten zien.`)}</p>
       </aside>
       <div className="mp-stage">
         <div className="phone">

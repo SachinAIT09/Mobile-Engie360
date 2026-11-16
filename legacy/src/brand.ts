@@ -8,8 +8,11 @@ export const brand = {
   name: 'ENGIE',
   portal: 'MijnENGIE',
   country: 'Netherlands',
-  assistant: { en: 'ENGIE Assistant', nl: 'ENGIE Assistent' } as Text,
-  askLabel: { en: 'Ask ENGIE', nl: 'Vraag het ENGIE' } as Text,
+  /** The chatbot's name and one-line role, shown in the chat header and welcome messages. */
+  assistant: {
+    name: 'Eva',
+    role: { en: 'ENGIE digital assistant', nl: 'Digitale assistent van ENGIE' } as Text,
+  },
   partners: {
     disaggregation: 'Net2Grid',
     networkOperator: 'Stedin',

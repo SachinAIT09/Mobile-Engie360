@@ -1,9 +1,9 @@
 import { Type } from 'class-transformer';
-import { IsMongoId, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateNested } from 'class-validator';
-import type { AssistantContext, AssistantRequest } from '@engie/shared';
+import { IsIn, IsMongoId, IsOptional, IsString, Matches, MaxLength, MinLength, ValidateNested } from 'class-validator';
+import type { AssistantContext, AssistantRequest, Lang } from '@engie/shared';
 
 export class AssistantContextDto implements AssistantContext {
-  @IsOptional() @IsString() @Matches(/^SUB-\d+-F\d+$/i) districtCode?: string;
+  @IsOptional() @IsString() @Matches(/^\d{4}$/) districtCode?: string;
   @IsOptional() @IsMongoId() campaignId?: string;
   @IsOptional() @IsString() @MaxLength(40) lastIntent?: string;
   @IsOptional() @IsString() @MaxLength(120) route?: string;
@@ -11,6 +11,7 @@ export class AssistantContextDto implements AssistantContext {
 
 export class AssistantRequestDto implements AssistantRequest {
   @IsString() @MinLength(1) @MaxLength(300) question: string;
+  @IsOptional() @IsIn(['en', 'nl']) lang?: Lang;
   @IsOptional() @ValidateNested() @Type(() => AssistantContextDto) context?: AssistantContextDto;
 }
 

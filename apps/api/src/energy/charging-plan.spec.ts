@@ -84,7 +84,7 @@ describe('planCharging', () => {
     for (let i = 1; i < r.slots.length; i++) expect(Date.parse(r.slots[i].start)).toBeGreaterThanOrEqual(Date.parse(r.slots[i - 1].end));
   });
 
-  it('a DR window 19–22 is excluded and the slots move', () => {
+  it('a flex window 19–22 is excluded and the slots move', () => {
     const window = { start: at(21, 19), end: at(21, 22) };
     const free = planCharging(input({ needKwh: 70 }));
     expect(free.slots.some((s) => overlaps(s, window))).toBe(true);

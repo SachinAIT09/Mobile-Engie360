@@ -3,7 +3,7 @@ import { activityCategory, type CustomerActivityKind } from '@engie/shared';
 /** Repeat screen views by the same customer inside this window are dropped (tab hopping, refocus). */
 export const VIEW_THROTTLE_MS = 30_000;
 
-/** Opening a message or DR event refetches on every live update, so opens are throttled like views. */
+/** Opening a message or flex event refetches on every live update, so opens are throttled like views. */
 function throttled(kind: CustomerActivityKind): boolean {
   return activityCategory(kind) === 'view' || kind === 'MESSAGE_OPENED' || kind === 'FLEX_OPENED';
 }

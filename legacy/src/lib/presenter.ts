@@ -30,7 +30,7 @@ export const DEMO_STEPS: DemoStep[] = [
     route: '/billing?adjust=1',
   },
   {
-    title: { en: 'AI assistant', nl: 'AI-assistent' },
+    title: { en: 'Eva, the AI assistant', nl: 'Eva, de AI-assistent' },
     say: { en: 'It answers from her own data, then follow up with “and last month?” or “why was December higher?”.', nl: 'Antwoord op basis van haar eigen data. Vraag daarna “en vorige maand?” of “waarom was december hoger?”.' },
     route: '/',
     ask: { en: 'Why is my energy bill higher this month?', nl: 'Waarom is mijn energierekening hoger deze maand?' },
@@ -42,7 +42,7 @@ export const DEMO_STEPS: DemoStep[] = [
   },
   {
     title: { en: 'Website widget', nl: 'Website-widget' },
-    say: { en: 'Same assistant on engie.nl: general answers for visitors, personal ones after sign-in.', nl: 'Dezelfde assistent op engie.nl: algemene antwoorden voor bezoekers, persoonlijke na inloggen.' },
+    say: { en: 'Eva on engie.nl: general answers for visitors, personal ones after sign-in.', nl: 'Eva op engie.nl: algemene antwoorden voor bezoekers, persoonlijke na inloggen.' },
     route: '/website-demo',
   },
   {

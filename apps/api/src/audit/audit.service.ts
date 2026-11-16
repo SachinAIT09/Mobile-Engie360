@@ -9,7 +9,7 @@ import { RealtimeService } from '../realtime/realtime.service.js';
 export type AuditActor = AuditEntry['actor'];
 export type AuditTarget = AuditEntry['target'];
 
-/** Actor for things the server does on its own (scheduled dispatch, automatic DR end). */
+/** Actor for things the server does on its own (scheduled dispatch, automatic flex end). */
 export const SYSTEM_ACTOR: AuditActor = { userId: null, name: 'System', email: null, kind: 'SYSTEM' };
 
 /** The campaign dispatcher, sending scheduled campaigns when they fall due. */
@@ -58,7 +58,7 @@ export class AuditService {
     return docs.map((d) => AuditService.toDto(d));
   }
 
-  /** Every entry about one or more targets (campaign / DR event ids), oldest first. */
+  /** Every entry about one or more targets (campaign / flex event ids), oldest first. */
   async forTarget(...ids: string[]): Promise<AuditEntry[]> {
     const docs = await this.db.audit.find({ 'target.id': { $in: ids } }).sort({ at: 1, _id: 1 }).lean();
     return docs.map((d) => AuditService.toDto(d));

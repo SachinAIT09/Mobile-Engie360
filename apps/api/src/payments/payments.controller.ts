@@ -9,13 +9,12 @@ import { RealtimeService } from '../realtime/realtime.service.js';
 import { PaymentProvider } from './payment-provider.js';
 
 class PaymentDto implements PaymentRequest {
-  @IsMongoId() billId: string;
+  @IsMongoId() invoiceId: string;
   @IsNumber({ maxDecimalPlaces: 2 }) @Min(0.01) amount: number;
-  @IsIn(['SAVED_CARD', 'BANK_PAD', 'WALLET']) method: PaymentMethodKind;
+  @IsIn(['DIRECT_DEBIT', 'IDEAL', 'TRANSFER']) method: PaymentMethodKind;
 }
 
-const METHOD_LABEL: Record<PaymentMethodKind, string> = { SAVED_CARD: 'saved card', BANK_PAD: 'bank (PAD)', WALLET: 'wallet' };
-
+/** Pay an open invoice (iDEAL mock). Installments are normally collected by direct debit. */
 @Roles('CUSTOMER')
 @Controller('payments')
 export class PaymentsController {
@@ -28,35 +27,32 @@ export class PaymentsController {
 
   @Post()
   async pay(@CustomerId() customerId: string, @Body() body: PaymentDto): Promise<Payment> {
-    const bill = await this.db.bills.findOne({ _id: new Types.ObjectId(body.billId), customerId: new Types.ObjectId(customerId) }).lean();
-    if (!bill) throw new NotFoundException('Bill not found');
+    const invoice = await this.db.invoices.findOne({ _id: new Types.ObjectId(body.invoiceId), customerId: new Types.ObjectId(customerId) }).lean();
+    if (!invoice) throw new NotFoundException('Invoice not found');
     if (body.amount > 100000) throw new BadRequestException('Amount too large');
-    const charge = await this.provider.charge({ amount: body.amount, method: body.method, reference: String(bill._id) });
+    const charge = await this.provider.charge({ amount: body.amount, method: body.method, reference: invoice.number });
+    const now = new Date();
     const doc = await this.db.payments.create({
       customerId: new Types.ObjectId(customerId),
-      billId: bill._id,
+      invoiceId: invoice._id,
       amount: body.amount,
       method: body.method,
       status: 'CONFIRMED',
       confirmationNo: charge.confirmationNo,
       provider: charge.provider,
-      createdAt: new Date(),
+      createdAt: now,
     });
-    if (body.amount + 0.001 >= bill.total) await this.db.bills.updateOne({ _id: bill._id }, { $set: { status: 'PAID' } });
+    if (body.amount + 0.001 >= invoice.amount) await this.db.invoices.updateOne({ _id: invoice._id }, { $set: { status: 'PAID', paidOn: now } });
     this.realtime.toCustomer(customerId, 'me:changed');
-    void this.activity.record(
-      customerId,
-      'PAYMENT_MADE',
-      `Paid ${fmtMoney(body.amount)} by ${METHOD_LABEL[body.method]} · ${charge.confirmationNo}`,
-    );
+    void this.activity.record(customerId, 'PAYMENT_MADE', `Paid ${fmtMoney(body.amount)} for ${invoice.number} by iDEAL · ${charge.confirmationNo}`);
     return {
       id: String(doc._id),
-      billId: String(bill._id),
+      invoiceId: String(invoice._id),
       amount: doc.amount,
       method: doc.method,
       status: 'CONFIRMED',
       confirmationNo: doc.confirmationNo,
-      provider: 'KUBRA_MOCK',
+      provider: 'IDEAL_MOCK',
       createdAt: doc.createdAt.toISOString(),
     };
   }

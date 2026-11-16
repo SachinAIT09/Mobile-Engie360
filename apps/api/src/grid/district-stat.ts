@@ -12,6 +12,8 @@ export interface LiveCounts {
   confirmed: number;
   /** Ground-truth-validated customers with an EV signal. */
   groundTruth: number;
+  /** Customers whose installment is below the advice. */
+  installmentGap?: number;
 }
 
 export const EMPTY_COUNTS: LiveCounts = { known: 0, unenrolled: 0, confirmed: 0, groundTruth: 0 };
@@ -19,7 +21,7 @@ export const EMPTY_COUNTS: LiveCounts = { known: 0, unenrolled: 0, confirmed: 0,
 /** Districts need at least this many EVs to show up in the blind-spot ranking. */
 export const BLIND_SPOT_MIN_EVS = 15;
 export const BLIND_SPOT_LIMIT = 8;
-export const DEFAULT_REGION = 'Central';
+export const DEFAULT_REGION = 'Utrecht';
 
 /**
  * District visibility numbers. Live districts are computed from `live` counts (penetration = EVs / premises,
@@ -28,7 +30,7 @@ export const DEFAULT_REGION = 'Central';
 export function toDistrictStat(f: DistrictDoc, live?: LiveCounts): DistrictStat {
   if (!f.live) {
     return {
-      code: f.code, gridAreaCode: f.gridAreaCode, evs: f.staticEvs, known: null, unenrolled: null,
+      code: f.code, gridAreaCode: f.gridAreaCode, name: f.name ?? f.code, installmentGap: null, evs: f.staticEvs, known: null, unenrolled: null,
       confirmedByEnrollment: null, groundTruthValidated: null, premises: null, penetrationPct: null,
       invisiblePct: null, forecastLoadPct: f.forecastLoadPct ?? null,
     };
@@ -39,6 +41,8 @@ export function toDistrictStat(f: DistrictDoc, live?: LiveCounts): DistrictStat 
   return {
     code: f.code,
     gridAreaCode: f.gridAreaCode,
+    name: f.name ?? f.code,
+    installmentGap: c.installmentGap ?? 0,
     evs,
     known: c.known,
     unenrolled: c.unenrolled,
@@ -64,6 +68,7 @@ export function rankBlindSpots(stats: readonly DistrictStat[], regionOf: (gridAr
     .map(({ s, gap }, i) => ({
       rank: i + 1,
       districtCode: s.code,
+      name: s.name,
       gridAreaCode: s.gridAreaCode,
       region: regionOf(s.gridAreaCode) ?? DEFAULT_REGION,
       known: s.known ?? 0,

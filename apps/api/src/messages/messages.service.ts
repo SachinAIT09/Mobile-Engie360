@@ -103,7 +103,7 @@ export class MessagesService {
     return MessagesService.toDto(m);
   }
 
-  /** Mark opened by DR event id (opening the alert screen counts as opening the message). */
+  /** Mark opened by flex event id (opening the alert screen counts as opening the message). */
   async openForFlexEvent(customerId: string, flexEventId: Types.ObjectId): Promise<void> {
     const m = await this.db.messages.findOne({ customerId: new Types.ObjectId(customerId), flexEventId, openedAt: null }).lean();
     if (m) await this.open(customerId, String(m._id));

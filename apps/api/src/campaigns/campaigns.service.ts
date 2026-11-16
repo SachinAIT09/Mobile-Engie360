@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Types } from 'mongoose';
 import {
   PROGRAM,
+  fmtEur,
   fmtWindow,
   type AudiencePreview,
   type AudiencePreviewRequest,
@@ -23,7 +24,7 @@ import { LiveEventsService } from '../live-events/live-events.service.js';
 import { MessagesService } from '../messages/messages.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { assignVariant, variantRateScale } from './ab.js';
-import { audienceLabel, distinctDistricts } from './audience-label.js';
+import { audienceLabel, distinctDistricts, INSTALLMENT_GAP_MIN } from './audience-label.js';
 import { CampaignStatsService, emptyStats } from './campaign-stats.service.js';
 import { mergeFields } from './merge.js';
 import { validateSendAt } from './schedule.js';
@@ -56,8 +57,15 @@ function normaliseVariants(v: CampaignCreateRequest['variants']): [CampaignVaria
   return [{ id: 'A', title: a.title, body: a.body, cta: a.cta }, { id: 'B', title: b.title, body: b.body, cta: b.cta }];
 }
 
-const typeName = (t: CampaignType) => (t === 'ENROLL_OFFER' ? 'Enrollment offer' : 'Stop-charging request');
+const typeName = (t: CampaignType) => (t === 'ENROLL_OFFER' ? 'Slim Laden offer' : t === 'INSTALLMENT_ADVICE' ? 'Installment advice' : 'Flex request');
 const plural = (n: number, w: string) => `${n.toLocaleString('en-US')} ${w}${n === 1 ? '' : 's'}`;
+
+const CATEGORY: Record<CampaignType, 'Offers' | 'Alerts' | 'Billing'> = { ENROLL_OFFER: 'Offers', FLEX_REQUEST: 'Alerts', INSTALLMENT_ADVICE: 'Billing' };
+const TAG: Record<CampaignType, { en: string; nl: string }> = {
+  ENROLL_OFFER: { en: 'Offer', nl: 'Aanbod' },
+  FLEX_REQUEST: { en: 'Grid busy', nl: 'Netdrukte' },
+  INSTALLMENT_ADVICE: { en: 'Installment', nl: 'Termijnbedrag' },
+};
 
 @Injectable()
 export class CampaignsService {
@@ -75,6 +83,8 @@ export class CampaignsService {
   // ------------------------------------------------------------ audience
 
   private async segmentFilter(customers: CustomerDoc[], segment: CampaignAudience['segment']): Promise<CustomerDoc[]> {
+    // Installment below the advice by €5 or more, whatever the EV status.
+    if (segment === 'INSTALLMENT_GAP') return customers.filter((c) => c.contract.advisedInstallment - c.contract.installment >= INSTALLMENT_GAP_MIN);
     const ids = customers.map((c) => c._id);
     const enrolled = new Set(
       (await this.db.enrollments.find({ customerId: { $in: ids }, status: 'ACTIVE' }, { customerId: 1 }).lean()).map((e) => String(e.customerId)),
@@ -228,7 +238,7 @@ export class CampaignsService {
 
   /**
    * Sends a campaign that was claimed by the dispatcher (status SENDING) or is still SCHEDULED. The audience
-   * and the DR window are resolved now. An empty audience cancels the campaign instead.
+   * and the flex window are resolved now. An empty audience cancels the campaign instead.
    * With `generation`, the work stops (DispatchAborted) if a demo reset happens meanwhile.
    */
   async dispatch(id: string, actor: AuditActor, generation?: number): Promise<Campaign> {
@@ -270,7 +280,7 @@ export class CampaignsService {
 
   // ------------------------------------------------------------ deliver
 
-  /** Writes the DR event, messages and live event for a resolved audience, marks the campaign SENT and starts the simulation. */
+  /** Writes the flex event, messages and live event for a resolved audience, marks the campaign SENT and starts the simulation. */
   private async deliver(doc: CampaignDoc, resolved: Resolved, check: () => void = () => undefined): Promise<Campaign> {
     const now = new Date();
     const campaignId = doc._id;
@@ -288,8 +298,15 @@ export class CampaignsService {
       knownByDistrict.set(f, await this.db.enrollments.countDocuments({ districtCode: f, status: 'ACTIVE' }));
     }
     const incentive = doc.type === 'ENROLL_OFFER' ? PROGRAM.signupIncentive : PROGRAM.perEventIncentive;
-    const merge = (text: string, c: Pick<CustomerDoc, 'firstName' | 'districtCode'>) =>
-      mergeFields(text, { firstName: c.firstName, incentive, eventWindow: windowText, neighboursEnrolled: knownByDistrict.get(c.districtCode) ?? 0 });
+    const merge = (text: string, c: Pick<CustomerDoc, 'firstName' | 'districtCode' | 'lang' | 'contract'>) =>
+      mergeFields(text, {
+        firstName: c.firstName,
+        incentive: incentive[c.lang ?? 'nl'],
+        eventWindow: windowText,
+        neighboursEnrolled: knownByDistrict.get(c.districtCode) ?? 0,
+        installment: fmtEur(c.contract.installment, c.lang ?? 'nl', 0),
+        advisedInstallment: fmtEur(c.contract.advisedInstallment, c.lang ?? 'nl', 0),
+      });
     check();
 
     let flexEventId: Types.ObjectId | null = null;
@@ -297,7 +314,7 @@ export class CampaignsService {
       const ev = await this.flexEvents.create({
         districtCode: districtForEvent,
         districtCodes: eventDistricts,
-        title: merge(doc.title, { firstName: 'there', districtCode: districtForEvent }),
+        title: merge(doc.title, { firstName: '', districtCode: districtForEvent, lang: targets[0].lang, contract: targets[0].contract }),
         start: window.start,
         end: window.end,
         campaignId,
@@ -332,8 +349,8 @@ export class CampaignsService {
       return {
         customerId: c._id,
         kind: doc.type,
-        category: doc.type === 'ENROLL_OFFER' ? ('Offers' as const) : ('Alerts' as const),
-        tag: doc.type === 'ENROLL_OFFER' ? 'Offer' : 'Grid alert',
+        category: CATEGORY[doc.type],
+        tag: TAG[doc.type][c.lang ?? 'nl'],
         title: merge(copy.title, c),
         body: merge(copy.body, c),
         cta: copy.cta,
@@ -351,7 +368,7 @@ export class CampaignsService {
       const m = await this.messages.create(
         {
           ...common(c),
-          route: doc.type === 'ENROLL_OFFER' ? '/messages/:id' : `/flex-events/${String(flexEventId)}`,
+          route: doc.type === 'FLEX_REQUEST' ? `/flex-events/${String(flexEventId)}` : '/messages/:id',
         },
         { webPush: doc.channels.push },
       );
@@ -364,7 +381,7 @@ export class CampaignsService {
           return {
             _id: mid,
             ...common(c),
-            route: doc.type === 'ENROLL_OFFER' ? `/messages/${String(mid)}` : `/flex-events/${String(flexEventId)}`,
+            route: doc.type === 'FLEX_REQUEST' ? `/flex-events/${String(flexEventId)}` : `/messages/${String(mid)}`,
             createdAt: now,
             deliveredAt: null,
             openedAt: null,
@@ -449,6 +466,17 @@ export class CampaignsService {
             }
           }
         }
+        if (acted.length && type === 'INSTALLMENT_ADVICE') {
+          // Synthetic customers accept the advice: their installment moves to the advised amount.
+          for (const p of acted) {
+            await this.db.customers.updateOne({ _id: p.c._id }, { $set: { 'contract.installment': p.c.contract.advisedInstallment } });
+          }
+          await this.db.messages.updateMany({ campaignId, customerId: { $in: acted.map((p) => p.c._id) } }, { $set: { action: 'INSTALLMENT_CHANGED', actedAt: now } });
+          for (const f of new Set(acted.map((p) => `${p.c.gridAreaCode}|${p.c.districtCode}`))) {
+            const [gridAreaCode, districtCode] = f.split('|');
+            this.realtime.toStaff('district:statsChanged', { gridAreaCode, districtCode });
+          }
+        }
         if (acted.length && type === 'FLEX_REQUEST' && flexEventId) {
           const ev = await this.flexEvents.loadDoc(flexEventId);
           if (ev && ev.status !== 'ENDED') {
@@ -481,7 +509,7 @@ export class CampaignsService {
     return CampaignStatsService.toDto(c);
   }
 
-  /** Campaign + DR event + audit trail + timeline (created, scheduled, sent, first delivered/opened/acted, DR start/end, cancelled). */
+  /** Campaign + flex event + audit trail + timeline (created, scheduled, sent, first delivered/opened/acted, flex start/end, cancelled). */
   async detail(id: string): Promise<CampaignDetail> {
     const campaign = await this.get(id);
     const oid = new Types.ObjectId(id);
@@ -499,11 +527,11 @@ export class CampaignsService {
       timeline.push({ at: campaign.sentAt, label: `Sent to ${plural(campaign.stats.targeted, 'customer')}` });
       if (firsts?.delivered) timeline.push({ at: firsts.delivered.toISOString(), label: 'First delivered' });
       if (firsts?.opened) timeline.push({ at: firsts.opened.toISOString(), label: 'First opened' });
-      if (firsts?.acted) timeline.push({ at: firsts.acted.toISOString(), label: campaign.type === 'ENROLL_OFFER' ? 'First enrollment' : 'First response' });
+      if (firsts?.acted) timeline.push({ at: firsts.acted.toISOString(), label: campaign.type === 'ENROLL_OFFER' ? 'First enrollment' : campaign.type === 'INSTALLMENT_ADVICE' ? 'First installment change' : 'First response' });
     }
     for (const e of audit) {
-      if (e.action === 'FLEX_STARTED') timeline.push({ at: e.at, label: 'DR event started' });
-      if (e.action === 'FLEX_ENDED') timeline.push({ at: e.at, label: 'DR event ended' });
+      if (e.action === 'FLEX_STARTED') timeline.push({ at: e.at, label: 'flex event started' });
+      if (e.action === 'FLEX_ENDED') timeline.push({ at: e.at, label: 'flex event ended' });
       if (e.action === 'CAMPAIGN_CANCELLED') timeline.push({ at: e.at, label: `Cancelled by ${e.actor.name}` });
     }
     timeline.sort((x, y) => x.at.localeCompare(y.at));

@@ -36,3 +36,13 @@ export function hashNoise(n: number): number {
   const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
   return (x - Math.floor(x)) * 2 - 1;
 }
+
+/** Deterministic 0..1 from a string key (FNV-1a). */
+export function hash01(key: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967296;
+}

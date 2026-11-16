@@ -7,7 +7,7 @@ export interface PeriodRate {
   rate: number;
 }
 
-export const RATE_PLAN_IDS: RatePlanId[] = ['TOU', 'ULO', 'TIERED'];
+export const RATE_PLAN_IDS: RatePlanId[] = ['DYNAMIC', 'DUAL', 'FIXED'];
 
 /** 0 = Sunday … 6 = Saturday. */
 export function isWeekend(weekday: number): boolean {
@@ -47,34 +47,15 @@ export interface EnergyStep {
   kwh: number;
 }
 
-/**
- * Energy cost of consumption steps on a plan. TIERED charges by cumulative monthly kWh
- * (`monthKwhSoFar` is what was already used this month before the first step); the others by period.
- */
-export function costOfSteps(steps: EnergyStep[], planId: RatePlanId, monthKwhSoFar = 0): number {
-  const tiers = RATE_PLANS[planId].tiers;
+/** Energy cost of consumption steps on a plan: each step is charged at its hour's rate. */
+export function costOfSteps(steps: EnergyStep[], planId: RatePlanId): number {
   let cost = 0;
-  if (tiers?.length) {
-    let used = monthKwhSoFar;
-    for (const s of steps) {
-      let left = s.kwh;
-      for (const t of tiers) {
-        if (left <= 0) break;
-        const room = t.upToKwhPerMonth === null ? Infinity : Math.max(0, t.upToKwhPerMonth - used);
-        const take = Math.min(room, left);
-        cost += take * t.rate;
-        used += take;
-        left -= take;
-      }
-    }
-    return cost;
-  }
   for (const s of steps) cost += s.kwh * periodAt(planId, s.hour, s.weekday).rate;
   return cost;
 }
 
-export interface UsageProfile {
-  /** Average monthly consumption the comparison is based on (bills), EV included. */
+export interface PlanProfile {
+  /** Average monthly consumption the comparison is based on (smart-meter history), EV included. */
   basisKwhPerMonth: number;
   /** Relative shape of the non-EV load by local hour (24 weights; normalised here). */
   homeShape: number[];
@@ -92,7 +73,7 @@ const round2 = (x: number) => Math.round(x * 100) / 100;
 const DAYS_PER_MONTH = 30;
 
 /** EV kWh per local hour for one night: hours plugInHour → readyByHour, either straight away or in the cheapest/cleanest hours. */
-function nightSteps(planId: RatePlanId, p: UsageProfile, plugInWeekday: number, smart: boolean): EnergyStep[] {
+function nightSteps(planId: RatePlanId, p: PlanProfile, plugInWeekday: number, smart: boolean): EnergyStep[] {
   const span = ((p.readyByHour - p.plugInHour + 24) % 24) || 24;
   const hours: { hour: number; weekday: number; idx: number; rate: number; co2: number; len: number }[] = [];
   for (let i = 0; i < Math.ceil(span); i++) {
@@ -116,7 +97,7 @@ function nightSteps(planId: RatePlanId, p: UsageProfile, plugInWeekday: number, 
  * Monthly energy cost of a household on each plan, with EV charging straight after plug-in vs smart (cheapest hours).
  * A 30-day month starting on a Monday; the non-EV load follows `homeShape`.
  */
-export function comparePlans(p: UsageProfile): RatePlanComparison {
+export function comparePlans(p: PlanProfile): RatePlanComparison {
   const evMonth = p.evKwhPerNight * DAYS_PER_MONTH;
   const homeMonth = Math.max(0, p.basisKwhPerMonth - evMonth);
   const shapeSum = p.homeShape.reduce((s, x) => s + x, 0) || 1;

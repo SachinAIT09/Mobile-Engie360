@@ -22,11 +22,11 @@ export function clip(text: string, max = 160): string {
   return t.length <= max ? t : `${t.slice(0, max - 1).trimEnd()}…`;
 }
 
-/** DR event start/end, worded like the in-app banners; null for statuses that don't notify. */
+/** flex event start/end, worded like the in-app banners; null for statuses that don't notify. */
 export function flexEventPayload(e: { id: string; status: FlexEventStatus; title: string }): PushPayload | null {
-  if (e.status === 'ACTIVE') return { title: 'Grid event has started', body: clip(e.title), url: appUrl(`/flex-events/${e.id}`), tag: `dr-${e.id}` };
+  if (e.status === 'ACTIVE') return { title: 'Het flexmoment is begonnen', body: clip(e.title), url: appUrl(`/flex-events/${e.id}`), tag: `flex-${e.id}` };
   if (e.status === 'ENDED') {
-    return { title: 'Thanks for taking part — see your event result', body: 'Your grid event has ended. Tap to see what you earned.', url: appUrl(`/flex-events/${e.id}/result`), tag: `dr-${e.id}` };
+    return { title: 'Bedankt voor het meedoen: bekijk je resultaat', body: 'Het flexmoment is afgelopen. Tik om te zien wat je hebt verdiend.', url: appUrl(`/flex-events/${e.id}/result`), tag: `flex-${e.id}` };
   }
   return null;
 }

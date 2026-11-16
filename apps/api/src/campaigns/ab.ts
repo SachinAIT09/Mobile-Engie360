@@ -53,10 +53,10 @@ export function variantRateScale(campaignId: string, variant: VariantId = 'B'): 
   return Math.round((0.85 + 0.3 * u) * 1000) / 1000;
 }
 
-/** The rate a variant is judged on: offers → enrolled / delivered; DR → paused / delivered. */
+/** The rate a variant is judged on: offers → enrolled / delivered; flex → shifted / delivered. */
 export function keyRate(type: CampaignType, s: CampaignStats): number {
   if (!s.delivered) return 0;
-  return (type === 'ENROLL_OFFER' ? s.acted : s.paused) / s.delivered;
+  return (type === 'FLEX_REQUEST' ? s.paused : s.acted) / s.delivered;
 }
 
 /** Winning variant, or null ("Too early to call") until both arms have ≥20 sends and one leads by ≥3 points. */

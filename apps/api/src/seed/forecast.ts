@@ -1,6 +1,6 @@
-import { hash01 } from '@engie/shared';
+import { hash01 } from '../common/numbers.js';
 
-/** Highest seeded baseline; stays below the assistant's 85% risk threshold and the 90% DR alert. */
+/** Highest seeded baseline; stays below the assistant's 85% risk threshold and the 90% flex alert. */
 export const BASELINE_FORECAST_MAX = 82;
 const BASELINE_FORECAST_MIN = 45;
 

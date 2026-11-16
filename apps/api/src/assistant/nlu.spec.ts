@@ -52,7 +52,7 @@ const STAFF_PHRASES: Record<StaffIntent, string[]> = {
   BLIND_SPOTS: ['Where are our biggest blind spots?', 'which districts have the most unenrolled EVs', 'worst invisible feedrs', 'where should we target next'],
   OVERVIEW: ['Give me the network overview', 'how many EVs are there in total', 'big picture pls', 'summarise everything'],
   CAMPAIGN_PERFORMANCE: ['How did the last campaign perform?', 'what were the campaign results', 'how is the offer converting', 'camapign results?', 'which variant is winning the a/b test'],
-  DR_PERFORMANCE: ['How did our DR events perform?', 'how much did demand response cut the peak', 'results of the grid event', 'dr events kwh shifted'],
+  DR_PERFORMANCE: ['How did our flex events perform?', 'how much did demand response cut the peak', 'results of the grid event', 'dr events kwh shifted'],
   ENROLLMENT_TREND: ['How are enrollments trending?', 'how many sign ups this week', 'enrolment growth lately', 'daily signups'],
   GRID_RISK: ['Which districts are at risk tonight?', 'any overload forecast for the evening peak', 'capacity hotspots', 'whats at risk 2nite'],
   DRAFT_CAMPAIGN: ['Draft an enrollment offer for SUB-26-F1', 'write a stop charging request for SUB-01-F1', 'compose an offer for the top 3 blind spots', 'draft msg pls'],

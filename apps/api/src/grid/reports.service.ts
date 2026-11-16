@@ -69,13 +69,14 @@ export class ReportsService {
           },
         },
       ]),
-      this.db.campaigns.aggregate<{ _id: null; total: number; offers: number; flexRequests: number; testSends: number }>([
+      this.db.campaigns.aggregate<{ _id: null; total: number; offers: number; flexRequests: number; installmentAdvice: number; testSends: number }>([
         {
           $group: {
             _id: null,
             total: { $sum: 1 },
             offers: { $sum: { $cond: [{ $eq: ['$type', 'ENROLL_OFFER'] }, 1, 0] } },
             flexRequests: { $sum: { $cond: [{ $eq: ['$type', 'FLEX_REQUEST'] }, 1, 0] } },
+            installmentAdvice: { $sum: { $cond: [{ $eq: ['$type', 'INSTALLMENT_ADVICE'] }, 1, 0] } },
             testSends: { $sum: { $cond: ['$isTest', 1, 0] } },
           },
         },
@@ -106,6 +107,7 @@ export class ReportsService {
         total: camp?.total ?? 0,
         offers: camp?.offers ?? 0,
         flexRequests: camp?.flexRequests ?? 0,
+        installmentAdvice: camp?.installmentAdvice ?? 0,
         testSends: camp?.testSends ?? 0,
       },
       smartCharging: {

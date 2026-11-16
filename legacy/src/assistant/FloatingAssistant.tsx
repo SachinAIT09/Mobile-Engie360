@@ -38,8 +38,8 @@ export function FloatingAssistant() {
           session={session}
           variant="widget"
           welcome={t(
-            `Hi ${customer.firstName}! I’m your ${brand.name} assistant. I can see your usage, bills and contract, so ask me anything.`,
-            `Hoi ${customer.firstName}! Ik ben je ${brand.name}-assistent. Ik kan je verbruik, nota’s en contract inzien, dus stel gerust je vraag.`,
+            `Hi ${customer.firstName}! I’m ${brand.assistant.name}, your ${brand.name} assistant. I can see your usage, bills and contract, so ask me anything.`,
+            `Hoi ${customer.firstName}! Ik ben ${brand.assistant.name}, je ${brand.name}-assistent. Ik kan je verbruik, nota’s en contract inzien, dus stel gerust je vraag.`,
           )}
           onAction={onAction}
           onClose={() => setOpen(false)}
@@ -52,11 +52,11 @@ export function FloatingAssistant() {
       <button
         className={`chat-fab${open ? ' open' : ''}`}
         onClick={() => setOpen(!open)}
-        aria-label={open ? t('Close assistant', 'Sluit assistent') : t(`Open ${brand.name} Assistant`, `Open ${brand.name} Assistent`)}
+        aria-label={open ? t(`Close ${brand.assistant.name}`, `Sluit ${brand.assistant.name}`) : t(`Open ${brand.assistant.name}`, `Open ${brand.assistant.name}`)}
         aria-expanded={open}
       >
         <span className="orb">{open ? <X size={22} /> : <Sparkles size={20} />}</span>
-        {!open && <span className="lbl">{t(`Ask ${brand.name}`, `Vraag het ${brand.name}`)}</span>}
+        {!open && <span className="lbl">{t(`Ask ${brand.assistant.name}`, `Vraag het ${brand.assistant.name}`)}</span>}
       </button>
     </>
   );

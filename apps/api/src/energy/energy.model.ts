@@ -18,12 +18,12 @@ export interface ModelPoint {
   gridExportKw: number;
 }
 
-export const EV_CHARGE_KW = 7.2;
+export const EV_CHARGE_KW = 3.7;
 
-/** Solar output for an October day in Ontario; peaks ≈1.13 kW around 12:30. */
+/** Solar output for a November day in the Netherlands; peaks ≈1.15 kW around 12:30. */
 export function solarKw(hour: number, hasSolar: boolean): number {
-  if (!hasSolar || hour <= 7.5 || hour >= 17.5) return 0;
-  return Math.max(0, 1.15 * Math.sin((Math.PI * (hour - 7.5)) / 10));
+  if (!hasSolar || hour <= 8 || hour >= 17) return 0;
+  return Math.max(0, 1.15 * Math.sin((Math.PI * (hour - 8)) / 9));
 }
 
 /** Non-EV household load. `noiseKey` makes the small noise deterministic (e.g. a time bucket). */

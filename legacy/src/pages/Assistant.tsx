@@ -51,8 +51,8 @@ export default function Assistant() {
           session={session}
           variant="page"
           welcome={t(
-            `Hi ${customer.firstName}! I’m your ${brand.name} assistant. I know your usage, bills and contract, so ask me anything or pick a topic.`,
-            `Hoi ${customer.firstName}! Ik ben je ${brand.name}-assistent. Ik ken je verbruik, nota’s en contract, dus stel je vraag of kies een onderwerp.`,
+            `Hi ${customer.firstName}! I’m ${brand.assistant.name}, your ${brand.name} assistant. I know your usage, bills and contract, so ask me anything or pick a topic.`,
+            `Hoi ${customer.firstName}! Ik ben ${brand.assistant.name}, je ${brand.name}-assistent. Ik ken je verbruik, nota’s en contract, dus stel je vraag of kies een onderwerp.`,
           )}
           onAction={onAction}
         />
@@ -70,7 +70,7 @@ export default function Assistant() {
             ))}
           </div>
         </Card>
-        <Card title={t('What the assistant uses', 'Wat de assistent gebruikt')}>
+        <Card title={t(`What ${brand.assistant.name} uses`, `Wat ${brand.assistant.name} gebruikt`)}>
           <div className="stack small" style={{ gap: 10 }}>
             <div className="row" style={{ alignItems: 'flex-start' }}>
               <Database size={16} color="#00aaff" style={{ flex: 'none', marginTop: 3 }} />

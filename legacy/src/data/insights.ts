@@ -125,7 +125,7 @@ export const insights: Insight[] = [
       nl: 'Ongeveer 3.600 kWh per jaar van een zuidwest-dak. Met je auto gebruik je veel zelf, en dat telt nu de salderingsregeling op 1 januari 2027 stopt.',
     },
     saving: 610,
-    cta: { en: 'Ask the assistant', nl: 'Vraag de assistent' },
+    cta: { en: 'Ask Eva', nl: 'Vraag het Eva' },
     to: '/assistant?q=solar',
     source: 'engie',
   },

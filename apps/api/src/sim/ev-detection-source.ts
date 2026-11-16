@@ -31,6 +31,8 @@ export class SimulatedNet2GridSource extends EvDetectionSource {
       source: 'NET2GRID',
       status: 'DETECTED',
     });
+    // The usage history shows EV charging from the moment Net2Grid first sees it.
+    if (!c.evSince) await this.db.customers.updateOne({ _id: c._id }, { $set: { evSince: new Date(Date.now() - 80 * 86400000) } });
     return { detection: doc.toObject(), isNew: true };
   }
 }

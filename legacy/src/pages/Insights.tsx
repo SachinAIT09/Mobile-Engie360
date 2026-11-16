@@ -8,6 +8,7 @@ import { contract } from '../data/customer';
 import { Card, DemoFlag, InsightIc, N2GBadge, PageHead, Seg } from '../components/ui';
 import { useToast } from '../components/toast';
 import { usePortalAssistant } from '../assistant/portalContext';
+import { brand } from '../brand';
 
 type Filter = 'all' | InsightKind;
 
@@ -136,7 +137,7 @@ export default function Insights() {
               {t('That’s', 'Dat is')} {Math.round((potential / contract.estimatedAnnualCost) * 100)}% {t('of your estimated yearly energy costs, including solar panels.', 'van je geschatte jaarlijkse energiekosten, inclusief zonnepanelen.')}
             </p>
             <button className="btn btn-primary mt" onClick={() => ask(t('How can I reduce my electricity costs?', 'Hoe kan ik mijn stroomkosten verlagen?'))}>
-              <Sparkles size={16} /> {t('Talk it through with the assistant', 'Bespreek het met de assistent')}
+              <Sparkles size={16} /> {t(`Talk it through with ${brand.assistant.name}`, `Bespreek het met ${brand.assistant.name}`)}
             </button>
           </div>
         </section>

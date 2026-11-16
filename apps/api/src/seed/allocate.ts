@@ -1,6 +1,6 @@
 /**
- * Pure seed helpers: how a gridArea's EV total is split across its districts, and which region a
- * gridArea belongs to. No I/O, so they can be unit-tested.
+ * Pure seed helper: how a grid area's EV total is split across its postcode districts.
+ * No I/O, so it can be unit-tested.
  */
 import type { LiveDistrictSpec } from './seed-data.js';
 
@@ -12,18 +12,16 @@ export interface DistrictAllocation {
 }
 
 /**
- * Splits `totalEvs` across `${gridAreaCode}-F1..Fn`. Live districts (per-customer data) keep their
+ * Splits `totalEvs` across the area's districts. Live districts (per-customer data) keep their
  * seeded known + unenrolled; the remainder is spread over the static districts with descending weights
- * (F1 gets the most), at least 1 per static district when the remainder allows, and the sum always
+ * (the first gets the most), at least 1 per static district when the remainder allows, and the sum always
  * equals `totalEvs`.
  */
 export function allocateDistrictEvs(
-  gridAreaCode: string,
+  codes: string[],
   totalEvs: number,
-  districtCount: number,
   liveDistricts: Record<string, LiveDistrictSpec>,
 ): DistrictAllocation[] {
-  const codes = Array.from({ length: districtCount }, (_, k) => `${gridAreaCode}-F${k + 1}`);
   const liveEvs = codes.reduce((s, c) => s + (liveDistricts[c] ? liveDistricts[c].known + liveDistricts[c].unenrolled : 0), 0);
   const staticCodes = codes.filter((c) => !liveDistricts[c]);
   const remaining = totalEvs - liveEvs;
@@ -47,12 +45,4 @@ export function allocateDistrictEvs(
       ? { code, evs: live.known + live.unenrolled, live: true }
       : { code, evs: alloc[staticCodes.indexOf(code)], live: false };
   });
-}
-
-/** Service regions, assigned round-robin by gridArea index (SUB-01 is Central). */
-export const REGIONS = ['Central', 'East', 'Northwest', 'South'] as const;
-export type Region = (typeof REGIONS)[number];
-
-export function regionForIndex(index: number): Region {
-  return REGIONS[((index % REGIONS.length) + REGIONS.length) % REGIONS.length];
 }

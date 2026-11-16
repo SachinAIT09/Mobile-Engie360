@@ -25,7 +25,7 @@ import type { Audience } from '../assistant/types';
 import './website.css';
 import { brand } from '../brand';
 
-const EMBED = `<!-- ${brand.name} Assistant: one script tag, no changes to the page -->
+const EMBED = `<!-- ${brand.assistant.name}, the ${brand.name} assistant: one script tag, no changes to the page -->
 <div id="engie-assistant"></div>
 <script src="https://cdn.example.com/engie-assistant/v1.js"
         data-locale="nl"

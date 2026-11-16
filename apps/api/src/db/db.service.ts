@@ -4,7 +4,8 @@ import type { Connection, Model } from 'mongoose';
 import {
   M,
   type AuditEntryDoc,
-  type BillDoc,
+  type AssistantLogDoc,
+  type InvoiceDoc,
   type CampaignDoc,
   type ConfigDoc,
   type CustomerActivityDoc,
@@ -16,8 +17,6 @@ import {
   type DistrictDoc,
   type LiveEventDoc,
   type MessageDoc,
-  type OutageDoc,
-  type OutageReportDoc,
   type PaymentDoc,
   type PremiseDoc,
   type ProgramDoc,
@@ -41,10 +40,9 @@ export class Db {
   readonly campaigns: Model<CampaignDoc>;
   readonly flexEvents: Model<FlexEventDoc>;
   readonly responses: Model<EventResponseDoc>;
-  readonly bills: Model<BillDoc>;
+  readonly invoices: Model<InvoiceDoc>;
   readonly payments: Model<PaymentDoc>;
-  readonly outages: Model<OutageDoc>;
-  readonly outageReports: Model<OutageReportDoc>;
+  readonly assistantLog: Model<AssistantLogDoc>;
   readonly liveEvents: Model<LiveEventDoc>;
   readonly audit: Model<AuditEntryDoc>;
   readonly activity: Model<CustomerActivityDoc>;
@@ -64,10 +62,9 @@ export class Db {
     this.campaigns = c.model<CampaignDoc>(M.Campaign);
     this.flexEvents = c.model<FlexEventDoc>(M.FlexEvent);
     this.responses = c.model<EventResponseDoc>(M.EventResponse);
-    this.bills = c.model<BillDoc>(M.Bill);
+    this.invoices = c.model<InvoiceDoc>(M.Invoice);
     this.payments = c.model<PaymentDoc>(M.Payment);
-    this.outages = c.model<OutageDoc>(M.Outage);
-    this.outageReports = c.model<OutageReportDoc>(M.OutageReport);
+    this.assistantLog = c.model<AssistantLogDoc>(M.AssistantLog);
     this.liveEvents = c.model<LiveEventDoc>(M.LiveEvent);
     this.audit = c.model<AuditEntryDoc>(M.AuditEntry);
     this.activity = c.model<CustomerActivityDoc>(M.CustomerActivity);
@@ -77,8 +74,8 @@ export class Db {
   async dropAll(): Promise<void> {
     const models = [
       this.config, this.gridAreas, this.districts, this.premises, this.customers, this.users, this.detections,
-      this.enrollments, this.programs, this.messages, this.campaigns, this.flexEvents, this.responses, this.bills,
-      this.payments, this.outages, this.outageReports, this.liveEvents, this.audit, this.activity,
+      this.enrollments, this.programs, this.messages, this.campaigns, this.flexEvents, this.responses, this.invoices,
+      this.payments, this.assistantLog, this.liveEvents, this.audit, this.activity,
     ] as Model<unknown>[];
     await Promise.all(models.map((m) => m.deleteMany({})));
   }

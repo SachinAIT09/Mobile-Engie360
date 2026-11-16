@@ -10,7 +10,7 @@ class SmartChargingUpdateDto implements SmartChargingUpdateRequest {
   /** "HH:MM" on a 15-minute boundary. */
   @Matches(/^([01]\d|2[0-3]):(00|15|30|45)$/) readyBy: string;
   @IsInt() @Min(SMART_CHARGING.minTargetKwh) @Max(SMART_CHARGING.maxTargetKwh) targetKwh: number;
-  @IsIn(['TOU', 'ULO', 'TIERED']) ratePlan: RatePlanId;
+  @IsIn(['DYNAMIC', 'DUAL', 'FIXED']) ratePlan: RatePlanId;
 }
 
 @Roles('CUSTOMER')

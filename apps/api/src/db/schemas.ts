@@ -4,6 +4,13 @@ import type {
   AuditEntry,
   CustomerActivityCategory,
   CustomerActivityKind,
+  AssistantChannel,
+  Contract,
+  InvoiceKind,
+  InvoiceStatus,
+  Lang,
+  Preferences,
+  Text,
   CampaignAudience,
   CampaignChannels,
   CampaignExclusions,
@@ -19,7 +26,6 @@ import type {
   MessageAction,
   MessageCategory,
   MessageKind,
-  OutageReportType,
   PaymentMethodKind,
   RatePlanId,
   Role,
@@ -41,10 +47,9 @@ export const M = {
   Campaign: 'Campaign',
   FlexEvent: 'FlexEvent',
   EventResponse: 'EventResponse',
-  Bill: 'Bill',
+  Invoice: 'Invoice',
   Payment: 'Payment',
-  Outage: 'Outage',
-  OutageReport: 'OutageReport',
+  AssistantLog: 'AssistantLog',
   LiveEvent: 'LiveEvent',
   AuditEntry: 'AuditEntry',
   CustomerActivity: 'CustomerActivity',
@@ -82,6 +87,9 @@ export const ConfigSchema = new Schema<ConfigDoc>({
 
 export interface GridAreaDoc {
   code: string;
+  name: string;
+  operator: string;
+  congestion: 'NONE' | 'WATCH' | 'CONGESTED';
   order: number;
   region: string;
   /** Seed-time totals from the Net2Grid source; live districts add deltas on top. */
@@ -96,6 +104,9 @@ export interface GridAreaDoc {
 }
 export const GridAreaSchema = new Schema<GridAreaDoc>({
   code: { type: String, required: true, unique: true },
+  name: String,
+  operator: String,
+  congestion: String,
   order: Number,
   region: String,
   seedEvs: Number,
@@ -109,6 +120,7 @@ export const GridAreaSchema = new Schema<GridAreaDoc>({
 
 export interface DistrictDoc {
   code: string;
+  name: string;
   gridAreaCode: string;
   order: number;
   /** Live districts compute their counts from customers/detections/enrollments. */
@@ -124,6 +136,7 @@ export interface DistrictDoc {
 }
 export const DistrictSchema = new Schema<DistrictDoc>({
   code: { type: String, required: true, unique: true },
+  name: String,
   gridAreaCode: { type: String, index: true },
   order: Number,
   live: Boolean,
@@ -165,12 +178,31 @@ export interface CustomerDoc {
   firstName: string;
   lastName: string;
   email: string;
-  accountNo: string;
+  phone: string;
+  customerNo: string;
   premiseId: Id;
+  /** "Lindelaan 24, 3581 AB Utrecht" */
   address: string;
+  street: string;
+  postcode: string;
+  city: string;
   districtCode: string;
   gridAreaCode: string;
+  gridOperator: string;
+  household: { residents: number; homeType: Text; sizeM2: number };
+  ibanMasked: string;
+  memberSince: Date;
   hasSolar: boolean;
+  hasHeatPump: boolean;
+  heatPumpDetectedAt: Date | null;
+  lang: Lang;
+  preferences: Preferences;
+  contract: Contract;
+  /** Seeded usage model inputs (shared/usage.ts). */
+  usage: { seed: number; elecScale: number; gasScale: number };
+  /** When EV charging started at home (drives the usage history); null until Net2Grid sees an EV. */
+  evSince: Date | null;
+  savingsPlan: string[];
   optedOutOfMessages: boolean;
   lifeSupport: boolean;
   groundTruthValidated: boolean;
@@ -186,12 +218,28 @@ export const CustomerSchema = new Schema<CustomerDoc>({
   firstName: String,
   lastName: String,
   email: { type: String, index: true },
-  accountNo: String,
+  phone: String,
+  customerNo: String,
   premiseId: { type: ObjectId },
   address: String,
+  street: String,
+  postcode: String,
+  city: String,
   districtCode: { type: String, index: true },
   gridAreaCode: { type: String, index: true },
+  gridOperator: String,
+  household: Schema.Types.Mixed,
+  ibanMasked: String,
+  memberSince: Date,
   hasSolar: Boolean,
+  hasHeatPump: Boolean,
+  heatPumpDetectedAt: { type: Date, default: null },
+  lang: { type: String, default: 'nl' },
+  preferences: Schema.Types.Mixed,
+  contract: Schema.Types.Mixed,
+  usage: Schema.Types.Mixed,
+  evSince: { type: Date, default: null },
+  savingsPlan: { type: [String], default: [] },
   optedOutOfMessages: Boolean,
   lifeSupport: Boolean,
   groundTruthValidated: Boolean,
@@ -271,20 +319,23 @@ export const EnrollmentSchema = new Schema<EnrollmentDoc>({
 
 export interface ProgramDoc {
   _id: Id;
-  name: string;
-  signupIncentive: string;
-  perEventIncentive: string;
-  maxEventsPerSeason: string;
-  typicalEventHours: string;
+  name: Text;
+  signupIncentive: Text;
+  perEventIncentive: Text;
+  maxEventsPerSeason: Text;
+  typicalEventHours: Text;
   termsUrl: string;
+  termsSummary: Text[];
 }
+
 export const ProgramSchema = new Schema<ProgramDoc>({
-  name: String,
-  signupIncentive: String,
-  perEventIncentive: String,
-  maxEventsPerSeason: String,
-  typicalEventHours: String,
+  name: Schema.Types.Mixed,
+  signupIncentive: Schema.Types.Mixed,
+  perEventIncentive: Schema.Types.Mixed,
+  maxEventsPerSeason: Schema.Types.Mixed,
+  typicalEventHours: Schema.Types.Mixed,
   termsUrl: String,
+  termsSummary: Schema.Types.Mixed,
 });
 
 // ---------------------------------------------------------------- messages / campaigns
@@ -415,7 +466,7 @@ export interface EventResponseDoc {
   respondedAt: Date;
   kwhShifted: number | null;
   peakReducedKw: number | null;
-  earned: string | null;
+  earned: Text | null;
   synthetic: boolean;
 }
 export const EventResponseSchema = new Schema<EventResponseDoc>({
@@ -425,50 +476,57 @@ export const EventResponseSchema = new Schema<EventResponseDoc>({
   respondedAt: Date,
   kwhShifted: { type: Number, default: null },
   peakReducedKw: { type: Number, default: null },
-  earned: { type: String, default: null },
+  earned: { type: Schema.Types.Mixed, default: null },
   synthetic: Boolean,
 });
 
-// ---------------------------------------------------------------- billing / outages
+// ---------------------------------------------------------------- invoices / payments
 
-export interface BillDoc {
+export interface InvoiceDoc {
   _id: Id;
   customerId: Id;
-  periodStart: Date;
-  periodEnd: Date;
-  days: number;
-  kWh: number;
-  lines: { label: string; amount: number }[];
-  total: number;
-  dueDate: Date;
-  status: 'UNPAID' | 'PAID';
+  number: string;
+  kind: InvoiceKind;
+  period: Text;
+  /** Sort key, e.g. "2026-11". */
+  periodKey: string;
+  issued: Date;
+  due: Date;
+  amount: number;
+  status: InvoiceStatus;
+  paidOn: Date | null;
+  lines: { label: Text; amount: number }[];
 }
-export const BillSchema = new Schema<BillDoc>({
+
+export const InvoiceSchema = new Schema<InvoiceDoc>({
   customerId: { type: ObjectId, index: true },
-  periodStart: Date,
-  periodEnd: Date,
-  days: Number,
-  kWh: Number,
-  lines: [{ label: String, amount: Number, _id: false }],
-  total: Number,
-  dueDate: Date,
+  number: String,
+  kind: String,
+  period: Schema.Types.Mixed,
+  periodKey: String,
+  issued: Date,
+  due: Date,
+  amount: Number,
   status: String,
+  paidOn: { type: Date, default: null },
+  lines: Schema.Types.Mixed,
 });
 
 export interface PaymentDoc {
   _id: Id;
   customerId: Id;
-  billId: Id;
+  invoiceId: Id;
   amount: number;
   method: PaymentMethodKind;
   status: 'CONFIRMED';
   confirmationNo: string;
-  provider: 'KUBRA_MOCK';
+  provider: 'IDEAL_MOCK';
   createdAt: Date;
 }
+
 export const PaymentSchema = new Schema<PaymentDoc>({
   customerId: ObjectId,
-  billId: ObjectId,
+  invoiceId: ObjectId,
   amount: Number,
   method: String,
   status: String,
@@ -477,42 +535,35 @@ export const PaymentSchema = new Schema<PaymentDoc>({
   createdAt: Date,
 });
 
-export interface OutageDoc {
-  _id: Id;
-  districtCode: string;
-  gridAreaCode: string;
-  affectedCount: number;
-  status: 'CREW_ASSIGNED' | 'INVESTIGATING' | 'RESTORED';
-  estRestoreAt: Date | null;
-  cause: string | null;
-}
-export const OutageSchema = new Schema<OutageDoc>({
-  districtCode: String,
-  gridAreaCode: { type: String, index: true },
-  affectedCount: Number,
-  status: String,
-  estRestoreAt: { type: Date, default: null },
-  cause: { type: String, default: null },
-});
+// ---------------------------------------------------------------- assistant log
 
-export interface OutageReportDoc {
+export interface AssistantLogDoc {
   _id: Id;
+  at: Date;
+  channel: AssistantChannel;
   customerId: Id | null;
-  address: string;
-  type: OutageReportType;
-  notifyOnRestore: boolean;
-  reference: string;
-  outageId: Id | null;
-  createdAt: Date;
+  customerName: string | null;
+  question: string;
+  intent: string;
+  matched: boolean;
+  signInPrompt: boolean;
+  handoff: boolean;
+  lang: Lang;
+  synthetic: boolean;
 }
-export const OutageReportSchema = new Schema<OutageReportDoc>({
+
+export const AssistantLogSchema = new Schema<AssistantLogDoc>({
+  at: { type: Date, index: true },
+  channel: String,
   customerId: { type: ObjectId, default: null },
-  address: String,
-  type: String,
-  notifyOnRestore: Boolean,
-  reference: String,
-  outageId: { type: ObjectId, default: null },
-  createdAt: Date,
+  customerName: { type: String, default: null },
+  question: String,
+  intent: String,
+  matched: Boolean,
+  signInPrompt: Boolean,
+  handoff: Boolean,
+  lang: String,
+  synthetic: Boolean,
 });
 
 // ---------------------------------------------------------------- live events
@@ -603,10 +654,9 @@ export const ALL_SCHEMAS = [
   { name: M.Campaign, schema: CampaignSchema },
   { name: M.FlexEvent, schema: FlexEventSchema },
   { name: M.EventResponse, schema: EventResponseSchema },
-  { name: M.Bill, schema: BillSchema },
+  { name: M.Invoice, schema: InvoiceSchema },
   { name: M.Payment, schema: PaymentSchema },
-  { name: M.Outage, schema: OutageSchema },
-  { name: M.OutageReport, schema: OutageReportSchema },
+  { name: M.AssistantLog, schema: AssistantLogSchema },
   { name: M.LiveEvent, schema: LiveEventSchema },
   { name: M.AuditEntry, schema: AuditEntrySchema },
   { name: M.CustomerActivity, schema: CustomerActivitySchema },

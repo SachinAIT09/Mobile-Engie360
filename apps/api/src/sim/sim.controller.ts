@@ -10,10 +10,10 @@ class EvDetectedDto implements SimEvDetectedRequest {
   @IsMongoId() customerId: string;
 }
 class ClusterDto implements SimClusterRequest {
-  @Matches(/^SUB-\d+$/) gridAreaCode: string;
+  @Matches(/^[A-Z]{2,4}(-[A-Z]{2,5})?$/) gridAreaCode: string;
 }
 class ForecastDto implements SimForecastRequest {
-  @Matches(/^SUB-\d+-F\d+$/) districtCode: string;
+  @Matches(/^\d{4}$/) districtCode: string;
 }
 class NotifyDto implements SimNotifyRequest {
   @IsMongoId() customerId: string;
@@ -34,14 +34,14 @@ export class SimController {
     return this.sim.evDetected(b.customerId);
   }
 
-  @Post('stopped-charging-cluster')
+  @Post('ev-cluster')
   cluster(@Body() b: ClusterDto): Promise<LiveEvent> {
-    return this.sim.stoppedChargingCluster(b.gridAreaCode);
+    return this.sim.evCluster(b.gridAreaCode);
   }
 
-  @Post('district-forecast-high')
+  @Post('congestion-forecast')
   forecast(@Body() b: ForecastDto): Promise<LiveEvent> {
-    return this.sim.districtForecastHigh(b.districtCode);
+    return this.sim.congestionForecast(b.districtCode);
   }
 
   @Post('notify')

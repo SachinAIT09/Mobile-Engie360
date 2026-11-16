@@ -166,15 +166,15 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
   };
 
   return (
-    <section className={`chat chat-${variant}`} aria-label={title ?? 'Assistant'}>
+    <section className={`chat chat-${variant}`} aria-label={title ?? brand.assistant.name}>
       <header className="chat-head">
         <div className="chat-avatar" aria-hidden>
           <Sparkles size={18} />
         </div>
         <div className="chat-title">
-          <b>{title ?? t(`${brand.name} Assistant`, `${brand.name} Assistent`)}</b>
+          <b>{title ?? brand.assistant.name}</b>
           <span>
-            <i className="online" /> {subtitle ?? t('Usually replies instantly', 'Reageert meestal direct')}
+            <i className="online" /> {subtitle ?? t(`${brand.assistant.role.en} · replies instantly`, `${brand.assistant.role.nl} · reageert direct`)}
           </span>
         </div>
         <div className="chat-head-actions">
@@ -189,7 +189,7 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
             </button>
           )}
           {onClose && (
-            <button className="chat-icon" onClick={onClose} aria-label={t('Close assistant', 'Sluit assistent')}>
+            <button className="chat-icon" onClick={onClose} aria-label={t(`Close ${brand.assistant.name}`, `Sluit ${brand.assistant.name}`)}>
               <X size={19} />
             </button>
           )}
@@ -229,7 +229,7 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
             <div className="bot-ic" aria-hidden>
               <Sparkles size={14} />
             </div>
-            <div className="bubble typing" aria-label={t('Assistant is typing', 'Assistent is aan het typen')}>
+            <div className="bubble typing" aria-label={t(`${brand.assistant.name} is typing`, `${brand.assistant.name} is aan het typen`)}>
               <span />
               <span />
               <span />
@@ -275,7 +275,7 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
       </form>
       <p className="chat-disclaimer">
         {provider.isMock
-          ? t('Demo assistant: scripted answers from sample data, no AI backend connected.', 'Demo-assistent: vooraf ingestelde antwoorden op voorbeelddata, geen AI-backend gekoppeld.')
+          ? t(`Demo: ${brand.assistant.name} gives scripted answers from sample data, no AI backend connected.`, `Demo: ${brand.assistant.name} geeft vooraf ingestelde antwoorden op voorbeelddata, geen AI-backend gekoppeld.`)
           : t('AI-generated answers may contain mistakes.', 'AI-antwoorden kunnen fouten bevatten.')}
       </p>
     </section>

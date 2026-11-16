@@ -12,9 +12,9 @@ class RespondDto implements FlexRespondRequest {
 }
 
 const RESPONSE_ACTIVITY: Record<FlexResponse, { kind: CustomerActivityKind; text: string }> = {
-  PAUSE: { kind: 'FLEX_OPTED_IN', text: 'Will pause charging for the DR event' },
-  REMIND: { kind: 'REMIND_LATER', text: 'Asked for a reminder about the DR event' },
-  OPT_OUT: { kind: 'FLEX_OPTED_OUT', text: 'Opted out of the DR event' },
+  PAUSE: { kind: 'FLEX_OPTED_IN', text: 'Will shift charging out of the flex window' },
+  REMIND: { kind: 'REMIND_LATER', text: 'Asked for a reminder about the flex event' },
+  OPT_OUT: { kind: 'FLEX_OPTED_OUT', text: 'Opted out of the flex event' },
 };
 
 @Controller('flex-events')
@@ -31,12 +31,12 @@ export class FlexEventsController {
     const where = districts.length > 1 ? `${districts[0]} +${districts.length - 1}` : districts[0];
     const summary =
       action === 'FLEX_STARTED'
-        ? `Started the DR event on ${where} now (was scheduled)`
-        : `Ended the DR event on ${where}${before === 'ACTIVE' ? '' : ' (fast-forwarded through its planned window)'}`;
-    await this.audit.record(await actorFromUser(this.db, user), action, { kind: 'flexEvent', id: e.id, label: `DR event · ${where}` }, summary);
+        ? `Started the flex event on ${where} now (was scheduled)`
+        : `Ended the flex event on ${where}${before === 'ACTIVE' ? '' : ' (fast-forwarded through its planned window)'}`;
+    await this.audit.record(await actorFromUser(this.db, user), action, { kind: 'flexEvent', id: e.id, label: `flex event · ${where}` }, summary);
   }
 
-  /** Staff list (DR events page). */
+  /** Staff list (flex events page). */
   @Roles('STAFF')
   @Get()
   list(): Promise<FlexEvent[]> {
@@ -47,7 +47,7 @@ export class FlexEventsController {
   @Get(':id')
   async get(@CustomerId() customerId: string, @Param('id') id: string): Promise<FlexEventForCustomer> {
     const r = await this.flexEvents.forCustomer(customerId, id);
-    void this.activity.record(customerId, 'FLEX_OPENED', `Opened the DR event on ${r.event.districtCode} (${fmtWindow(r.event.windowStart, r.event.windowEnd)})`);
+    void this.activity.record(customerId, 'FLEX_OPENED', `Opened the flex event on ${r.event.districtCode} (${fmtWindow(r.event.windowStart, r.event.windowEnd)})`);
     return r;
   }
 

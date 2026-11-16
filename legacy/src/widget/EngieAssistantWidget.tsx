@@ -67,7 +67,7 @@ export const EngieAssistantWidget = forwardRef<EngieAssistantHandle, Props>(func
   const welcome =
     audience === 'customer'
       ? t(`Welcome back ${customer.firstName}! You’re signed in, so I can answer questions about your own usage, bills and contract.`, `Welkom terug ${customer.firstName}! Je bent ingelogd, dus ik kan vragen over je eigen verbruik, nota’s en contract beantwoorden.`)
-      : t(`Hi! I’m the ${brand.name} assistant. Ask me about our energy contracts, switching, or your bill. Sign in to ${brand.portal} for answers about your own account.`, `Hoi! Ik ben de ${brand.name}-assistent. Vraag me naar onze energiecontracten, overstappen of je nota. Log in bij ${brand.portal} voor antwoorden over je eigen account.`);
+      : t(`Hi! I’m ${brand.assistant.name}, the ${brand.name} digital assistant. Ask me about our energy contracts, switching, or your bill. Sign in to ${brand.portal} for answers about your own account.`, `Hoi! Ik ben ${brand.assistant.name}, de digitale assistent van ${brand.name}. Vraag me naar onze energiecontracten, overstappen of je nota. Log in bij ${brand.portal} voor antwoorden over je eigen account.`);
 
   return (
     <>
@@ -97,7 +97,7 @@ export const EngieAssistantWidget = forwardRef<EngieAssistantHandle, Props>(func
         style={{ background: open ? 'var(--navy)' : 'var(--blue)' }}
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        aria-label={open ? t('Close assistant', 'Sluit assistent') : t(`Ask ${brand.name}`, `Vraag het ${brand.name}`)}
+        aria-label={open ? t(`Close ${brand.assistant.name}`, `Sluit ${brand.assistant.name}`) : t(`Ask ${brand.assistant.name}`, `Vraag het ${brand.assistant.name}`)}
       >
         <span className="orb" style={{ background: open ? 'transparent' : 'rgba(255,255,255,0.18)' }}>
           {open ? <X size={22} /> : <Sparkles size={20} />}

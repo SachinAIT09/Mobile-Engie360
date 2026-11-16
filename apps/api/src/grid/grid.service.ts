@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import type { BlindSpot, DeadGridArea, DistrictStat, StatsOverview, GridAreaStat } from '@engie/shared';
 import { Db } from '../db/db.service.js';
 import type { DistrictDoc } from '../db/schemas.js';
+import { INSTALLMENT_GAP_MIN } from '../campaigns/audience-label.js';
 import { HEADLINE } from '../seed/seed-data.js';
 import { EMPTY_COUNTS, rankBlindSpots, toDistrictStat, type LiveCounts } from './district-stat.js';
 
@@ -15,15 +16,19 @@ export class GridService {
   /** Live counts for the given districts (or every live district). */
   async liveCounts(districtCodes?: string[]): Promise<Map<string, LiveCounts>> {
     const filter = districtCodes ? { districtCode: { $in: districtCodes } } : {};
-    const [enrolled, detected, gtCustomers] = await Promise.all([
+    const [enrolled, detected, gtCustomers, gap] = await Promise.all([
       this.db.enrollments.find({ ...filter, status: 'ACTIVE' }, { customerId: 1, districtCode: 1 }).lean(),
       this.db.detections.find({ ...filter, status: 'DETECTED' }, { customerId: 1, districtCode: 1 }).lean(),
       this.db.customers.find({ ...filter, groundTruthValidated: true }, { _id: 1, districtCode: 1 }).lean(),
+      this.db.customers.aggregate<{ _id: string; n: number }>([
+        { $match: { ...filter, $expr: { $gte: [{ $subtract: ['$contract.advisedInstallment', '$contract.installment'] }, INSTALLMENT_GAP_MIN] } } },
+        { $group: { _id: '$districtCode', n: { $sum: 1 } } },
+      ]),
     ]);
     const map = new Map<string, LiveCounts>();
     const get = (f: string) => {
       let v = map.get(f);
-      if (!v) map.set(f, (v = { known: 0, unenrolled: 0, confirmed: 0, groundTruth: 0 }));
+      if (!v) map.set(f, (v = { known: 0, unenrolled: 0, confirmed: 0, groundTruth: 0, installmentGap: 0 }));
       return v;
     };
     const enrolledSet = new Set(enrolled.map((e) => String(e.customerId)));
@@ -34,6 +39,7 @@ export class GridService {
       if (detectedSet.has(String(e.customerId))) v.confirmed++;
     }
     for (const d of detected) if (!enrolledSet.has(String(d.customerId))) get(d.districtCode).unenrolled++;
+    for (const g of gap) get(g._id).installmentGap = g.n;
     for (const c of gtCustomers) {
       const id = String(c._id);
       if (enrolledSet.has(id) || detectedSet.has(id)) get(c.districtCode).groundTruth++;
@@ -89,6 +95,9 @@ export class GridService {
         const known = s.seedKnown + delta.known;
         return {
           code: s.code,
+          name: s.name ?? s.code,
+          operator: s.operator ?? '',
+          congestion: s.congestion ?? ('NONE' as const),
           region: s.region,
           evs,
           knownPct: evs ? Math.round((known / evs) * 100) : 0,
@@ -116,7 +125,20 @@ export class GridService {
     const knownEvs = HEADLINE.knownEvs + d.known;
     const unenrolledEvs = HEADLINE.unenrolledEvs + d.unenrolled;
     const dead = subs.filter((s) => s.evs === 0).length;
+    const [liveCustomers, liveDynamic, liveHeat] = await Promise.all([
+      this.db.customers.countDocuments({}),
+      this.db.customers.countDocuments({ 'contract.product': { $in: ['DYNAMIC', 'DYNAMIC_FIXED_GAS'] } }),
+      this.db.customers.countDocuments({ hasHeatPump: true }),
+    ]);
+    const liveGap = [...liveCounts.values()].reduce((s, c) => s + (c.installmentGap ?? 0), 0);
     return {
+      // Headline portfolio figures plus what the live (per-customer) districts add or change.
+      customers: HEADLINE.customers + liveCustomers,
+      onDynamic: HEADLINE.onDynamic + liveDynamic,
+      installmentGapCustomers: HEADLINE.installmentGapCustomers + liveGap,
+      avgInstallmentGap: HEADLINE.avgInstallmentGap,
+      heatPumps: HEADLINE.heatPumps + liveHeat,
+      slimLadenHomes: knownEvs,
       gridAreas: subs.filter((s) => s.evs > 0).length,
       districts: districtsWithEvs,
       knownEvs,

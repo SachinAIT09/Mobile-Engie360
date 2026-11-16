@@ -5,6 +5,9 @@ import { config } from './config.js';
 import { ActivityController } from './activity/activity.controller.js';
 import { ActivityService } from './activity/activity.service.js';
 import { AuthController } from './auth/auth.controller.js';
+import { BillingController } from './billing/billing.controller.js';
+import { BillingService } from './billing/billing.service.js';
+import { UsageService } from './usage/usage.service.js';
 import { AssistantController } from './assistant/assistant.controller.js';
 import { AssistantService } from './assistant/assistant.service.js';
 import { AuditController } from './audit/audit.controller.js';
@@ -33,8 +36,7 @@ import { ReportsService } from './grid/reports.service.js';
 import { LiveEventsService } from './live-events/live-events.service.js';
 import { MessagesController } from './messages/messages.controller.js';
 import { MessagesService } from './messages/messages.service.js';
-import { OutagesController } from './outages/outages.controller.js';
-import { MockKubraProvider, PaymentProvider } from './payments/payment-provider.js';
+import { MockIdealProvider, PaymentProvider } from './payments/payment-provider.js';
 import { PaymentsController } from './payments/payments.controller.js';
 import { RealtimeGateway } from './realtime/realtime.gateway.js';
 import { RealtimeService } from './realtime/realtime.service.js';
@@ -51,7 +53,7 @@ import { SimService } from './sim/sim.service.js';
     AuthController,
     MeController,
     PaymentsController,
-    OutagesController,
+    BillingController,
     MessagesController,
     EnrollmentsController,
     FlexEventsController,
@@ -88,10 +90,12 @@ import { SimService } from './sim/sim.service.js';
     WebPushService,
     SmartChargingService,
     AssistantService,
+    BillingService,
+    UsageService,
     CustomersService,
     SimService,
     { provide: EvDetectionSource, useClass: SimulatedNet2GridSource },
-    { provide: PaymentProvider, useClass: MockKubraProvider },
+    { provide: PaymentProvider, useClass: MockIdealProvider },
   ],
 })
 export class AppModule implements OnApplicationBootstrap {

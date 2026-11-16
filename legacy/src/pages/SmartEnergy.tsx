@@ -63,7 +63,7 @@ export default function SmartEnergy() {
     { icon: Cpu, title: t('Appliance recognition', 'Apparaatherkenning'), body: t('Disaggregation identifies EVs, heat pumps, laundry and always-on load without extra hardware.', 'Disaggregatie herkent auto’s, warmtepompen, wassen en sluipverbruik zonder extra hardware.'), to: '/energy' },
     { icon: Lightbulb, title: t('Personalised recommendations', 'Persoonlijke aanbevelingen'), body: t('Advice based on what this household actually does, with a euro value attached.', 'Advies op basis van wat dit huishouden echt doet, met een bedrag in euro’s erbij.'), to: '/insights' },
     { icon: BellRing, title: t('Anomaly alerts', 'Afwijkingsmeldingen'), body: t('Unusual night use or a faulty appliance flagged before the bill arrives.', 'Ongebruikelijk nachtverbruik of een defect apparaat gesignaleerd vóór de nota.'), to: '/insights#night-anomaly' },
-    { icon: Bot, title: t('AI-assisted support', 'AI-ondersteunde service'), body: t('The assistant answers “why is my bill higher?” using the same appliance data.', 'De assistent beantwoordt “waarom is mijn nota hoger?” met dezelfde apparaatdata.'), to: '/assistant' },
+    { icon: Bot, title: t('AI-assisted support', 'AI-ondersteunde service'), body: t(`${brand.assistant.name} answers “why is my bill higher?” using the same appliance data.`, `${brand.assistant.name} beantwoordt “waarom is mijn nota hoger?” met dezelfde apparaatdata.`), to: '/assistant' },
     { icon: UserCog, title: t('Self-service & smart control', 'Zelfservice & slim sturen'), body: t('Installment advice, smart EV charging and dynamic-price planning in one place.', 'Termijnadvies, slim laden en planning op dynamische prijzen op één plek.'), to: '/billing' },
   ];
 

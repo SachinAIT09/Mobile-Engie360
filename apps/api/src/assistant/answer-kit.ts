@@ -67,7 +67,7 @@ export function dayLabel(key: string): string {
   return `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1]} ${d}`;
 }
 
-/** "SUB-26-F1", "SUB-26-F1 and SUB-15-F3", "SUB-26-F1, SUB-15-F3 and SUB-11-F2". */
+/** "1401", "1401 and 2611", "1401, 2611 and 1312". */
 export function listText(xs: string[]): string {
   if (xs.length <= 1) return xs[0] ?? '';
   return `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;

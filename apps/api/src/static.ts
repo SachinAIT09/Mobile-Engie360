@@ -91,7 +91,7 @@ footer{max-width:880px;margin:0 auto;padding:0 24px 28px;font-size:12px;color:va
 <main>
 <div class="head"><span class="tile" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div><h1>EV &amp; Energy demo</h1><p>${BRAND.vendorName} concept for ${BRAND.utilityName}. Open the two apps in separate tabs, or the customer app on a phone.</p></div></div>
 <div class="grid">
-${card('/staff/districts', 'Staff app', `District visibility, Campaign 360 and DR events for ${BRAND.utilityName} staff.`, true, hasStaff)}
+${card('/staff/districts', 'Staff app', `District visibility, Campaign 360 and flex events for ${BRAND.utilityName} staff.`, true, hasStaff)}
 ${card('/app/login', 'Customer app', 'The mobile app. Sign in as manny@demo.test or priya@demo.test, any password.', false, hasApp)}
 </div>
 ${hasApp ? `<section class="phone">${qr}<div><strong>Open the customer app on a phone</strong><span>Scan with the phone camera, or open <code>${appUrl}</code>. ${phoneNote(appUrl)} The phone and the staff app stay in sync through this server.</span></div></section>` : ''}

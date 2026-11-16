@@ -25,7 +25,7 @@ export class GridController {
     return this.grid.blindSpots();
   }
 
-  @Get('stats/dead-gridAreas')
+  @Get('stats/dead-grid-areas')
   dead(): Promise<DeadGridArea[]> {
     return this.grid.deadGridAreas();
   }
@@ -35,12 +35,12 @@ export class GridController {
     return this.reports.summary();
   }
 
-  @Get('gridAreas')
+  @Get('grid-areas')
   gridAreas(): Promise<GridAreaStat[]> {
     return this.grid.gridAreas();
   }
 
-  @Get('gridAreas/:code/districts')
+  @Get('grid-areas/:code/districts')
   districts(@Param('code') code: string): Promise<DistrictStat[]> {
     return this.grid.gridAreaDistricts(code);
   }

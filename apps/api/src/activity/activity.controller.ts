@@ -74,10 +74,11 @@ export class ActivityController {
 
 const VIEW_SUMMARY: Record<TrackableActivityKind, string> = {
   SIGNED_OUT: 'Signed out of the app',
-  VIEWED_BILL: 'Opened the Bill tab',
-  VIEWED_BILL_HISTORY: 'Looked through past bills',
-  VIEWED_USAGE: 'Checked usage on the home screen',
-  VIEWED_ENERGY: 'Opened the Energy tab',
-  VIEWED_FLEX_RESULT: 'Viewed their DR event result',
-  VIEWED_PROGRAM: 'Read the EV program details',
+  VIEWED_BILLING: 'Opened the Facturen tab',
+  VIEWED_INVOICE: 'Opened an invoice',
+  VIEWED_USAGE: 'Opened the Verbruik tab',
+  VIEWED_ENERGY: 'Opened Slim Energie (live power)',
+  VIEWED_INSIGHTS: 'Read their insights and tips',
+  VIEWED_FLEX_RESULT: 'Viewed their flex result',
+  VIEWED_PROGRAM: 'Read the Slim Laden details',
 };

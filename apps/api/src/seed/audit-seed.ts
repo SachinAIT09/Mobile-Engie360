@@ -10,29 +10,29 @@ const HISTORY: { daysAgo: number; hour: number; action: AuditAction; label: stri
     daysAgo: 3,
     hour: 10.25,
     action: 'CAMPAIGN_SENT',
-    label: 'EV owners near you are saving',
-    summary: 'Enrollment offer sent to 142 customers · SUB-02-F1 · Detected, unenrolled EVs',
+    label: 'Laad slimmer en goedkoper met Slim Laden',
+    summary: 'Slim Laden offer sent to 142 customers · 1072 De Pijp · Detected EVs, not in Slim Laden',
   },
   {
     daysAgo: 2,
     hour: 15.5,
     action: 'CAMPAIGN_CANCELLED',
-    label: 'Please pause EV charging 5–8 PM today',
-    summary: 'Cancelled before sending (forecast dropped below 90% on SUB-03-F2)',
+    label: 'Wil je vanavond later laden?',
+    summary: 'Cancelled before sending (Stedin forecast for 3583 Abstede dropped below 90%)',
   },
   {
     daysAgo: 1,
     hour: 16.75,
     action: 'CAMPAIGN_SENT',
-    label: 'Please pause EV charging 5–8 PM today',
-    summary: 'Stop-charging request sent to 64 customers · SUB-01-F1, SUB-01-F3 · Enrolled EVs (DR program)',
+    label: 'Je termijnbedrag past niet meer bij je verbruik',
+    summary: 'Installment advice sent to 211 customers · 3582, 3583 · Installment below the advice',
   },
-];
+]
 
-/** Seeds the audit log at the end of a seed/reset: three entries by Jordan Reyes, 1–3 days ago. */
+/** Seeds the audit log at the end of a seed/reset: three entries by Lotte Visser, 1–3 days ago. */
 export async function seedAudit(db: Db): Promise<void> {
   const now = Date.now();
-  const actor = { userId: String(DEMO_IDS.staffUser2), name: 'Jordan Reyes', email: DEMO_EMAILS.staff2, kind: 'STAFF' as const };
+  const actor = { userId: String(DEMO_IDS.staffUser2), name: 'Lotte Visser', email: DEMO_EMAILS.staff2, kind: 'STAFF' as const };
   await db.audit.insertMany(
     HISTORY.map((h) => {
       // Roughly `daysAgo` days back, spread by `hour` so the entries do not line up; always in the past.

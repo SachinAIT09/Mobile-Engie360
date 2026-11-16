@@ -14,7 +14,7 @@ export const NAV: NavItem[] = [
   { to: '/billing', icon: CreditCard, en: 'Bills & payments', nl: 'Nota’s & betalingen' },
   { to: '/insights', icon: Lightbulb, en: 'Energy insights', nl: 'Energie-inzichten' },
   { to: '/smart-energy', icon: Zap, en: 'Smart Energy', nl: 'Slimme Energie', tag: 'N2G' },
-  { to: '/assistant', icon: MessageCircle, en: 'AI Assistant', nl: 'AI-assistent' },
+  { to: '/assistant', icon: MessageCircle, en: 'Eva · AI assistant', nl: 'Eva · AI-assistent' },
   { to: '/account', icon: User, en: 'My account', nl: 'Mijn account' },
 ];
 

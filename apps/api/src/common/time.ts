@@ -76,7 +76,7 @@ export function addMinutes(d: Date, m: number): Date {
   return new Date(d.getTime() + m * 60000);
 }
 
-/** The DR window used by simulators/campaigns: today 5–8 PM, or next full hour + 3 h if past 5 PM. */
+/** The flex window used by simulators/campaigns: today 5–8 PM, or next full hour + 3 h if past 5 PM. */
 export function nextEventWindow(now = new Date(), tz = config.timezone): { start: Date; end: Date } {
   const p = localParts(now, tz);
   if (p.hour < 17) {
@@ -87,13 +87,12 @@ export function nextEventWindow(now = new Date(), tz = config.timezone): { start
 }
 
 export function fmtClock(d: Date, tz = config.timezone): string {
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tz });
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: tz });
 }
 
 /** "9:30 and 9:45 PM" */
 export function fmtClockRange(a: Date, b: Date, joiner = 'and', tz = config.timezone): string {
   const s = fmtClock(a, tz);
   const e = fmtClock(b, tz);
-  const sameHalf = s.slice(-2) === e.slice(-2);
-  return `${sameHalf ? s.slice(0, -3) : s} ${joiner} ${e}`;
+  return `${s} ${joiner} ${e}`;
 }

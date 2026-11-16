@@ -1,16 +1,37 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { AssistantAnswer, AssistantContext, AssistantSuggestions, EnergyRange } from '@engie/shared';
+import { Types } from 'mongoose';
+import {
+  ASSISTANT,
+  BRAND,
+  applianceBreakdown,
+  lastMonthSummary,
+  monthlyUsage,
+  peakSplit,
+  thisMonth,
+  type AssistantAnswer,
+  type AssistantChannel,
+  type AssistantContext,
+  type AssistantInsights,
+  type AssistantLogEntry,
+  type AssistantSuggestions,
+  type Lang,
+} from '@engie/shared';
+import { BillingService } from '../billing/billing.service.js';
+import type { AssistantLogDoc } from '../db/schemas.js';
+import { RealtimeService } from '../realtime/realtime.service.js';
+import { usageProfile } from '../usage/usage.service.js';
 import { nextEventWindow } from '../common/time.js';
 import { CampaignsService } from '../campaigns/campaigns.service.js';
 import { CustomersService } from '../customers/customers.service.js';
 import { Db } from '../db/db.service.js';
 import { FlexEventsService } from '../flex-events/flex-events.service.js';
-import { EnergyService } from '../energy/energy.service.js';
-import { SmartChargingService } from '../energy/smart-charging.service.js';
 import { GridService } from '../grid/grid.service.js';
 import { ReportsService } from '../grid/reports.service.js';
-import { answerCustomer, billJumped, type CustomerFacts, type CustomerQuestion } from './customer-answers.js';
-import { CUSTOMER_INTENTS, CUSTOMER_SUGGESTIONS, STAFF_INTENTS, STAFF_SUGGESTIONS } from './intents.js';
+import { answerEva, phrase, type EvaAnswer, type EvaFacts } from './eva-answers.js';
+import { INTENTS as EVA_INTENTS, SUGGESTIONS as EVA_SUGGESTIONS } from './eva-intents.js';
+import { matchIntent as matchEva } from './eva-nlu.js';
+import { STAFF_INTENTS, STAFF_SUGGESTIONS } from './intents.js';
+import { summariseLog } from './log-summary.js';
 import { matchIntent } from './nlu.js';
 import { answerStaff, type DraftTarget, type StaffFacts, type StaffQuestion } from './staff-answers.js';
 
@@ -21,7 +42,7 @@ import { answerStaff, type DraftTarget, type StaffFacts, type StaffQuestion } fr
  */
 @Injectable()
 export class AssistantService {
-  private readonly log = new Logger('Assistant');
+  private readonly log_ = new Logger('Assistant');
 
   constructor(
     private readonly db: Db,
@@ -30,8 +51,8 @@ export class AssistantService {
     private readonly campaigns: CampaignsService,
     private readonly flexEvents: FlexEventsService,
     private readonly customers: CustomersService,
-    private readonly energy: EnergyService,
-    private readonly smartCharging: SmartChargingService,
+    private readonly billing: BillingService,
+    private readonly realtime: RealtimeService,
   ) {}
 
   /** Await a fact, degrading to `fallback` (and a log line) when the source is unavailable. */
@@ -39,7 +60,7 @@ export class AssistantService {
     try {
       return await p;
     } catch (e) {
-      this.log.debug(`${what} unavailable: ${(e as Error).message}`);
+      this.log_.debug(`${what} unavailable: ${(e as Error).message}`);
       return fallback;
     }
   }
@@ -115,73 +136,131 @@ export class AssistantService {
     const top = (await this.safe('blind spots', this.grid.blindSpots(), []))[0];
     const dynamic = top ? [`How is ${top.districtCode} doing?`] : [];
     return {
-      greeting: 'Ask me about districts, blind spots, campaigns, DR events or grid risk. I answer from the live demo data.',
+      greeting: 'Ask me about postcode districts, EVs not yet in Slim Laden, campaigns, flex events or grid congestion. I answer from the live demo data.',
       suggestions: [...dynamic, ...STAFF_SUGGESTIONS.filter((s) => s !== STAFF_SUGGESTIONS[0] || !top)].slice(0, 9),
     };
   }
 
-  // ------------------------------------------------------------ customer
+  // ------------------------------------------------------------ Eva (customer app and website)
 
-  async askMe(customerId: string, question: string, context: AssistantContext): Promise<AssistantAnswer> {
-    const now = new Date();
-    const m = matchIntent(question, CUSTOMER_INTENTS, context);
-    const q: CustomerQuestion = { intent: m.intent, entities: m.entities, context, now };
-    const facts = await this.customerFacts(customerId, q);
-    return answerCustomer(q, facts);
+  /** Facts for a signed-in customer; everything Eva may quote comes from the same services as the app screens. */
+  private async evaFacts(customerId: string, lang: Lang, now: Date): Promise<EvaFacts> {
+    const c = await this.customers.get(customerId);
+    const profile = usageProfile(c);
+    const [ev, billing, activeFlexEvent] = await Promise.all([
+      this.customers.evStatus(c),
+      this.billing.overview(customerId, now),
+      this.safe('flex event', this.flexEvents.activeForCustomer(customerId), null),
+    ]);
+    return {
+      audience: 'customer',
+      lang,
+      now,
+      firstName: c.firstName,
+      city: c.city,
+      gridOperator: c.gridOperator,
+      ibanMasked: c.ibanMasked,
+      contract: c.contract,
+      evStatus: ev.status,
+      thisMonth: thisMonth(profile, now),
+      lastMonth: lastMonthSummary(profile, now),
+      months: monthlyUsage(profile, now),
+      breakdown: applianceBreakdown(profile, now, c.hasHeatPump),
+      peakPct: peakSplit(profile, now).peakPct,
+      invoices: billing.invoices,
+      annual: billing.annual,
+      insights: await this.customers.insightsFor(c, ev.status, billing.annual.expectedSettlement, now),
+      activeFlexEvent,
+    };
   }
 
-  private async customerFacts(customerId: string, q: CustomerQuestion): Promise<CustomerFacts> {
-    const c = await this.customers.get(customerId);
-    const base: CustomerFacts = { firstName: c.firstName, districtCode: c.districtCode, hasSolar: c.hasSolar };
-    const range = (fallback: EnergyRange): EnergyRange => (q.entities.range === 'today' ? 'day' : q.entities.range ?? fallback);
-    const plan = () => this.safe('smart charging', this.smartCharging.get(customerId), null);
-    const ev = () => this.customers.evStatus(c).then((x) => x.status);
-    const bill = () => this.safe('bill', this.customers.bill(c), null);
-    switch (q.intent) {
-      case 'BILL_WHY_HIGH': {
-        const [b, bills, evStatus] = await Promise.all([bill(), this.customers.bills(customerId), ev()]);
-        return { ...base, bill: b, bills, evStatus };
-      }
-      case 'BILL_DUE':
-        return { ...base, bill: await bill(), autoPay: CustomersService.autoPay(c) };
-      case 'USAGE_TODAY': {
-        const [energy, live] = await Promise.all([this.energy.summary(customerId, range('day'), q.now), this.energy.readingFor(c, q.now)]);
-        return { ...base, energy, live };
-      }
-      case 'EV_COST': {
-        const [energy, b, evStatus, p] = await Promise.all([this.energy.summary(customerId, range('month'), q.now), bill(), ev(), plan()]);
-        return { ...base, energy, bill: b, evStatus, plan: p };
-      }
-      case 'BEST_TIME': {
-        const [evStatus, p] = await Promise.all([ev(), plan()]);
-        return { ...base, evStatus, plan: p };
-      }
-      case 'RATE_PLAN': {
-        const [b, evStatus, p, ratePlans] = await Promise.all([bill(), ev(), plan(), this.safe('rate plans', this.smartCharging.ratePlans(customerId), null)]);
-        return { ...base, bill: b, evStatus, plan: p, ratePlans };
-      }
-      case 'SOLAR': {
-        const [energy, live] = await Promise.all([this.energy.summary(customerId, range('day'), q.now), this.energy.readingFor(c, q.now)]);
-        return { ...base, energy, live };
-      }
-      case 'GRID_EVENT': {
-        const [activeFlexEvent, evStatus] = await Promise.all([this.flexEvents.activeForCustomer(customerId), ev()]);
-        return { ...base, activeFlexEvent, evStatus };
-      }
-      case 'OUTAGE':
-        return { ...base, outage: await this.customers.nearbyOutage(c) };
-      default:
-        return base;
+  private async log(channel: AssistantChannel, question: string, a: EvaAnswer, lang: Lang, customer: { id: string; name: string } | null): Promise<void> {
+    try {
+      const doc = await this.db.assistantLog.create({
+        at: new Date(),
+        channel,
+        customerId: customer ? new Types.ObjectId(customer.id) : null,
+        customerName: customer?.name ?? null,
+        question: question.replace(/\s+/g, ' ').trim().slice(0, 300),
+        intent: a.intent,
+        matched: a.matched,
+        signInPrompt: a.signInPrompt,
+        handoff: a.handoff,
+        lang,
+        synthetic: false,
+      });
+      this.realtime.toStaff('assistant:logged', AssistantService.logDto(doc.toObject()));
+    } catch (e) {
+      this.log_.debug(`assistant log failed: ${(e as Error).message}`);
     }
   }
 
-  async mySuggestions(customerId: string): Promise<AssistantSuggestions> {
-    const [c, bills] = await Promise.all([this.customers.get(customerId), this.safe('bills', this.customers.bills(customerId), [])]);
-    const jumped = billJumped(bills);
-    const statics = CUSTOMER_SUGGESTIONS.filter((s) => s !== CUSTOMER_SUGGESTIONS[0] && (c.hasSolar || !/solar/i.test(s)));
+  static logDto(d: AssistantLogDoc): AssistantLogEntry {
     return {
-      greeting: `Hi ${c.firstName}. Ask about your bill, energy use, EV charging or outages. I answer from your account's demo data.`,
-      suggestions: jumped ? [CUSTOMER_SUGGESTIONS[0], ...statics].slice(0, 9) : ['How does my bill compare to last month?', ...statics].slice(0, 9),
+      id: String(d._id),
+      at: d.at.toISOString(),
+      channel: d.channel,
+      customerId: d.customerId ? String(d.customerId) : null,
+      customerName: d.customerName ?? null,
+      question: d.question,
+      intent: d.intent,
+      matched: d.matched,
+      signInPrompt: d.signInPrompt,
+      handoff: d.handoff,
+      lang: d.lang,
     };
+  }
+
+  /** A signed-in customer asks Eva (in the app, or on the website after signing in). */
+  async askMe(customerId: string, question: string, context: AssistantContext, lang?: Lang, channel: AssistantChannel = 'APP'): Promise<EvaAnswer> {
+    const now = new Date();
+    const c = await this.customers.get(customerId);
+    const l = lang ?? c.lang ?? 'nl';
+    const m = matchEva(question, EVA_INTENTS, context.lastIntent);
+    const a = answerEva({ intent: m.intent, entities: m.entities, text: question, route: context.route }, await this.evaFacts(customerId, l, now));
+    await this.log(channel, question, a, l, { id: customerId, name: `${c.firstName} ${c.lastName}` });
+    return a;
+  }
+
+  /** A website visitor asks Eva: general answers, and a sign-in prompt for anything personal. */
+  async askPublic(question: string, context: AssistantContext, lang: Lang = 'nl'): Promise<EvaAnswer> {
+    const m = matchEva(question, EVA_INTENTS, context.lastIntent);
+    const a = answerEva({ intent: m.intent, entities: m.entities, text: question, route: context.route }, { audience: 'visitor', lang, now: new Date() });
+    await this.log('WEBSITE', question, a, lang, null);
+    return a;
+  }
+
+  async mySuggestions(customerId: string, lang?: Lang, route?: string): Promise<AssistantSuggestions> {
+    const c = await this.customers.get(customerId);
+    const l = lang ?? c.lang ?? 'nl';
+    const ids = EVA_SUGGESTIONS[route ?? 'default'] ?? EVA_SUGGESTIONS.default ?? [];
+    return {
+      greeting:
+        l === 'nl'
+          ? `Hoi ${c.firstName}! Ik ben ${ASSISTANT.customerName.nl}. Vraag me naar je verbruik, nota's, termijnbedrag of het laden van je auto.`
+          : `Hi ${c.firstName}! I'm ${ASSISTANT.customerName.en}. Ask me about your usage, invoices, installment or EV charging.`,
+      suggestions: ids.map((id) => phrase(id, l)),
+    };
+  }
+
+  publicSuggestions(lang: Lang = 'nl'): AssistantSuggestions {
+    return {
+      greeting:
+        lang === 'nl'
+          ? `${ASSISTANT.customerIntro.nl} Vraag me naar onze energiecontracten, overstappen of je nota. Log in bij ${BRAND.appName} voor antwoorden over je eigen account.`
+          : `${ASSISTANT.customerIntro.en} Ask me about our energy contracts, switching, or your bill. Sign in to ${BRAND.appName} for answers about your own account.`,
+      suggestions: (EVA_SUGGESTIONS.visitor ?? []).map((id) => phrase(id, lang)),
+    };
+  }
+
+  // ------------------------------------------------------------ staff: what customers ask Eva
+
+  async insights(now = new Date()): Promise<AssistantInsights> {
+    const since = new Date(now.getTime() - 24 * 3600000);
+    const [all, total] = await Promise.all([
+      this.db.assistantLog.find({ at: { $gte: since } }).sort({ at: -1 }).lean(),
+      this.db.assistantLog.countDocuments({}),
+    ]);
+    return summariseLog(all.map(AssistantService.logDto), total, now);
   }
 }

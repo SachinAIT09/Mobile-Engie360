@@ -80,7 +80,7 @@ export class CampaignStatsService {
 type MsgRow = Pick<MessageDoc, 'deliveredAt' | 'openedAt' | 'action'>;
 type ResponseRow = Pick<EventResponseDoc, 'response'>;
 
-/** Stats for one set of messages (and, for DR, the matching responses). */
+/** Stats for one set of messages (and, for flex requests, the matching responses). */
 export function tally(type: CampaignType, targeted: number, msgs: readonly MsgRow[], responses: readonly ResponseRow[] | null): CampaignStats {
   const stats = emptyStats(targeted);
   stats.delivered = msgs.filter((m) => m.deliveredAt).length;
@@ -88,6 +88,8 @@ export function tally(type: CampaignType, targeted: number, msgs: readonly MsgRo
   stats.declined = msgs.filter((m) => m.action === 'DECLINED').length;
   if (type === 'ENROLL_OFFER') {
     stats.acted = msgs.filter((m) => m.action === 'ENROLLED').length;
+  } else if (type === 'INSTALLMENT_ADVICE') {
+    stats.acted = msgs.filter((m) => m.action === 'INSTALLMENT_CHANGED').length;
   } else if (responses) {
     stats.acted = responses.length;
     stats.paused = responses.filter((r) => r.response === 'PAUSE').length;

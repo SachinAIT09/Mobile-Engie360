@@ -50,7 +50,7 @@ export interface StaffFacts {
   reports?: ReportsSummary;
   flexEvents?: FlexEvent[];
   riskDistricts?: RiskDistrict[];
-  /** The next DR window (ISO) the simulators would use. */
+  /** The next flex window (ISO) the simulators would use. */
   nextWindow?: { start: string; end: string };
   draftTargets?: DraftTarget[];
 }
@@ -63,7 +63,7 @@ export interface StaffQuestion {
 }
 
 const draftFollowUp = (code: string, type: CampaignType = 'ENROLL_OFFER') =>
-  type === 'ENROLL_OFFER' ? `Draft an enrollment offer for ${code}` : `Draft a stop-charging request for ${code}`;
+  type === 'ENROLL_OFFER' ? `Draft a Slim Laden offer for ${code}` : `Draft a flex request for ${code}`;
 
 // ---------------------------------------------------------------- DISTRICT_STATUS
 
@@ -71,21 +71,21 @@ export function districtStatus(q: StaffQuestion, f: StaffFacts): AssistantAnswer
   const code = f.districtCode;
   const top = (f.blindSpots ?? []).slice(0, 3).map((b) => `How is ${b.districtCode} doing?`);
   if (!code) {
-    return answer('DISTRICT_STATUS', { text: ['Which district? Ask about a code like SUB-01-F1, or start from one of the biggest blind spots.'], followUps: top, actions: [route('Open district dashboard', '/districts')] }, q.now);
+    return answer('DISTRICT_STATUS', { text: ['Which district? Ask about a code like 3581, or start from one of the biggest blind spots.'], followUps: top, actions: [route('Open district dashboard', '/districts')] }, q.now);
   }
   const s = f.district;
   if (!s) {
-    return answer('DISTRICT_STATUS', { text: [`I couldn't find district **${code}** in the demo data.`, 'District codes look like SUB-01-F1 (gridArea, then district number).'], followUps: top, actions: [route('Open district dashboard', '/districts')] }, q.now);
+    return answer('DISTRICT_STATUS', { text: [`I couldn't find district **${code}** in the demo data.`, 'District codes look like 3581 (the four digits of the postcode).'], followUps: top, actions: [route('Open district dashboard', '/districts')] }, q.now);
   }
-  const followUps = [draftFollowUp(s.code), 'Where are our biggest blind spots?', 'Which districts are at risk tonight?'];
+  const followUps = [draftFollowUp(s.code), 'Where are the most EVs not in Slim Laden?', 'Which districts are at risk tonight?'];
   const actions = [route('Open district dashboard', '/districts')];
   if (s.known === null || s.unenrolled === null) {
     return answer(
       'DISTRICT_STATUS',
       {
         text: [
-          `**${s.code}** (gridArea ${s.gridAreaCode}) has **${fmtInt(s.evs)}** EVs in the ${BRAND.partners.evDetection} pilot sample.`,
-          'The enrolled / not-enrolled split is only available for SUB-01 and the ranked blind-spot districts in this demo.',
+          `**${s.code}** (${s.name}, ${s.gridAreaCode}) has **${fmtInt(s.evs)}** EVs in the ${BRAND.partners.disaggregation} pilot sample.`,
+          'The enrolled / not-enrolled split is only available for Utrecht-Oost and the ranked blind-spot districts in this demo.',
         ],
         facts: [{ label: 'EVs', value: fmtInt(s.evs) }, ...(s.forecastLoadPct !== null ? [riskFact(s.forecastLoadPct)] : [])],
         followUps: followUps.slice(1),
@@ -97,8 +97,8 @@ export function districtStatus(q: StaffQuestion, f: StaffFacts): AssistantAnswer
   }
   const rank = (f.blindSpots ?? []).find((b) => b.districtCode === s.code)?.rank;
   const text = [
-    `**${s.code}** (gridArea ${s.gridAreaCode}) has **${fmtInt(s.evs)}** EVs: **${fmtInt(s.known)}** enrolled and **${fmtInt(s.unenrolled)}** detected but not enrolled.`,
-    `That leaves ${s.invisiblePct ?? 0}% of its EVs invisible to the DR program${s.premises ? `, with EV penetration at ${s.penetrationPct ?? 0}% of ${fmtInt(s.premises)} premises` : ''}.${rank ? ` It is blind spot #${rank} on the dashboard.` : ''}`,
+    `**${s.code}** (${s.name}, ${s.gridAreaCode}) has **${fmtInt(s.evs)}** EVs: **${fmtInt(s.known)}** enrolled and **${fmtInt(s.unenrolled)}** detected but not enrolled.`,
+    `That leaves ${s.invisiblePct ?? 0}% of its EVs invisible to Slim Laden${s.premises ? `, with EV penetration at ${s.penetrationPct ?? 0}% of ${fmtInt(s.premises)} premises` : ''}.${rank ? ` It is blind spot #${rank} on the dashboard.` : ''}`,
   ];
   if (s.forecastLoadPct !== null) text.push(`Load is forecast at **${s.forecastLoadPct}%** of capacity for the next peak.`);
   const facts: AssistantFact[] = [
@@ -144,7 +144,7 @@ export function blindSpots(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
       text,
       facts: shown.slice(0, 4).map((b) => ({ label: b.districtCode, value: `${b.unenrolled} of ${b.known + b.unenrolled} unenrolled`, tone: 'warn' as const })),
       chart: { kind: 'bar', unit: '% invisible', points: shown.map((b, i) => ({ label: b.districtCode, value: b.gapPct, highlight: i === 0 })) },
-      followUps: [`How is ${top.districtCode} doing?`, draftFollowUp(top.districtCode), 'Draft an enrollment offer for the top 3 blind spots'],
+      followUps: [`How is ${top.districtCode} doing?`, draftFollowUp(top.districtCode), 'Draft a Slim Laden offer for the top 3 blind spots'],
       actions: [route('Open district dashboard', '/districts')],
       context: { districtCode: top.districtCode },
     },
@@ -163,7 +163,7 @@ export function overview(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
     {
       text: [
         `Across **${o.gridAreas}** gridAreas and ${fmtInt(o.districts)} districts we can see **${fmtInt(total)}** EVs.`,
-        `**${fmtInt(o.knownEvs)}** are known to our programs and **${fmtInt(o.unenrolledEvs)}** (**${o.invisiblePct}%**) are invisible: detected by ${BRAND.partners.evDetection} but not enrolled.`,
+        `**${fmtInt(o.knownEvs)}** are known to our programs and **${fmtInt(o.unenrolledEvs)}** (**${o.invisiblePct}%**) are invisible: detected by ${BRAND.partners.disaggregation} but not enrolled.`,
         `${o.deadGridAreas} gridAreas and ${o.deadDistricts} districts have no signal yet, and ${fmtInt(o.noSignalPremises)} matched premises show no EV.`,
       ],
       facts: [
@@ -173,7 +173,7 @@ export function overview(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
         { label: 'GridAreas', value: fmtInt(o.gridAreas) },
       ],
       chart: { kind: 'bar', unit: 'EVs', points: [{ label: 'Known', value: o.knownEvs }, { label: 'Invisible', value: o.unenrolledEvs, highlight: true }] },
-      followUps: ['Where are our biggest blind spots?', 'How are enrollments trending?', 'How much flexible load do we have?'],
+      followUps: ['Where are the most EVs not in Slim Laden?', 'How are Slim Laden sign-ups trending?', 'How much flexible load do we have?'],
       actions: [route('Open district dashboard', '/districts')],
     },
     q.now,
@@ -199,13 +199,13 @@ export function campaignPerformance(q: StaffQuestion, f: StaffFacts): AssistantA
   if (!c) {
     return answer(
       'CAMPAIGN_PERFORMANCE',
-      { text: ['No campaigns have been sent yet in this demo.', 'Start with an enrollment offer on a blind-spot district.'], followUps: ['Where are our biggest blind spots?', 'Draft an enrollment offer for SUB-26-F1'], actions: [route('Open Campaign 360', '/campaigns')] },
+      { text: ['No campaigns have been sent yet in this demo.', 'Start with a Slim Laden offer on a blind-spot district.'], followUps: ['Where are the most EVs not in Slim Laden?', 'Draft a Slim Laden offer for 1401'], actions: [route('Open Campaign 360', '/campaigns')] },
       q.now,
     );
   }
   const offer = c.type === 'ENROLL_OFFER';
   const s = c.stats;
-  const kind = offer ? 'enrollment offer' : 'stop-charging request';
+  const kind = offer ? 'Slim Laden offer' : 'flex request';
   const actions = [route('Open campaign', `/campaigns/${c.id}`), route('All campaigns', '/campaigns')];
   if (c.status === 'SCHEDULED') {
     return answer(
@@ -213,7 +213,7 @@ export function campaignPerformance(q: StaffQuestion, f: StaffFacts): AssistantA
       {
         text: [`The latest ${kind}, “${c.title}”, is scheduled for **${fmtTime(c.scheduledFor ?? c.sentAt)}** to ${c.audienceLabel}. Nothing has been sent yet.`],
         facts: [{ label: 'Status', value: 'Scheduled' }],
-        followUps: ['How did our DR events perform?', 'How are enrollments trending?'],
+        followUps: ['How did our flex events perform?', 'How are Slim Laden sign-ups trending?'],
         actions,
         context: { campaignId: c.id },
       },
@@ -256,7 +256,7 @@ export function campaignPerformance(q: StaffQuestion, f: StaffFacts): AssistantA
           offer ? { label: 'Enrolled', value: s.acted, highlight: true } : { label: 'Paused', value: s.paused, highlight: true },
         ],
       },
-      followUps: offer ? ['How are enrollments trending?', 'Where are our biggest blind spots?', 'How did our DR events perform?'] : ['How did our DR events perform?', 'How much flexible load do we have?', 'How are enrollments trending?'],
+      followUps: offer ? ['How are Slim Laden sign-ups trending?', 'Where are the most EVs not in Slim Laden?', 'How did our flex events perform?'] : ['How did our flex events perform?', 'How much flexible load do we have?', 'How are Slim Laden sign-ups trending?'],
       actions,
       context: { campaignId: c.id },
     },
@@ -272,12 +272,12 @@ export function drPerformance(q: StaffQuestion, f: StaffFacts): AssistantAnswer 
   const latestText = latest
     ? `The latest event, “${latest.title}”, is ${latest.status.toLowerCase()} on ${latest.districtCode}${latest.districtCodes && latest.districtCodes.length > 1 ? ` (+${latest.districtCodes.length - 1} districts)` : ''} for ${fmtWindow(latest.windowStart, latest.windowEnd)}.`
     : null;
-  const actions = [route('Open DR events', '/events'), route('Open reports', '/reports')];
+  const actions = [route('Open flex events', '/events'), route('Open reports', '/reports')];
   if (dr.eventsEnded === 0) {
     return answer(
       'DR_PERFORMANCE',
       {
-        text: ['No DR events have finished yet, so there are no results to report.', ...(latestText ? [latestText] : ['Send a stop-charging request from Campaign 360 to schedule one.'])],
+        text: ['No flex events have finished yet, so there are no results to report.', ...(latestText ? [latestText] : ['Send a flex request from Campaign 360 to schedule one.'])],
         facts: latest ? [{ label: 'Latest event', value: latest.status.toLowerCase() }] : [],
         followUps: ['Which districts are at risk tonight?', 'How much flexible load do we have?'],
         actions,
@@ -289,7 +289,7 @@ export function drPerformance(q: StaffQuestion, f: StaffFacts): AssistantAnswer 
     'DR_PERFORMANCE',
     {
       text: [
-        `**${dr.eventsEnded}** DR event${dr.eventsEnded === 1 ? ' has' : 's have'} ended. **${fmtInt(dr.householdsPaused)}** households paused charging, shifting **${fmtInt(Math.round(dr.kwhShifted))} kWh** and cutting the peak by **${dr.peakReducedMw} MW**.`,
+        `**${dr.eventsEnded}** flex event${dr.eventsEnded === 1 ? ' has' : 's have'} ended. **${fmtInt(dr.householdsPaused)}** households paused charging, shifting **${fmtInt(Math.round(dr.kwhShifted))} kWh** and cutting the peak by **${dr.peakReducedMw} MW**.`,
         ...(latestText ? [latestText] : []),
       ],
       facts: [
@@ -331,7 +331,7 @@ export function enrollmentTrend(q: StaffQuestion, f: StaffFacts): AssistantAnswe
         { label: 'Today', value: fmtInt(e.today) },
       ],
       chart: { kind: 'line', unit: 'enrollments/day', points: shownDays.map((d, i) => ({ label: dayLabel(d.date), value: d.count, highlight: i === shownDays.length - 1 })) },
-      followUps: ['Where are our biggest blind spots?', 'How did the last campaign perform?', 'Give me the network overview'],
+      followUps: ['Where are the most EVs not in Slim Laden?', 'How did the last campaign perform?', 'Give me the portfolio overview'],
       actions: [route('Open reports', '/reports')],
     },
     q.now,
@@ -350,11 +350,11 @@ export function gridRisk(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
       {
         text: [
           `No district is forecast above ${RISK_PCT}% of capacity right now. The next peak window is **${window}**.`,
-          districts.length ? `Highest forecast: ${districts[0].code} at ${districts[0].forecastLoadPct}%.` : 'Use the demo control panel to simulate a high forecast on SUB-01-F1.',
+          districts.length ? `Highest forecast: ${districts[0].code} at ${districts[0].forecastLoadPct}%.` : 'Use the demo control panel to simulate a high forecast on 3581.',
         ],
         facts: [{ label: 'Districts at risk', value: '0', tone: 'good' }, { label: 'Next peak', value: window }],
-        followUps: ['How much flexible load do we have?', 'How did our DR events perform?'],
-        actions: [route('Open DR events', '/events')],
+        followUps: ['How much flexible load do we have?', 'How did our flex events perform?'],
+        actions: [route('Open flex events', '/events')],
       },
       q.now,
     );
@@ -367,8 +367,8 @@ export function gridRisk(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
   ];
   if (atRisk.length > 1) text.push(`Also at risk: ${listText(atRisk.slice(1).map((x) => `${x.code} (${x.forecastLoadPct}%)`))}.`);
   const actions: AssistantAnswer['actions'] = [];
-  if (top.known !== null) actions.push({ kind: 'campaignDraft', label: 'Draft stop-charging request', draft: buildDraft('FLEX_REQUEST', { districtCodes: [top.code], knownOnDistrict: top.known, unenrolled: 0 }) });
-  actions.push(route('Open DR events', '/events'));
+  if (top.known !== null) actions.push({ kind: 'campaignDraft', label: 'Draft flex request', draft: buildDraft('FLEX_REQUEST', { districtCodes: [top.code], knownOnDistrict: top.known, unenrolled: 0 }) });
+  actions.push(route('Open flex events', '/events'));
   return answer(
     'GRID_RISK',
     {
@@ -393,8 +393,8 @@ export function draftCampaign(q: StaffQuestion, f: StaffFacts): AssistantAnswer 
   const targets = f.draftTargets ?? [];
   const type: CampaignType = q.entities.campaignType ?? 'ENROLL_OFFER';
   if (!targets.length) {
-    const top = (f.blindSpots ?? [])[0]?.districtCode ?? 'SUB-01-F1';
-    return answer('DRAFT_CAMPAIGN', { text: ['Which district should I write for? Name one, like SUB-26-F1, or ask for the top blind spots.'], followUps: [draftFollowUp(top, type), 'Where are our biggest blind spots?'] }, q.now);
+    const top = (f.blindSpots ?? [])[0]?.districtCode ?? '3581';
+    return answer('DRAFT_CAMPAIGN', { text: ['Which district should I write for? Name one, like 1401, or ask for the top blind spots.'], followUps: [draftFollowUp(top, type), 'Where are the most EVs not in Slim Laden?'] }, q.now);
   }
   const codes = targets.map((t) => t.code);
   const known = targets.reduce((a, t) => a + t.known, 0);
@@ -407,7 +407,7 @@ export function draftCampaign(q: StaffQuestion, f: StaffFacts): AssistantAnswer 
     'DRAFT_CAMPAIGN',
     {
       text: [
-        `Here are two ${offer ? 'enrollment offer' : 'stop-charging request'} drafts for ${where}, reaching **${fmtInt(audience)}** ${offer ? 'EV owners who are detected but not enrolled' : 'enrolled EV owners'}.`,
+        `Here are two ${offer ? 'Slim Laden offer' : 'flex request'} drafts for ${where}, reaching **${fmtInt(audience)}** ${offer ? 'EV owners who are detected but not enrolled' : 'enrolled EV owners'}.`,
         `Variant A leans on social proof (${fmtInt(targets[0].known)} neighbours already enrolled), variant B on the reward${offer ? '' : ' and the event window'}. Merge fields like {first_name} are filled in per customer by Campaign 360.`,
       ],
       facts: [
@@ -443,7 +443,7 @@ export function flexLoad(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
   text.push(
     sc.homes > 0
       ? `Smart charging is on in **${fmtInt(sc.homes)}** homes: **${fmtInt(Math.round(sc.flexibleKw))} kW** of flexible load, moving ${fmtInt(Math.round(sc.shiftedKwhPerNight))} kWh out of the peak each night (about ${sc.peakAvoidedMw} MW avoided).`
-      : 'Smart charging is not switched on in any homes yet, so there is no scheduled flexibility on top of DR.',
+      : 'Smart charging is not switched on in any homes yet, so there is no scheduled flexibility on top of flex requests.',
   );
   if (untapped) text.push(`Another **${fmtInt(untapped)}** EVs are detected but not enrolled: roughly ${untappedMw} MW still untapped.`);
   return answer(
@@ -451,7 +451,7 @@ export function flexLoad(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
     {
       text,
       facts: [
-        { label: 'DR-ready EVs', value: fmtInt(enrolled) },
+        { label: 'Flex-ready EVs', value: fmtInt(enrolled) },
         { label: 'Pausable', value: `${drMw} MW`, tone: 'good' },
         { label: 'Smart charging homes', value: fmtInt(sc.homes) },
         ...(untapped ? [{ label: 'Untapped', value: `${untappedMw} MW`, tone: 'warn' as const }] : []),
@@ -460,12 +460,12 @@ export function flexLoad(q: StaffQuestion, f: StaffFacts): AssistantAnswer {
         kind: 'bar',
         unit: 'MW',
         points: [
-          { label: 'DR pause', value: drMw, highlight: true },
+          { label: 'Flex shift', value: drMw, highlight: true },
           { label: 'Smart charging', value: scMw },
           ...(untapped ? [{ label: 'Untapped', value: untappedMw }] : []),
         ],
       },
-      followUps: ['Which districts are at risk tonight?', 'Where are our biggest blind spots?', 'How did our DR events perform?'],
+      followUps: ['Which districts are at risk tonight?', 'Where are the most EVs not in Slim Laden?', 'How did our flex events perform?'],
       actions: [route('Open reports', '/reports')],
     },
     q.now,
@@ -479,7 +479,7 @@ export function fallback(q: StaffQuestion): AssistantAnswer {
     'FALLBACK',
     {
       matched: false,
-      text: [SCRIPTED_FALLBACK, 'I can tell you about districts, blind spots, campaigns, DR events, enrollments, grid risk and flexible load. Try one of these:'],
+      text: [SCRIPTED_FALLBACK, 'I can tell you about districts, blind spots, campaigns, flex events, enrollments, grid risk and flexible load. Try one of these:'],
       followUps: [STAFF_SUGGESTIONS[1], STAFF_SUGGESTIONS[0], STAFF_SUGGESTIONS[3], STAFF_SUGGESTIONS[6]],
       context: { districtCode: q.context.districtCode, campaignId: q.context.campaignId },
     },

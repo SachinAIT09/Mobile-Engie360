@@ -1020,8 +1020,8 @@ export interface DemoResetRequest {
 }
 
 export interface SimEvDetectedRequest { customerId: string }
-export interface SimClusterRequest { districtCode: string }
-export interface SimForecastRequest { gridAreaCode: string }
+export interface SimClusterRequest { gridAreaCode: string }
+export interface SimForecastRequest { districtCode: string }
 
 /** One-click phone notifications on the demo control panel ("quick send"). Catalogue in demo-notify.ts. */
 export type NotifyPreset =

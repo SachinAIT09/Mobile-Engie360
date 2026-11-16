@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { PROGRAM, fmtWindow, type LiveEvent, type NotifyPreset, type SimNotifyResult } from '@engie/shared';
+import { fmtWindow, type LiveEvent, type NotifyPreset, type SimNotifyResult } from '@engie/shared';
 import { Db } from '../db/db.service.js';
 import type { CustomerDoc } from '../db/schemas.js';
 import type { AuditActor } from '../audit/audit.service.js';
@@ -12,10 +12,10 @@ import { LiveEventsService } from '../live-events/live-events.service.js';
 import { MessagesService } from '../messages/messages.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { EvDetectionSource } from './ev-detection-source.js';
-import { CAMPAIGN_COPY, isPlainPreset, notifyCopy } from './notify-copy.js';
+import { CAMPAIGN_COPY, EV_DETECTED_COPY, isPlainPreset, notifyCopy } from './notify-copy.js';
 
-const CLUSTER_TOTAL = 284;
-const CLUSTER_UNENROLLED = 118;
+const CLUSTER_TOTAL = 212;
+const CLUSTER_UNENROLLED = 96;
 
 @Injectable()
 export class SimService {
@@ -49,10 +49,7 @@ export class SimService {
           customerId: c._id,
           kind: 'EV_DETECTED',
           category: 'Offers',
-          tag: 'EV',
-          title: 'We noticed an EV charging at your home',
-          body: `Earn ${PROGRAM.signupIncentive} by joining ${PROGRAM.name}. Tap to learn more.`,
-          cta: 'See program & enroll',
+          ...EV_DETECTED_COPY[c.lang ?? 'nl'],
           campaignId: null,
           flexEventId: null,
           route: '/program',
@@ -68,18 +65,18 @@ export class SimService {
       gridAreaCode: c.gridAreaCode,
       districtCode: c.districtCode,
       headline: 'New EV detected',
-      summary: `at ${street} (${c.districtCode}), ${enrolled ? 'already enrolled' : 'not enrolled'}`,
+      summary: `at ${street} (${c.districtCode}), ${enrolled ? 'already in Slim Laden' : 'not in Slim Laden'}`,
       count: 1,
       unenrolledCount: enrolled ? 0 : 1,
       enrolledCount: enrolled ? 1 : 0,
-      actionTaken: enrolled ? null : 'Onboarding message sent in app automatically',
+      actionTaken: enrolled ? null : 'Slim Laden invitation sent in the app automatically',
       suggested: null,
       customerIds: [c._id],
     });
   }
 
-  /** Flow B: a cluster of EVs on a gridArea stops charging at the same time. */
-  async stoppedChargingCluster(gridAreaCode: string): Promise<LiveEvent> {
+  /** Flow B: Net2Grid sees a cluster of EVs in a grid area charging at the evening peak. */
+  async evCluster(gridAreaCode: string): Promise<LiveEvent> {
     const sub = await this.db.gridAreas.findOne({ code: gridAreaCode }).lean();
     if (!sub) throw new NotFoundException(`GridArea ${gridAreaCode} not found`);
 
@@ -107,11 +104,11 @@ export class SimService {
     const to = new Date(Math.ceil(addMinutes(now, 3).getTime() / 300000) * 300000);
     this.realtime.toStaff('district:statsChanged', { gridAreaCode, districtCode: null });
     const le = await this.liveEvents.create({
-      kind: 'STOPPED_CHARGING_CLUSTER',
+      kind: 'EV_CLUSTER',
       gridAreaCode,
       districtCode: null,
-      headline: `${CLUSTER_TOTAL} EVs stopped charging`,
-      summary: `on ${gridAreaCode} between ${fmtClockRange(from, to)} · ${chosen.length} not enrolled`,
+      headline: `${CLUSTER_TOTAL} EVs charging at the evening peak`,
+      summary: `in ${sub.name ?? gridAreaCode} between ${fmtClockRange(from, to)} · ${chosen.length} not in Slim Laden`,
       count: CLUSTER_TOTAL,
       unenrolledCount: chosen.length,
       enrolledCount: CLUSTER_TOTAL - chosen.length,
@@ -121,7 +118,7 @@ export class SimService {
     }, false);
     // Now that the id exists, attach the suggested action that targets this cluster.
     const suggested = {
-      label: `Target ${chosen.length} with enrollment offer`,
+      label: `Target ${chosen.length} with Slim Laden offer`,
       campaignType: 'ENROLL_OFFER' as const,
       audience: { kind: 'LIVE_EVENT' as const, liveEventId: le.id, segment: 'UNENROLLED_EV' as const },
     };
@@ -131,26 +128,27 @@ export class SimService {
     return full;
   }
 
-  /** Flow C: load forecast on a district is close to its limit. */
-  async districtForecastHigh(districtCode: string): Promise<LiveEvent> {
+  /** Flow C: the grid operator forecasts congestion in a postcode district. */
+  async congestionForecast(districtCode: string): Promise<LiveEvent> {
     const f = await this.db.districts.findOne({ code: districtCode }).lean();
     if (!f) throw new NotFoundException(`District ${districtCode} not found`);
     await this.db.districts.updateOne({ code: districtCode }, { $set: { forecastLoadPct: 92 } });
     const enrolled = await this.db.enrollments.countDocuments({ districtCode, status: 'ACTIVE' });
     const w = nextEventWindow();
+    const area = await this.db.gridAreas.findOne({ code: f.gridAreaCode }, { operator: 1 }).lean();
     this.realtime.toStaff('district:statsChanged', { gridAreaCode: f.gridAreaCode, districtCode });
     return this.liveEvents.create({
-      kind: 'DISTRICT_FORECAST_HIGH',
+      kind: 'CONGESTION_FORECAST',
       gridAreaCode: f.gridAreaCode,
       districtCode,
-      headline: `${districtCode} forecast at 92% of capacity`,
-      summary: `, ${fmtWindow(w.start.toISOString(), w.end.toISOString())} · ${enrolled} enrolled EVs on this district`,
+      headline: `${area?.operator ?? 'Grid operator'} forecasts ${districtCode} ${f.name ?? ''} at 92% of capacity`,
+      summary: `, ${fmtWindow(w.start.toISOString(), w.end.toISOString())} · ${enrolled} Slim Laden EVs in this district`,
       count: enrolled,
       unenrolledCount: null,
       enrolledCount: enrolled,
       actionTaken: null,
       suggested: {
-        label: 'Send stop-charging request',
+        label: 'Send flex request',
         campaignType: 'FLEX_REQUEST',
         audience: { kind: 'DISTRICT', districtCode, segment: 'ENROLLED_EV' },
       },
@@ -166,15 +164,16 @@ export class SimService {
       const e = await this.evDetected(customerId);
       return { text: `${e.headline} ${e.summary}` };
     }
-    if (preset === 'FLEX_REQUEST' || preset === 'ENROLL_OFFER') {
-      if (preset === 'FLEX_REQUEST' && !enrolled) throw new BadRequestException(`${c.firstName} is not enrolled; stop-charging requests go to enrolled customers`);
-      if (preset === 'ENROLL_OFFER' && enrolled) throw new BadRequestException(`${c.firstName} is already enrolled`);
+    if (preset === 'FLEX_REQUEST' || preset === 'ENROLL_OFFER' || preset === 'INSTALLMENT_ADVICE') {
+      if (preset === 'FLEX_REQUEST' && !enrolled) throw new BadRequestException(`${c.firstName} is not in Slim Laden; flex requests go to Slim Laden customers`);
+      if (preset === 'ENROLL_OFFER' && enrolled) throw new BadRequestException(`${c.firstName} is already in Slim Laden`);
+      if (preset === 'INSTALLMENT_ADVICE' && c.contract.advisedInstallment - c.contract.installment < 5) throw new BadRequestException(`${c.firstName}'s installment already matches the advice`);
       await this.campaigns.create(
         {
           type: preset,
-          audience: { kind: 'DISTRICT', districtCode: c.districtCode, segment: preset === 'FLEX_REQUEST' ? 'ENROLLED_EV' : 'UNENROLLED_EV' },
+          audience: { kind: 'DISTRICT', districtCode: c.districtCode, segment: preset === 'FLEX_REQUEST' ? 'ENROLLED_EV' : preset === 'ENROLL_OFFER' ? 'UNENROLLED_EV' : 'INSTALLMENT_GAP' },
           exclusions: { optedOut: false, contactedLast7Days: false, lifeSupport: false },
-          ...CAMPAIGN_COPY[preset],
+          ...CAMPAIGN_COPY[preset][c.lang ?? 'nl'],
           channels: { push: true, inApp: true, sms: false, email: false },
           schedule: { sendNow: true, expiresInHours: 4 },
           testCustomerId: customerId,
@@ -183,13 +182,15 @@ export class SimService {
       );
       return {
         text: preset === 'FLEX_REQUEST'
-          ? `Stop-charging request sent to ${c.firstName}'s phone. Start and end the event on the DR events page (or E in the presenter bar).`
-          : `Enrollment offer sent to ${c.firstName}'s phone.`,
+          ? `Flex request sent to ${c.firstName}'s phone. Start and end the event on the Flex events page (or E in the presenter bar).`
+          : preset === 'ENROLL_OFFER'
+            ? `Slim Laden offer sent to ${c.firstName}'s phone.`
+            : `Installment advice sent to ${c.firstName}'s phone.`,
       };
     }
     if (!isPlainPreset(preset)) throw new BadRequestException('Unknown preset');
     const w = nextEventWindow();
-    const copy = notifyCopy(preset, { firstName: c.firstName, peakWindow: fmtWindow(w.start.toISOString(), w.end.toISOString()), clock: fmtClock(new Date()) });
+    const copy = notifyCopy(preset, { firstName: c.firstName, peakWindow: fmtWindow(w.start.toISOString(), w.end.toISOString()), clock: fmtClock(new Date()), lang: c.lang ?? 'nl' });
     await this.messages.create({ customerId: c._id, campaignId: null, flexEventId: null, ...copy });
     return { text: `“${copy.title}” sent to ${c.firstName}'s phone.` };
   }

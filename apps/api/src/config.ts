@@ -44,15 +44,15 @@ export function socketPollingOnly(env: Record<string, string | undefined>): bool
 export const config = {
   /** Read lazily: database.ts may set MONGO_URL at startup (built-in database). */
   get mongoUrl(): string {
-    return process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/hydro_one_demo';
+    return process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/engie_demo';
   },
   port: resolvePort(process.env),
   socketPollingOnly: socketPollingOnly(process.env),
   jwtSecret: process.env.JWT_SECRET || 'demo-only-secret',
-  demoFirstName: process.env.DEMO_CUSTOMER_FIRST_NAME || 'Manny',
-  demoEnrolledFirstName: process.env.DEMO_ENROLLED_CUSTOMER_FIRST_NAME || 'Priya',
+  demoFirstName: process.env.DEMO_CUSTOMER_FIRST_NAME || 'Sanne',
+  demoEnrolledFirstName: process.env.DEMO_ENROLLED_CUSTOMER_FIRST_NAME || 'Daan',
   evAlwaysCharging: bool(process.env.EV_ALWAYS_CHARGING, true),
-  timezone: process.env.DEMO_TIMEZONE || 'America/Toronto',
+  timezone: process.env.DEMO_TIMEZONE || 'Europe/Amsterdam',
   /** Web push keys (npx web-push generate-vapid-keys). Unset: a new pair is generated at each start. */
   vapidPublicKey: process.env.VAPID_PUBLIC_KEY || '',
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',

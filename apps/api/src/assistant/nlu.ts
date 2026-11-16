@@ -1,4 +1,5 @@
 import type { AssistantContext, CampaignType } from '@engie/shared';
+import { DISTRICT_AREA, GRID_AREAS } from '../seed/seed-data.js';
 
 /**
  * Scripted assistant "NLU": deterministic text normalisation, entity extraction and weighted keyword
@@ -27,7 +28,7 @@ export interface Entities {
 /** Common misspellings and shorthand seen in demo rehearsals, applied word by word after lowercasing. */
 const TYPOS: Record<string, string> = {
   bil: 'bill', bills: 'bill', hi: 'high', higer: 'higher', hihg: 'high', chargin: 'charging', chrage: 'charge', chraging: 'charging',
-  feedr: 'district', fedder: 'district', whats: 'what is', wats: 'what is', whys: 'why is', hows: 'how is',
+  whats: 'what is', wats: 'what is', whys: 'why is', hows: 'how is',
   im: 'i am', u: 'you', ur: 'your', thx: 'thanks', pls: 'please', plz: 'please', enrolment: 'enrollment', enrolments: 'enrollments',
   enrol: 'enroll', camapign: 'campaign', campagin: 'campaign', compain: 'campaign', outtage: 'outage',
   outages: 'outage', usag: 'usage', elec: 'electricity', tonite: 'tonight', '2nite': 'tonight', '2day': 'today', cuz: 'because',
@@ -54,19 +55,20 @@ export function normalise(q: string): string {
     .join(' ');
 }
 
-const DISTRICT_RE = /\bSUB-?\s?(\d{1,3})-?\s?F(\d{1,2})\b/gi;
-const GRID_AREA_RE = /\bSUB-?\s?(\d{1,3})\b(?!-?\s?F\d)/i;
-
-const pad2 = (n: string) => n.padStart(2, '0');
+/** Postcode districts (PC4). Years (2024–2030) are not districts. */
+const DISTRICT_RE = /\b([1-9]\d{3})\b/g;
+const isYear = (code: string) => Number(code) >= 2024 && Number(code) <= 2030;
 
 export function extractEntities(raw: string): Entities {
   const districtCodes: string[] = [];
   for (const m of raw.matchAll(DISTRICT_RE)) {
-    const code = `SUB-${pad2(m[1])}-F${m[2]}`;
-    if (!districtCodes.includes(code)) districtCodes.push(code);
+    const code = m[1];
+    if (!isYear(code) && !districtCodes.includes(code)) districtCodes.push(code);
   }
-  const subMatch = raw.replace(DISTRICT_RE, ' ').match(GRID_AREA_RE);
-  const gridAreaCode = subMatch ? `SUB-${pad2(subMatch[1])}` : districtCodes[0]?.split('-F')[0] ?? null;
+  // Grid areas by code ("UT-OOST") or name ("Utrecht-Oost", "utrecht oost").
+  const flat = raw.toLowerCase().replace(/[\s_]+/g, '-');
+  const area = GRID_AREAS.find((g) => flat.includes(g.code.toLowerCase()) || flat.includes(g.name.toLowerCase().replace(/\s+/g, '-')));
+  const gridAreaCode = area?.code ?? (districtCodes[0] ? DISTRICT_AREA[districtCodes[0]] ?? null : null);
 
   const n = normalise(raw);
   const words = n.split(' ');
@@ -90,7 +92,8 @@ export function extractEntities(raw: string): Entities {
   else if (/\b(this|past) year\b|\byearly\b|\bannual/.test(n)) range = 'year';
 
   let campaignType: CampaignType | null = null;
-  if (/\b(stop|pause|pausing|stopping|curtail|dr request|dr event|demand response|stop charging)\b/.test(n)) campaignType = 'FLEX_REQUEST';
+  if (/\b(installment|termijnbedrag|advance payment|underpay|underpaying)\b/.test(n)) campaignType = 'INSTALLMENT_ADVICE';
+  else if (/\b(stop|pause|pausing|stopping|curtail|flex request|flex event|shift charging|congestion|stop charging)\b/.test(n)) campaignType = 'FLEX_REQUEST';
   else if (/\b(offer|enroll|enrollment|sign up|signup|join|recruit|onboard)/.test(n)) campaignType = 'ENROLL_OFFER';
 
   const countMatch = n.match(/\b(?:top|best|worst|first)\s+(\d{1,2})\b|\b(\d{1,2})\s+(?:districts|blind spots)\b/);
@@ -126,7 +129,7 @@ export interface IntentMatch<I extends string = string> {
   intent: I | 'FALLBACK';
   score: number;
   entities: Entities;
-  /** True when the intent was inherited from the previous turn ("and SUB-02-F1?"). */
+  /** True when the intent was inherited from the previous turn ("and 1072?"). */
   followUp: boolean;
   /** Runner-up score, for debugging/specs. */
   scores: Record<string, number>;
@@ -154,7 +157,7 @@ function scoreIntent(def: IntentDef, text: string, words: string[], ent: Entitie
 
 const FOLLOW_UP_CUE = /^(and|what about|how about|same for|same|now|also|ok|okay|then|what of)\b/;
 
-/** Words that carry no intent once entities are removed ("and SUB-02-F1?" → nothing left). */
+/** Words that carry no intent once entities are removed ("and 1072?" → nothing left). */
 const FILLER = new Set(['and', 'what', 'about', 'how', 'same', 'for', 'now', 'also', 'ok', 'okay', 'then', 'of', 'the', 'is', 'in', 'on', 'one', 'please', 'it', 'that', 'this', 'district', 'sub']);
 
 function isEntityOnly(text: string, ent: Entities): boolean {
@@ -167,7 +170,7 @@ function isEntityOnly(text: string, ent: Entities): boolean {
 }
 
 /**
- * Pick the best intent. Below the threshold → FALLBACK, except a bare follow-up ("and SUB-02-F1?",
+ * Pick the best intent. Below the threshold → FALLBACK, except a bare follow-up ("and 1072?",
  * "what about September?") which inherits `ctx.lastIntent` when that intent is one of `defs`.
  */
 export function matchIntent<I extends string>(question: string, defs: readonly IntentDef<I>[], ctx: AssistantContext = {}): IntentMatch<I> {

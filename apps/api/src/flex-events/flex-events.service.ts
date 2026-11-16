@@ -71,9 +71,9 @@ export class FlexEventsService {
   }
 
   private async load(id: string): Promise<FlexEventDoc> {
-    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('DR event not found');
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException('flex event not found');
     const e = await this.db.flexEvents.findById(id).lean();
-    if (!e) throw new NotFoundException('DR event not found');
+    if (!e) throw new NotFoundException('flex event not found');
     return e;
   }
 
@@ -177,7 +177,7 @@ export class FlexEventsService {
       kind: 'FLEX_EVENT_ENDED',
       gridAreaCode: sub,
       districtCode: e.districtCode,
-      headline: `DR event ended on ${e.districtCode}`,
+      headline: `flex event ended on ${e.districtCode}`,
       summary: `${paused} homes paused charging · peak cut by ${peakReducedMw(paused)} MW`,
       count: paused,
       unenrolledCount: null,

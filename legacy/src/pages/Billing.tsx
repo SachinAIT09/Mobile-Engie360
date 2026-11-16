@@ -127,7 +127,7 @@ function InvoiceModal({ inv, onClose }: { inv: Invoice; onClose: () => void }) {
               ask(t('Can you explain my latest invoice?', 'Kun je mijn laatste nota uitleggen?'));
             }}
           >
-            {t('Explain with assistant', 'Uitleg van assistent')}
+            {t(`Explain with ${brand.assistant.name}`, `Uitleg van ${brand.assistant.name}`)}
           </button>
           <button
             className="btn btn-primary"

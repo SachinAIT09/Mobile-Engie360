@@ -24,6 +24,7 @@ import { Card, Delta, InsightIc, Kpi, N2GBadge, DemoFlag, Seg } from '../compone
 import { ChartLegend, UsageChart, type Metric } from '../components/UsageChart';
 import { usePortalAssistant } from '../assistant/portalContext';
 import { useLivePower } from '../lib/live';
+import { brand } from '../brand';
 
 function greeting(t: (en: string, nl: string) => string) {
   const k = greetingKey();
@@ -83,7 +84,7 @@ export default function Dashboard() {
     { icon: SlidersHorizontal, tone: 'el', label: t('Adjust installment', 'Termijnbedrag aanpassen'), go: () => navigate('/billing?adjust=1') },
     { icon: FileText, tone: 'ink', label: t('Latest invoice', 'Laatste nota'), go: () => navigate('/billing#invoices') },
     { icon: Gauge, tone: 'eur', label: t('Meter readings', 'Meterstanden'), go: () => navigate('/account#meter') },
-    { icon: Sparkles, tone: 'pur', label: t('Ask the assistant', 'Vraag de assistent'), go: () => ask(t('Why is my energy bill higher this month?', 'Waarom is mijn energierekening hoger deze maand?')) },
+    { icon: Sparkles, tone: 'pur', label: t(`Ask ${brand.assistant.name}`, `Vraag het ${brand.assistant.name}`), go: () => ask(t('Why is my energy bill higher this month?', 'Waarom is mijn energierekening hoger deze maand?')) },
   ] as const;
 
   return (

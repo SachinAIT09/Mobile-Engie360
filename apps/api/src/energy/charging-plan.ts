@@ -53,7 +53,7 @@ export interface PlanInput {
   needKwh: number;
   maxKw: number;
   planId: RatePlanId;
-  /** Windows the car must not charge in (DR events). */
+  /** Windows the car must not charge in (flex events). */
   blocked: Window[];
   tz: string;
 }
@@ -239,14 +239,14 @@ function round3(x: number) {
 }
 
 /**
- * What one home on default smart-charging settings (TOU, no DR events) moves out of the 17–21 evening peak tonight:
+ * What one home on default smart-charging settings (dynamic price, no flex events) moves out of the 17–21 evening peak tonight:
  * kWh the plug-in-and-charge baseline would draw in 17–21 minus what the plan draws there, and the largest hourly kW cut.
  */
 export function defaultNightShift(now: Date, tz: string, maxKw = 7.2): { shiftedKwh: number; peakKwAvoided: number } {
   const session = sessionFor(now, SMART_CHARGING.defaultReadyBy, SMART_CHARGING.plugInHour, tz);
   const need = SMART_CHARGING.defaultTargetKwh;
-  const plan = planCharging({ session, needKwh: need, maxKw, planId: 'TOU', blocked: [], tz }).slots;
-  const base = baseline(session, need, maxKw, 'TOU', tz);
+  const plan = planCharging({ session, needKwh: need, maxKw, planId: 'DYNAMIC', blocked: [], tz }).slots;
+  const base = baseline(session, need, maxKw, 'DYNAMIC', tz);
   const shiftedKwh = Math.max(0, kwhInLocalHours(base, 17, 21, tz) - kwhInLocalHours(plan, 17, 21, tz));
   let peakKwAvoided = 0;
   const h0 = Math.floor(session.start.getTime() / HOUR_MS) * HOUR_MS;

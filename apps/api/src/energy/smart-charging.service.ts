@@ -1,29 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { SMART_CHARGING, type RatePlanComparison, type SmartChargingPlan, type SmartChargingSettings, type SmartChargingUpdateRequest } from '@engie/shared';
-import { localMidnight } from '../common/time.js';
+import { SMART_CHARGING, monthlyUsage, type RatePlanComparison, type SmartChargingPlan, type SmartChargingSettings, type SmartChargingUpdateRequest } from '@engie/shared';
 import { config } from '../config.js';
 import { Db } from '../db/db.service.js';
 import type { CustomerDoc } from '../db/schemas.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { baseline, evKwAt, hmToMinutes, planCharging, sessionFor, summarisePlan, type Session } from './charging-plan.js';
-import { baseKw, EV_CHARGE_KW, historicalEvKw } from './energy.model.js';
-import { integrate } from './integrate.js';
+import { usageProfile } from '../usage/usage.service.js';
+import { baseKw, EV_CHARGE_KW } from './energy.model.js';
 import { comparePlans } from './tariff.js';
 
-/** Share of an EV home's bill that is EV charging (same figure as `Bill.evSharePct`). */
-const EV_BILL_SHARE = 0.38;
 /** Plans are cached per customer and minute for this long (the 5 s live ticker reuses them). */
 const CACHE_TTL_MS = 5000;
 
-interface DrWindow {
+interface FlexWindow {
   start: Date;
   end: Date;
   title: string;
 }
 
 export function defaultSettings(): SmartChargingSettings {
-  return { enabled: false, readyBy: SMART_CHARGING.defaultReadyBy, targetKwh: SMART_CHARGING.defaultTargetKwh, ratePlan: 'TOU' };
+  return { enabled: false, readyBy: SMART_CHARGING.defaultReadyBy, targetKwh: SMART_CHARGING.defaultTargetKwh, ratePlan: 'DYNAMIC' };
 }
 
 export function settingsOf(c: CustomerDoc): SmartChargingSettings {
@@ -41,10 +38,10 @@ export function activeBoost(c: CustomerDoc, at: Date): Date | null {
 }
 
 /**
- * Builds the plan (pure apart from the inputs): tonight's session, cheapest/cleanest slots outside the DR windows,
+ * Builds the plan (pure apart from the inputs): tonight's session, cheapest/cleanest slots outside the flex windows,
  * savings against charging at plug-in.
  */
-export function buildPlan(settings: SmartChargingSettings, hasEv: boolean, windows: DrWindow[], boostUntil: Date | null, at: Date, tz = config.timezone): SmartChargingPlan {
+export function buildPlan(settings: SmartChargingSettings, hasEv: boolean, windows: FlexWindow[], boostUntil: Date | null, at: Date, tz = config.timezone): SmartChargingPlan {
   const session = sessionFor(at, settings.readyBy, SMART_CHARGING.plugInHour, tz);
   const avoided = hasEv ? windows.filter((w) => w.start < session.end && w.end > session.start) : [];
   const need = hasEv ? settings.targetKwh : 0;
@@ -65,7 +62,7 @@ export function buildPlan(settings: SmartChargingSettings, hasEv: boolean, windo
     co2Kg: sum.co2Kg,
     baselineCo2Kg: sum.baselineCo2Kg,
     co2SavedKg: sum.co2SavedKg,
-    avoidedDrWindows: avoided.map((w) => ({ start: w.start.toISOString(), end: w.end.toISOString(), title: w.title })),
+    avoidedFlexWindows: avoided.map((w) => ({ start: w.start.toISOString(), end: w.end.toISOString(), title: w.title })),
     chargingNow: hasEv && (!!boost || evKwAt(plan.slots, at) > 0),
     nextStart: plan.slots.find((s) => Date.parse(s.start) > at.getTime())?.start ?? null,
     boostUntil: boost ? boost.toISOString() : null,
@@ -100,8 +97,8 @@ export class SmartChargingService {
     return !!det || !!enr;
   }
 
-  /** SCHEDULED/ACTIVE DR events targeting the customer that overlap the session, minus the ones they opted out of. */
-  private async drWindows(c: CustomerDoc, session: Session): Promise<DrWindow[]> {
+  /** SCHEDULED/ACTIVE flex events targeting the customer that overlap the session, minus the ones they opted out of. */
+  private async flexWindows(c: CustomerDoc, session: Session): Promise<FlexWindow[]> {
     const evs = await this.db.flexEvents
       .find(
         { status: { $in: ['SCHEDULED', 'ACTIVE'] }, targetCustomerIds: c._id, windowEnd: { $gt: session.start }, windowStart: { $lt: session.end } },
@@ -118,7 +115,7 @@ export class SmartChargingService {
   private async compute(c: CustomerDoc, hasEv: boolean, at: Date): Promise<SmartChargingPlan> {
     const settings = settingsOf(c);
     const session = sessionFor(at, settings.readyBy);
-    const windows = hasEv ? await this.drWindows(c, session) : [];
+    const windows = hasEv ? await this.flexWindows(c, session) : [];
     return buildPlan(settings, hasEv, windows, activeBoost(c, at), at);
   }
 
@@ -173,25 +170,18 @@ export class SmartChargingService {
     return this.get(customerId);
   }
 
-  /** Monthly cost on each plan from the customer's bills and the model's day shape, with and without smart charging. */
+  /** Monthly cost on each plan from the customer's last 12 months of usage, with and without smart charging. */
   async ratePlans(customerId: string): Promise<RatePlanComparison> {
     const c = await this.customer(customerId);
-    const [hasEv, bills] = await Promise.all([
-      this.hasEv(c),
-      this.db.bills.find({ customerId: c._id }, { kWh: 1 }).sort({ periodEnd: -1 }).limit(6).lean(),
-    ]);
-    let basis = bills.length ? bills.reduce((s, b) => s + b.kWh, 0) / bills.length : 0;
-    if (!basis) {
-      // No bills (synthetic homes): one modelled day × 30.
-      const from = localMidnight(new Date());
-      const day = integrate({ from, to: new Date(from.getTime() + 86400000), hasSolar: false, evKwAt: (_t, h) => historicalEvKw(h, hasEv), nowEvKw: null, now: from });
-      basis = day.cons * 30;
-    }
+    const hasEv = await this.hasEv(c);
+    const months = monthlyUsage(usageProfile(c), new Date());
+    const basis = months.reduce((s, m) => s + m.electricity, 0) / months.length;
+    const evPerMonth = hasEv ? months[months.length - 1]?.ev || 78 : 0;
     const settings = settingsOf(c);
     return comparePlans({
-      basisKwhPerMonth: basis,
+      basisKwhPerMonth: Math.max(basis, evPerMonth),
       homeShape: Array.from({ length: 24 }, (_, h) => baseKw(h + 0.5, 0)),
-      evKwhPerNight: hasEv ? (basis * EV_BILL_SHARE) / 30 : 0,
+      evKwhPerNight: evPerMonth / 30,
       evKw: EV_CHARGE_KW,
       plugInHour: SMART_CHARGING.plugInHour,
       readyByHour: hmToMinutes(settings.readyBy) / 60,

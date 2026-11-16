@@ -152,7 +152,7 @@ describe('staff answers', () => {
   });
 
   it('DR_PERFORMANCE, ENROLLMENT_TREND, FLEX_LOAD from the reports summary', () => {
-    expect(plain(answerStaff(sq('DR_PERFORMANCE'), { reports: REPORTS, flexEvents: [] }))).toContain('2 DR events have ended. 120 households paused charging, shifting 2,592 kWh and cutting the peak by 0.864 MW.');
+    expect(plain(answerStaff(sq('DR_PERFORMANCE'), { reports: REPORTS, flexEvents: [] }))).toContain('2 flex events have ended. 120 households paused charging, shifting 2,592 kWh and cutting the peak by 0.864 MW.');
     const trend = answerStaff(sq('ENROLLMENT_TREND'), { reports: REPORTS });
     expect(plain(trend)).toContain('1,726 customers are enrolled. 44 joined in the last 30 days and 21 in the last 7, up from 7 the week before.');
     expect(trend.chart?.kind).toBe('line');

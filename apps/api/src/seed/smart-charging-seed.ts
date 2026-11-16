@@ -7,7 +7,7 @@ import type { CustomerDoc } from '../db/schemas.js';
 const SHARE = 0.3;
 
 /**
- * Turns smart charging on (default settings, TOU) for a deterministic ~30% of the synthetic enrolled EV customers
+ * Turns smart charging on (default settings, dynamic price) for a deterministic ~30% of the synthetic enrolled EV customers
  * (after customers and enrollments are inserted). Demo customers always stay off (smartCharging null).
  */
 export async function seedSmartCharging(db: Db, customers: Partial<CustomerDoc>[]): Promise<void> {
@@ -23,7 +23,7 @@ export async function seedSmartCharging(db: Db, customers: Partial<CustomerDoc>[
           enabled: true,
           readyBy: SMART_CHARGING.defaultReadyBy,
           targetKwh: SMART_CHARGING.defaultTargetKwh,
-          ratePlan: 'TOU',
+          ratePlan: 'DYNAMIC',
           boostUntil: null,
         },
       },

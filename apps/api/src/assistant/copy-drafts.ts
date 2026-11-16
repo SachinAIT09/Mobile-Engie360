@@ -13,54 +13,65 @@ export interface DraftInput {
   unenrolled: number;
 }
 
-/** Enough neighbours enrolled to quote the number; below it the copy talks about "drivers on your street". */
+/** Enough neighbours enrolled to quote the number; below it the copy speaks of neighbours in general. */
 const SOCIAL_PROOF_MIN = 5;
 
 /**
- * Two variants per campaign type: A leans on social proof, B on the reward and urgency.
- * Copy uses only the campaign merge fields ({first_name} {incentive} {event_window} {neighbours_enrolled})
- * and PROGRAM placeholders, so Campaign 360 personalises it per recipient exactly like hand-written copy.
+ * Two variants per campaign type: A leans on social proof, B on the reward and urgency. Written in Dutch,
+ * the customers' language. Copy uses only the campaign merge fields and PROGRAM placeholders, so
+ * Campaign 360 personalises it per recipient exactly like hand-written copy.
  */
 export function draftCopy(type: CampaignType, input: DraftInput): [CampaignDraftCopy, CampaignDraftCopy] {
   const proof = input.knownOnDistrict >= SOCIAL_PROOF_MIN;
+  const program = PROGRAM.name.nl;
   if (type === 'ENROLL_OFFER') {
     return [
       {
-        title: proof
-          ? `{first_name}, {neighbours_enrolled} of your neighbours already earn with ${PROGRAM.name}`
-          : `{first_name}, EV drivers on your street are joining ${PROGRAM.name}`,
+        title: proof ? `{first_name}, {neighbours_enrolled} buren laden al slim met ${program}` : `{first_name}, steeds meer buren laden slim met ${program}`,
         body: proof
-          ? `{neighbours_enrolled} EV drivers near you get rewarded for charging a little later on a few busy evenings. Join ${PROGRAM.name} and earn {incentive}. You can skip any event, and your car is still charged by morning.`
-          : `Your neighbours are starting to shift EV charging away from the busiest evenings. Join ${PROGRAM.name}, earn {incentive}, and skip any event you like. Your car is still charged by morning.`,
-        cta: 'See how it works',
+          ? `{neighbours_enrolled} buren met een elektrische auto laden automatisch op de goedkoopste uren. Meld je aan voor ${program} en ontvang {incentive}. Je auto is 's ochtends gewoon vol en je kunt elk flexmoment overslaan.`
+          : `Je buren verschuiven het laden van hun auto naar de goedkoopste uren. Meld je aan voor ${program}, ontvang {incentive} en sla elk flexmoment over wanneer je wilt. Je auto is 's ochtends gewoon vol.`,
+        cta: 'Bekijk hoe het werkt',
       },
       {
-        title: `Earn {incentive} for charging your EV off-peak`,
-        body: `{first_name}, join ${PROGRAM.name} before the next peak event and earn {incentive} on sign-up, plus ${PROGRAM.perEventIncentive} for every event you take part in. It takes two minutes and you can opt out at any time.`,
-        cta: 'Claim my reward',
+        title: 'Ontvang {incentive} en laad voortaan op de goedkoopste uren',
+        body: `{first_name}, meld je aan voor ${program} en ontvang {incentive}, plus ${PROGRAM.perEventIncentive.nl} voor elk flexmoment waaraan je meedoet. Aanmelden duurt twee minuten en je kunt altijd stoppen.`,
+        cta: 'Aanmelden',
+      },
+    ];
+  }
+  if (type === 'INSTALLMENT_ADVICE') {
+    return [
+      {
+        title: '{first_name}, voorkom bijbetalen bij je jaarnota',
+        body: 'Je betaalt nu {installment} per maand, maar op basis van je verbruik adviseren we {advised_installment}. Pas je termijnbedrag in een paar tikken aan en spreid de kosten over het jaar.',
+        cta: 'Termijnbedrag aanpassen',
+      },
+      {
+        title: 'Je termijnbedrag past niet meer bij je verbruik',
+        body: 'Hoi {first_name}, je verbruik is hoger dan waar je termijnbedrag van {installment} op is gebaseerd. Met {advised_installment} per maand kom je bij de jaarnota niet voor verrassingen te staan.',
+        cta: 'Bekijk advies',
       },
     ];
   }
   return [
     {
-      title: proof
-        ? `{first_name}, {neighbours_enrolled} neighbours are pausing EV charging {event_window}`
-        : `{first_name}, help keep power steady on your street {event_window}`,
+      title: proof ? `{first_name}, {neighbours_enrolled} buren laden vandaag later dan {event_window}` : `{first_name}, help het stroomnet in je buurt: laad later dan {event_window}`,
       body: proof
-        ? `The grid near you is busy {event_window}. {neighbours_enrolled} neighbours in ${PROGRAM.name} are pausing EV charging. Pause yours and earn {incentive}; charging resumes automatically after the event.`
-        : `The grid near you is busy {event_window}. Pausing your EV charging for a few hours keeps power steady for everyone and earns you {incentive}. Charging resumes automatically after the event.`,
-      cta: 'Pause charging',
+        ? `Het stroomnet in je buurt is druk tussen {event_window}. {neighbours_enrolled} buren met ${program} verschuiven het laden. Doe mee en ontvang {incentive}; het laden gaat daarna vanzelf verder.`
+        : `Het stroomnet in je buurt is druk tussen {event_window}. Verschuif het laden van je auto een paar uur en ontvang {incentive}. Het laden gaat daarna vanzelf verder.`,
+      cta: 'Laden verschuiven',
     },
     {
-      title: `Earn {incentive}: pause EV charging {event_window}`,
-      body: `{first_name}, pause your EV charging {event_window} and earn {incentive} from ${PROGRAM.name}. It only takes one tap, and charging picks up again as soon as the event ends.`,
-      cta: 'Pause and earn',
+      title: 'Ontvang {incentive}: laad vandaag buiten {event_window}',
+      body: `{first_name}, verschuif het laden van je auto buiten {event_window} en ontvang {incentive} van ${program}. Eén tik is genoeg, en je auto is morgenochtend gewoon vol.`,
+      cta: 'Doe mee',
     },
   ];
 }
 
 export function draftAudience(type: CampaignType, districtCodes: string[]): CampaignAudience {
-  const segment = type === 'ENROLL_OFFER' ? 'UNENROLLED_EV' : 'ENROLLED_EV';
+  const segment = type === 'ENROLL_OFFER' ? 'UNENROLLED_EV' : type === 'INSTALLMENT_ADVICE' ? 'INSTALLMENT_GAP' : 'ENROLLED_EV';
   return districtCodes.length > 1 ? { kind: 'DISTRICTS', districtCodes: districtCodes.slice(0, 10), segment } : { kind: 'DISTRICT', districtCode: districtCodes[0], segment };
 }
 
