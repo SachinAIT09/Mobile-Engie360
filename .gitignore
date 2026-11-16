@@ -9,3 +9,4 @@ playwright-report
 *.tar
 # Local clone of the GitHub repo (not part of this project tree)
 /Mobile Engie360/
+.data/

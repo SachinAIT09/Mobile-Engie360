@@ -72,7 +72,7 @@ D:\Mobile Engie360
 
 - [x] 0 repo reset (4d)
 - [x] 1 contract (f4)
-- [ ] 2a server (f4) · [ ] 2b frontend + staff app (4d)
+- [x] 2a server (f4) · [ ] 2b frontend + staff app (4d)
 - [ ] 3 run/hosting (f4)
 - [ ] 4 checks + e2e (both)
 
@@ -80,3 +80,5 @@ D:\Mobile Engie360
 
 - f4: `tsconfig.json` now includes `shared/` and `server/` and sets `allowImportingTsExtensions` (server runs TS directly).
 - f4: contract adds the two endpoints 4d asked for: `banner` on `message:new`, and `GET /api/staff/conversations` + live `chat:message`.
+- f4: `npm run dev` = ONE server on :3000 (API + Vite middleware, hot reload). `npm run dev:client` = Vite alone. `npm start` = production (`tsx server/index.ts --prod`, serves dist/). Start page at `/start`.
+- f4: package.json gained `web-push`, `tsx` (dependency) and `engines.node >=22.13` (node:sqlite); vite.config tests include `server/**/*.spec.ts`; `.gitignore` adds `.data/` (SQLite file).

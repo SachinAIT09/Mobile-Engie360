@@ -21,7 +21,7 @@ export default defineConfig({
   server: { port: 5173, host: true },
   preview: { host: true },
   test: {
-    include: ['src/**/*.spec.ts'],
+    include: ['src/**/*.spec.ts', 'server/**/*.spec.ts'],
     environment: 'node',
   },
 });
