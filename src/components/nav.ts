@@ -1,4 +1,4 @@
-import { CreditCard, Gauge, Globe2, Home, Lightbulb, MessageCircle, Smartphone, User, Zap, type LucideIcon } from 'lucide-react';
+import { CreditCard, Gauge, Globe2, Headset, Home, Lightbulb, MessageCircle, Smartphone, User, Zap, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -21,5 +21,6 @@ export const NAV: NavItem[] = [
 export const DEMO_NAV: NavItem[] = [
   { to: '/website-demo', icon: Globe2, en: 'Website widget demo', nl: 'Website-widget demo' },
   { to: '/mobile-preview', icon: Smartphone, en: 'Mobile preview', nl: 'Mobiele preview' },
+  { to: '/staff', icon: Headset, en: 'Customer Service view', nl: 'Klantenservice-weergave' },
 ];
 
