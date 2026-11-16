@@ -8,7 +8,7 @@ import { useToast } from './toast';
 
 /**
  * Presenter mode: Shift+P toggles a bar that walks through the demo script.
- * Hotkeys while shown: N / → next, B / ← back, 1–7 jump, R reset, Esc hide.
+ * Hotkeys while shown: N / → next, B / ← back, 1–6 jump, R reset, Esc hide.
  */
 export function PresenterBar({ onReset }: { onReset: () => void }) {
   const { t, tx } = useI18n();

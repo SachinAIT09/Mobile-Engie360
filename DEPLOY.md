@@ -7,7 +7,6 @@ One server process serves everything on one port:
 | `/start` | Start page: links to every app, the phone QR code, the demo script, Reset demo |
 | `/` | Customer portal (MijnENGIE, Sanne's account, Eva) |
 | `/staff` | ENGIE staff app (customer service view, live) |
-| `/website-demo` | engie.nl-style page with the Eva widget |
 | `/mobile-preview` | The portal in a phone frame |
 | `/api/...` | API; live updates at `/api/events` (Server-Sent Events) |
 

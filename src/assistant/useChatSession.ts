@@ -61,8 +61,8 @@ export function useChatSession(provider: AssistantProvider, context: AssistantCo
     setMessages([]);
   }, []);
 
-  const { lang, route, audience } = context;
-  const suggestions = useMemo(() => provider.suggestions({ lang, route, audience }), [provider, lang, route, audience]);
+  const { lang, route } = context;
+  const suggestions = useMemo(() => provider.suggestions({ lang, route }), [provider, lang, route]);
 
   return { messages, typing, send, reset, suggestions, provider };
 }

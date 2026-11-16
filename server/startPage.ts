@@ -9,7 +9,6 @@ export async function startPage(phoneUrl: string, otherUrls: string[]): Promise<
   const apps = [
     ['/', `${brand.portal} customer portal`, 'Sanne’s energy, bills, insights and Eva. Open it on the phone too.'],
     ['/staff', `${brand.name} staff app`, 'Customer service view: Sanne’s activity and Eva chats live; send her a message or push.'],
-    ['/website-demo', `${brand.name}.nl widget`, `${brand.assistant.name} on the public website: visitor vs signed-in.`],
     ['/mobile-preview', 'Mobile preview', 'The portal in a phone frame, for a laptop-only demo.'],
   ];
   const steps = [

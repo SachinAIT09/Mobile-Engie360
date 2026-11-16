@@ -1,6 +1,6 @@
 import { networkInterfaces } from 'node:os';
 import type { IncomingMessage } from 'node:http';
-import { API, type ActivityKind, type ChatChannel, type DemoInfo, type MessageIcon, type StaffMessageResult } from '../shared/contract.ts';
+import { API, type ActivityKind, type DemoInfo, type MessageIcon, type StaffMessageResult } from '../shared/contract.ts';
 import type { AssistantContext } from '../src/assistant/types';
 import { config } from './config.ts';
 import { bool, num, obj, Router, str, text } from './http.ts';
@@ -72,13 +72,9 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
     const b = obj(body);
     const ctx = obj(b.context);
     const lang = str(ctx, 'lang');
-    const audience = str(ctx, 'audience');
-    const channel = str(b, 'channel') as ChatChannel;
-    if ((lang !== 'en' && lang !== 'nl') || (audience !== 'customer' && audience !== 'visitor') || (channel !== 'portal' && channel !== 'website')) {
-      throw new HttpError(400, 'Invalid context or channel');
-    }
-    const context: AssistantContext = { lang, audience, route: str(ctx, 'route', true) || '/', lastIntent: str(ctx, 'lastIntent', true) || undefined };
-    return store.ask({ question: str(b, 'question'), context, conversationId: str(b, 'conversationId'), channel });
+    if (lang !== 'en' && lang !== 'nl') throw new HttpError(400, 'Invalid context: lang must be en or nl');
+    const context: AssistantContext = { lang, route: str(ctx, 'route', true) || '/', lastIntent: str(ctx, 'lastIntent', true) || undefined };
+    return store.ask({ question: str(b, 'question'), context, conversationId: str(b, 'conversationId') });
   });
 
   // ---- staff

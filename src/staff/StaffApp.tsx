@@ -8,7 +8,6 @@ import {
   ExternalLink,
   Eye,
   Flame,
-  Globe2,
   Mail,
   MessageSquareText,
   Moon,
@@ -296,7 +295,7 @@ function Conversations({ list }: { list: Conversation[] }) {
   return (
     <Card
       title={t(`Conversations with ${brand.assistant.name}`, `Gesprekken met ${brand.assistant.name}`)}
-      sub={t(`What customers and website visitors ask ${brand.assistant.name}, live`, `Wat klanten en websitebezoekers aan ${brand.assistant.name} vragen, live`)}
+      sub={t(`What customers ask ${brand.assistant.name} in ${brand.portal}, live`, `Wat klanten in ${brand.portal} aan ${brand.assistant.name} vragen, live`)}
       className="staff-conv-card"
     >
       {!current ? (
@@ -311,8 +310,7 @@ function Conversations({ list }: { list: Conversation[] }) {
                 <button className={c.id === current.id ? 'on' : ''} aria-current={c.id === current.id} onClick={() => setPicked(c.id)}>
                   <span className="row between">
                     <span className="xs strong">
-                      {c.channel === 'website' ? <Globe2 size={13} aria-hidden /> : <Smartphone size={13} aria-hidden />} {c.channel === 'website' ? 'engie.nl' : brand.portal}
-                      {c.audience === 'visitor' ? ` · ${t('visitor', 'bezoeker')}` : ''}
+                      <Smartphone size={13} aria-hidden /> {brand.portal}
                     </span>
                     <time className="xs muted num">{clock(c.updatedAt, lang).slice(0, 5)}</time>
                   </span>
@@ -325,7 +323,7 @@ function Conversations({ list }: { list: Conversation[] }) {
             {current.entries.map((e, i) => (
               <div key={`${e.ts}-${i}`} className={`staff-bubble ${e.role}`}>
                 <span className="xs muted">
-                  {e.role === 'user' ? (current.audience === 'visitor' ? t('Visitor', 'Bezoeker') : t('Customer', 'Klant')) : brand.assistant.name} · {clock(e.ts, lang).slice(0, 5)}
+                  {e.role === 'user' ? t('Customer', 'Klant') : brand.assistant.name} · {clock(e.ts, lang).slice(0, 5)}
                   {e.role === 'assistant' && e.intent === 'FALLBACK' && <span className="badge warn" style={{ marginLeft: 6 }}>{t('Not understood', 'Niet begrepen')}</span>}
                   {e.role === 'assistant' && e.intent === 'HUMAN' && <span className="badge info" style={{ marginLeft: 6 }}>{t('Asked for an agent', 'Vroeg om een medewerker')}</span>}
                 </span>

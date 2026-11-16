@@ -110,7 +110,7 @@ test.describe('presenter mode', () => {
   test('Shift+P shows the bar; N steps through the script; R resets', async ({ page }) => {
     await fresh(page);
     await page.keyboard.press('Shift+P');
-    await expect(page.locator('.presenter')).toContainText('1/7');
+    await expect(page.locator('.presenter')).toContainText('1/6');
     await page.keyboard.press('n');
     await expect(page).toHaveURL(/\/energy$/);
     await page.keyboard.press('n');
@@ -123,32 +123,22 @@ test.describe('presenter mode', () => {
     await expect(page.locator('.chat-widget .msg.bot .bubble').last()).toContainText('12% higher', { timeout: 6000 });
     await page.locator('body').click({ position: { x: 600, y: 120 } });
     await page.keyboard.press('r');
-    await expect(page.locator('.presenter')).toContainText('1/7');
+    await expect(page.locator('.presenter')).toContainText('1/6');
     await expect(page).toHaveURL(/\/$/);
     await page.reload();
     await expect(page.locator('.presenter')).toBeVisible(); // remembered
   });
 });
 
-test.describe('website widget', () => {
-  test('visitor gets sign-in prompt, signed-in gets personal answer', async ({ page }) => {
-    await fresh(page, '/website-demo');
-    await page.locator('.chat-fab').click();
-    await expect(await ask(page, 'Why is my energy bill higher this month?')).toContainText('signed in');
-    await page.locator('.chat-action', { hasText: 'Sign in' }).last().click();
-    await expect(page.getByRole('button', { name: 'Signed in' })).toHaveClass(/on/);
-    await expect(await ask(page, 'Why is my energy bill higher this month?')).toContainText('12%');
-    await page.getByRole('button', { name: /Embed code/ }).click();
-    await expect(page.locator('.demo-code pre')).toContainText('engie-assistant');
-  });
-
-  test('stays light when the portal is dark', async ({ page }) => {
-    await fresh(page);
-    await page.getByRole('button', { name: 'Switch to dark theme' }).click();
-    await page.goto('/website-demo');
-    const bg = await page.locator('.site').evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(bg).toBe('rgb(255, 255, 255)');
-  });
+test('the website widget demo is gone', async ({ page }) => {
+  await fresh(page);
+  await expect(page.locator('.sidebar')).not.toContainText('Website widget');
+  // Old links land on the portal home instead of a dead page.
+  await page.goto('/website-demo');
+  await expect(page).toHaveURL(/\/$/);
+  expect((await page.request.get('/start')).ok()).toBe(true);
+  await page.goto('/start');
+  await expect(page.locator('a[href="/website-demo"]')).toHaveCount(0);
 });
 
 test('mobile preview shows the phone and a QR code', async ({ page }) => {

@@ -56,7 +56,6 @@ const PAGE_NAMES: Record<string, Text> = {
   '/smart-energy': T('Smart Energy', 'Slimme Energie'),
   '/assistant': T(brand.assistant.name, brand.assistant.name),
   '/account': T('My account', 'Mijn account'),
-  '/website-demo': T(`${brand.name}.nl (website)`, `${brand.name}.nl (website)`),
 };
 
 export const TEMPLATES: MessageTemplate[] = [
@@ -273,19 +272,17 @@ export class Store {
     const reply = scriptedReply(question, req.context);
     const ts = this.now().toISOString();
     const existing = this.db.find<Conversation>('conversations', req.conversationId);
-    const conv: Conversation = existing ?? { id: req.conversationId, channel: req.channel, audience: req.context.audience, lang: req.context.lang, startedAt: ts, updatedAt: ts, entries: [] };
+    const conv: Conversation = existing ?? { id: req.conversationId, lang: req.context.lang, startedAt: ts, updatedAt: ts, entries: [] };
     const user: ChatLogEntry = { role: 'user', text: question, ts };
     const bot: ChatLogEntry = { role: 'assistant', text: reply.text, intent: reply.intent, ts };
     conv.entries.push(user, bot);
-    conv.audience = req.context.audience;
     conv.lang = req.context.lang;
     conv.updatedAt = ts;
     this.db.put('conversations', conv.id, ts, conv);
-    this.emit({ type: 'chat:message', conversationId: conv.id, channel: conv.channel, entry: user });
-    this.emit({ type: 'chat:message', conversationId: conv.id, channel: conv.channel, entry: bot });
+    this.emit({ type: 'chat:message', conversationId: conv.id, entry: user });
+    this.emit({ type: 'chat:message', conversationId: conv.id, entry: bot });
     if (!existing) {
-      const where = req.channel === 'website' ? T(`on ${brand.name}.nl`, `op ${brand.name}.nl`) : T(`in ${brand.portal}`, `in ${brand.portal}`);
-      this.log('chat', T(`Started a chat with ${brand.assistant.name} ${where.en}: “${question}”`, `Startte een chat met ${brand.assistant.name} ${where.nl}: “${question}”`), '/assistant');
+      this.log('chat', T(`Started a chat with ${brand.assistant.name}: “${question}”`, `Startte een chat met ${brand.assistant.name}: “${question}”`), '/assistant');
     }
     return reply;
   }

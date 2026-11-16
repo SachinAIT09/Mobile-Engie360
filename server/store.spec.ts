@@ -77,7 +77,7 @@ describe('customer actions', () => {
 
 describe('Eva conversations', () => {
   const ask = (question: string, conversationId = 'conv-1', lastIntent?: string) =>
-    store.ask({ question, conversationId, channel: 'portal', context: { lang: 'en', route: '/', audience: 'customer', lastIntent } });
+    store.ask({ question, conversationId, context: { lang: 'en', route: '/', lastIntent } });
 
   it('answers from the scripted assistant and logs the conversation', () => {
     const r = ask('Why is my energy bill higher this month?');

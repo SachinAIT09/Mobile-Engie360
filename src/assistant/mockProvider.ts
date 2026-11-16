@@ -25,7 +25,7 @@ export class MockAssistantProvider implements AssistantProvider {
   }
 
   suggestions(context: AssistantContext): string[] {
-    const ids = context.audience === 'visitor' ? SUGGESTIONS.visitor : (SUGGESTIONS[context.route] ?? SUGGESTIONS.default);
+    const ids = SUGGESTIONS[context.route] ?? SUGGESTIONS.default;
     return (ids ?? []).map((id) => phrase(id, context.lang));
   }
 }

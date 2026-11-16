@@ -2,9 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { reply } from './mockProvider';
 import type { AssistantContext } from './types';
 
-const customer: AssistantContext = { lang: 'en', route: '/', audience: 'customer' };
+const customer: AssistantContext = { lang: 'en', route: '/' };
 const nl: AssistantContext = { ...customer, lang: 'nl' };
-const visitor: AssistantContext = { ...customer, audience: 'visitor', route: '/website' };
 
 describe('customer answers', () => {
   it('this month usage comes from the demo month', () => {
@@ -65,16 +64,20 @@ describe('customer answers', () => {
   });
 });
 
-describe('visitor answers', () => {
-  it('personal questions ask the visitor to sign in', () => {
-    const r = reply('Why is my energy bill higher this month?', visitor);
-    expect(r.text).toContain('signed in');
-    expect(r.actions?.[0]?.signIn).toBe(true);
+describe('contracts and products', () => {
+  it('"which contract suits me" lists the four products', () => {
+    const r = reply('Which energy contract suits me?', customer);
+    expect(r.intent).toBe('PRODUCTS');
+    expect(r.text).toContain('Fixed Electricity & Gas');
   });
 
-  it('contract questions describe the products, not the demo customer', () => {
-    const r = reply('I want a fixed contract', visitor);
-    expect(r.text).toContain('Fixed Electricity & Gas');
-    expect(r.text).not.toContain('Sanne');
+  it('contract questions describe the customer’s own contract', () => {
+    const r = reply('I want a fixed contract', customer);
+    expect(r.intent).toBe('CONTRACT');
+    expect(r.text).toContain('Dynamic Electricity & Fixed Gas');
+  });
+
+  it('never asks a signed-in customer to sign in', () => {
+    expect(reply('Why is my energy bill higher this month?', customer).text).not.toContain('signed in');
   });
 });

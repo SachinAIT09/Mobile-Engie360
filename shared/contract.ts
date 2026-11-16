@@ -11,9 +11,9 @@ import type { Customer, Contract } from '../src/data/customer';
 import type { BreakdownItem, UsagePoint } from '../src/data/energy';
 import type { Invoice, Payment } from '../src/data/billing';
 import type { Insight, Notification as SeedNotification } from '../src/data/insights';
-import type { AssistantContext, AssistantReply, Audience } from '../src/assistant/types';
+import type { AssistantContext, AssistantReply } from '../src/assistant/types';
 
-export type { Text, Customer, Contract, UsagePoint, BreakdownItem, Invoice, Payment, Insight, AssistantContext, AssistantReply, Audience };
+export type { Text, Customer, Contract, UsagePoint, BreakdownItem, Invoice, Payment, Insight, AssistantContext, AssistantReply };
 
 // ---------------------------------------------------------------- REST paths
 
@@ -154,15 +154,12 @@ export interface InboxMessage {
 
 // ---------------------------------------------------------------- assistant (Eva, scripted, server-side)
 
-export type ChatChannel = 'portal' | 'website';
-
 /** POST /api/assistant → AssistantReply */
 export interface AssistantRequest {
   question: string;
   context: AssistantContext;
   /** Stable per browser tab session; groups a conversation for the staff view. */
   conversationId: string;
-  channel: ChatChannel;
 }
 
 export interface ChatLogEntry {
@@ -175,8 +172,6 @@ export interface ChatLogEntry {
 
 export interface Conversation {
   id: string;
-  channel: ChatChannel;
-  audience: Audience;
   lang: 'en' | 'nl';
   startedAt: string;
   updatedAt: string;
@@ -319,7 +314,7 @@ export type LiveEvent =
   | { type: 'message:read'; id: string | 'all' }
   | { type: 'installment:changed'; installment: InstallmentState }
   | { type: 'insights:plan'; plan: string[] }
-  | { type: 'chat:message'; conversationId: string; channel: ChatChannel; entry: ChatLogEntry }
+  | { type: 'chat:message'; conversationId: string; entry: ChatLogEntry }
   | { type: 'presence'; online: number }
   | { type: 'demo:reset' };
 

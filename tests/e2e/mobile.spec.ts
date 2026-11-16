@@ -1,6 +1,6 @@
 import { ask, expect, fresh, noHorizontalScroll, test } from './fixtures';
 
-const ROUTES = ['/', '/energy', '/billing', '/insights', '/smart-energy', '/assistant', '/account', '/website-demo'];
+const ROUTES = ['/', '/energy', '/billing', '/insights', '/smart-energy', '/assistant', '/account'];
 
 test('no horizontal scrolling on any screen at 390 px', async ({ page }) => {
   await fresh(page);

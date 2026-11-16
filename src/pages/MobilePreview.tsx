@@ -15,7 +15,6 @@ const SCREENS = [
   { path: '/smart-energy', en: 'Smart Energy', nl: 'Slimme Energie' },
   { path: '/assistant', en: 'Eva', nl: 'Eva' },
   { path: '/account', en: 'Account', nl: 'Account' },
-  { path: '/website-demo', en: 'Website widget', nl: 'Website-widget' },
 ];
 
 export default function MobilePreview() {

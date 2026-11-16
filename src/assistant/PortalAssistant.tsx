@@ -7,13 +7,13 @@ import { useChatSession } from './useChatSession';
 
 // Eva answers on the server (same scripted answers), which also shows the conversation to staff.
 // Without a server the provider falls back to the local scripted answers.
-const provider = new HttpAssistantProvider('portal');
+const provider = new HttpAssistantProvider();
 
 /** One chat session for the whole portal, shared by the floating widget and the full-page view. */
 export function PortalAssistantProvider({ children }: { children: ReactNode }) {
   const { lang } = useI18n();
   const { pathname } = useLocation();
-  const session = useChatSession(provider, { lang, route: pathname, audience: 'customer' });
+  const session = useChatSession(provider, { lang, route: pathname });
   const [open, setOpen] = useState(false);
 
   const ask = useCallback(

@@ -8,7 +8,7 @@ import { brand } from '../brand';
 import { contract, customer } from '../data/customer';
 import { costOf, lastMonthSummary, monthly, peakSplit, thisMonth, type UsagePoint } from '../data/energy';
 import { annualOverview, invoices } from '../data/billing';
-import { PERSONAL, PHRASES, type Intent } from './intents';
+import { PHRASES, type Intent } from './intents';
 import { normalise, type Entities } from './nlu';
 import type { AssistantContext, AssistantReply } from './types';
 
@@ -27,24 +27,12 @@ function base(intent: Intent | 'FALLBACK', ctx: AssistantContext): AssistantRepl
   const { L, eur, n, date } = fmt(ctx.lang);
   const name = customer.firstName;
 
-  if (ctx.audience === 'visitor' && PERSONAL.includes(intent as Intent)) {
-    return {
-      text: L(
-        `I can answer that with your own data once you’re signed in to ${brand.portal}. For this demo you can sign in as our sample customer.`,
-        `Dat kan ik met je eigen gegevens beantwoorden zodra je bent ingelogd bij ${brand.portal}. In deze demo kun je inloggen als onze voorbeeldklant.`,
-      ),
-      actions: [{ label: L('Sign in (demo)', 'Inloggen (demo)'), signIn: true }],
-    };
-  }
-
-  if (ctx.audience === 'visitor' && intent === 'CONTRACT') return base('PRODUCTS', ctx);
-
   switch (intent) {
     case 'GREETING':
       return {
         text: L(
-          `Hi${ctx.audience === 'customer' ? ' ' + name : ''}! Ask me about your usage, bills, installment or ways to save.`,
-          `Hoi${ctx.audience === 'customer' ? ' ' + name : ''}! Vraag me naar je verbruik, nota’s, termijnbedrag of manieren om te besparen.`,
+          `Hi ${name}! Ask me about your usage, bills, installment or ways to save.`,
+          `Hoi ${name}! Vraag me naar je verbruik, nota’s, termijnbedrag of manieren om te besparen.`,
         ),
       };
 
@@ -398,7 +386,6 @@ const FOLLOW_UPS: Partial<Record<Intent | 'FALLBACK', (keyof typeof PHRASES)[]>>
   GREETING: ['USAGE', 'BILL_WHY_HIGH', 'SAVE'],
   FALLBACK: ['USAGE', 'BILL_WHY_HIGH', 'SAVE'],
 };
-const VISITOR_FOLLOW_UPS: (keyof typeof PHRASES)[] = ['PRODUCTS', 'SWITCH', 'GREEN'];
 
 export interface AnswerQuestion {
   intent: Intent | 'FALLBACK';
@@ -407,24 +394,23 @@ export interface AnswerQuestion {
 }
 
 export function phrase(id: keyof typeof PHRASES, lang: Lang): string {
-  return PHRASES[id][lang].replace(`${brand.name}`, brand.name);
+  return PHRASES[id][lang];
 }
 
 export function answerFor(q: AnswerQuestion, ctx: AssistantContext): AssistantReply {
   let reply: AssistantReply | null = null;
-  const allowed = ctx.audience === 'customer';
-  if (allowed && q.intent === 'USAGE') {
+  if (q.intent === 'USAGE') {
     const p = pickMonth(q.entities);
     if (p) reply = usageForMonth(p.point, p.prev, ctx);
   }
-  if (allowed && q.intent === 'BILL_WHY_HIGH') {
+  if (q.intent === 'BILL_WHY_HIGH') {
     const p = pickMonth(q.entities);
     if (p?.prev && p.point.key !== '2026-10') reply = whyForMonth(p.point, p.prev, ctx);
   }
-  if (allowed && q.intent === 'INVOICE') reply = invoiceFor(q, ctx);
+  if (q.intent === 'INVOICE') reply = invoiceFor(q, ctx);
   reply ??= base(q.intent, ctx);
 
-  const ids = ctx.audience === 'visitor' ? VISITOR_FOLLOW_UPS : (FOLLOW_UPS[q.intent] ?? []);
+  const ids = FOLLOW_UPS[q.intent] ?? [];
   const followUps = ids.filter((id) => id !== q.intent).map((id) => phrase(id, ctx.lang));
   return { ...reply, intent: q.intent, followUps };
 }

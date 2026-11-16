@@ -14,8 +14,6 @@ export interface ChatAction {
   to?: string;
   /** Send this text as the next user message. */
   prompt?: string;
-  /** Widget-only: switch the website widget into the signed-in demo state. */
-  signIn?: boolean;
 }
 
 export interface ChatMessage {
@@ -32,14 +30,10 @@ export interface ChatMessage {
   ts: number;
 }
 
-export type Audience = 'customer' | 'visitor';
-
 export interface AssistantContext {
   lang: Lang;
   /** Current portal route, used for contextual answers and suggestions. */
   route: string;
-  /** Signed-in MijnENGIE customer, or an anonymous engie.nl visitor. */
-  audience: Audience;
   /** Intent of the previous answer, so "and last month?" continues the same topic. */
   lastIntent?: string;
 }

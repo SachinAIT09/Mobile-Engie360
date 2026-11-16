@@ -69,7 +69,7 @@ test.describe('customer ↔ staff, live', () => {
 
   test('start page links every app and shows the phone QR', async ({ page }) => {
     await fresh(page, '/start');
-    for (const href of ['/', '/staff', '/website-demo', '/mobile-preview']) await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
+    for (const href of ['/', '/staff', '/mobile-preview']) await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
     await expect(page.locator('.qr svg')).toBeVisible();
   });
 });

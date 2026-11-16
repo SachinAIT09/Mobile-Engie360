@@ -21,9 +21,6 @@ export type Intent =
   | 'SWITCH'
   | 'GREEN';
 
-/** Intents that need the signed-in customer's own data; visitors get a sign-in prompt instead. */
-export const PERSONAL: readonly Intent[] = ['USAGE', 'BILL_WHY_HIGH', 'INSTALLMENT', 'INVOICE', 'EV', 'PAYMENT', 'METER'];
-
 /**
  * Weights: a distinctive topic word ≈ 2.5–3, a supporting word ≈ 1–1.5; threshold 2.
  * Ambiguities resolved here (and pinned in nlu.spec.ts):
@@ -182,7 +179,7 @@ export const PHRASES: Record<Exclude<Intent, 'GREETING' | 'THANKS'>, Text> = {
   GREEN: { en: 'Is your electricity green?', nl: 'Is jullie stroom groen?' },
 };
 
-/** Suggested questions per portal page (customer) and for the public website (visitor). */
+/** Suggested questions per portal page. */
 export const SUGGESTIONS: Record<string, (keyof typeof PHRASES)[]> = {
   default: ['USAGE', 'BILL_WHY_HIGH', 'INSTALLMENT', 'SAVE', 'INVOICE', 'SOLAR'],
   '/billing': ['INVOICE', 'INSTALLMENT', 'PAYMENT', 'BILL_WHY_HIGH'],
@@ -190,5 +187,4 @@ export const SUGGESTIONS: Record<string, (keyof typeof PHRASES)[]> = {
   '/smart-energy': ['EV', 'SOLAR', 'SAVE'],
   '/insights': ['SAVE', 'SOLAR', 'BILL_WHY_HIGH'],
   '/account': ['CONTRACT', 'METER', 'MOVING'],
-  visitor: ['PRODUCTS', 'SWITCH', 'BILL_WHY_HIGH', 'GREEN'],
 };

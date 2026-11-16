@@ -1,12 +1,12 @@
-import type { AssistantRequest, ChatChannel } from '../../shared/contract';
+import type { AssistantRequest } from '../../shared/contract';
 import { MockAssistantProvider } from '../assistant/mockProvider';
 import type { AssistantContext, AssistantProvider, AssistantReply, ChatMessage } from '../assistant/types';
 import { API, post } from './client';
 
-/** One id per browser tab and channel, so staff see a conversation as one thread. */
-function conversationId(channel: ChatChannel): string {
-  const key = `engie-demo-conversation-${channel}`;
-  const fresh = () => `${channel}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+/** One id per browser tab, so staff see a conversation as one thread. */
+function conversationId(): string {
+  const key = 'engie-demo-conversation';
+  const fresh = () => `portal-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   try {
     const saved = sessionStorage.getItem(key);
     if (saved) return saved;
@@ -30,11 +30,9 @@ export class HttpAssistantProvider implements AssistantProvider {
   readonly isMock = true;
   private readonly local = new MockAssistantProvider();
 
-  constructor(private readonly channel: ChatChannel) {}
-
   async reply(history: ChatMessage[], context: AssistantContext): Promise<AssistantReply> {
     const question = [...history].reverse().find((m) => m.role === 'user')?.text ?? '';
-    const body: AssistantRequest = { question, context, conversationId: conversationId(this.channel), channel: this.channel };
+    const body: AssistantRequest = { question, context, conversationId: conversationId() };
     try {
       const [reply] = await Promise.all([post<AssistantReply>(API.assistant, body), new Promise((r) => setTimeout(r, MIN_THINKING_MS))]);
       return reply;

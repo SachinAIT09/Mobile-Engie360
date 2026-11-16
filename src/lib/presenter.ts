@@ -41,11 +41,6 @@ export const DEMO_STEPS: DemoStep[] = [
     route: '/smart-energy',
   },
   {
-    title: { en: 'Website widget', nl: 'Website-widget' },
-    say: { en: 'Eva on engie.nl: general answers for visitors, personal ones after sign-in.', nl: 'Eva op engie.nl: algemene antwoorden voor bezoekers, persoonlijke na inloggen.' },
-    route: '/website-demo',
-  },
-  {
     title: { en: 'Mobile experience', nl: 'Mobiele ervaring' },
     say: { en: 'The full portal at phone size. Scan the QR code to open it on a real phone.', nl: 'Het hele portaal op telefoonformaat. Scan de QR-code om het op een echte telefoon te openen.' },
     route: '/mobile-preview',
