@@ -93,8 +93,8 @@ footer{max-width:960px;margin:0 auto;padding:0 24px 32px;font-size:12.5px;color:
 </div></section>
 <main>
 <div class="apps">
-${app('/staff', 'Staff app', `${brand.name} Customer Service: ${customer.firstName}’s activity and ${brand.assistant.name} conversations live, and messages to her phone.`, headset, true)}
-${app('/app', 'Customer app', `${brand.portal}, signed in as ${customer.firstName} ${customer.lastName} (sample customer). Open it on a phone too.`, phone, false)}
+${app('/staff', 'Staff app', `${brand.name} Customer Service: dashboard, live customer activity, ${brand.assistant.name} conversations, messages and the demo control panel.`, headset, true)}
+${app('/app', 'Customer app', `The ${brand.portal} app. Sign in as ${customer.email} (any password). Best on a phone.`, phone, false)}
 </div>
 <section class="card phone">${qr}<div class="txt"><h2>Open the customer app on a phone</h2>
 <span>Scan with the phone camera, or open <code>${esc(phoneUrl)}</code>. ${reach}</span>
@@ -102,14 +102,14 @@ ${otherUrls.length ? `<span class="muted">Other addresses for this laptop: ${oth
 <span class="muted">Phone notifications need HTTPS (a hosted URL); on this laptop they work at localhost.</span></div></section>
 <section class="card"><h2>Demo script</h2>
 <ol>
-<li><span>Open the <strong>Staff app</strong> in one tab and the <strong>Customer app</strong> (${name}) in another tab or on a phone.</span></li>
-<li><span><strong>Live activity:</strong> Customer app → <em>Bills &amp; payments</em> → <em>Adjust installment</em> → €198 → Confirm. It appears in the staff app’s <em>Live activity</em> at once.</span></li>
-<li><span><strong>${eva}:</strong> press <kbd>Shift</kbd>+<kbd>P</kbd> for the presenter bar → <kbd>4</kbd>. ${eva} explains why the bill is higher; follow up with “and last month?”. The conversation shows live in the staff app.</span></li>
-<li><span><strong>Message the customer:</strong> Staff app → <em>Cheapest hours tonight</em> → Send. A banner pops up in the customer app, and a phone notification if it is on (<em>My account</em> → <em>Preferences</em>).</span></li>
-<li><span><strong>Reset:</strong> <kbd>R</kbd> in the presenter bar, <em>Reset demo</em> in the staff app, or the button below.</span></li>
+<li><span>Open the <strong>Staff app</strong> on the laptop and the <strong>Customer app</strong> on a phone (scan the code), and sign in as ${name}. The staff dashboard shows she is in the app.</span></li>
+<li><span><strong>Customer activity:</strong> on the phone, <em>Billing</em> → <em>Adjust installment</em> → €198 → Confirm. It appears in the staff app’s <em>Customer activity</em> at once.</span></li>
+<li><span><strong>${eva}:</strong> on the phone, tap the ${eva} button → “Why is my energy bill higher this month?”, then “and last month?”. Staff read along under <em>${eva} conversations</em>.</span></li>
+<li><span><strong>Send to phone:</strong> Staff app → <em>Demo control panel</em> → <em>Cheapest hours tonight</em>. A banner pops up in the app, and a notification if it is on (<em>Profile</em> → <em>Preferences</em>).</span></li>
+<li><span><strong>Presenter:</strong> press <kbd>Shift</kbd>+<kbd>P</kbd> in the staff app for the step-by-step bar (<kbd>N</kbd> next, <kbd>R</kbd> reset).</span></li>
 </ol>
 <div class="row"><button id="reset" type="button">Reset demo</button><span id="msg" class="muted" role="status"></span>
-<span class="links" style="margin-left:auto"><a href="/app/mobile-preview">Mobile preview</a></span></div></section>
+<span class="links" style="margin-left:auto"><a href="/staff/demo">Demo control panel</a><a href="/staff/preview">Phone preview</a></span></div></section>
 </main>
 <footer><span class="flag">Sample data · not connected to ${esc(brand.name)} systems</span></footer>
 <script>

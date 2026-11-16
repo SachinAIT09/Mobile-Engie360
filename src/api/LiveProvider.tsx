@@ -3,11 +3,12 @@ import { useLocation } from 'react-router-dom';
 import type { BillingResponse, InboxMessage, InsightsResponse, InstallmentState, LiveEvent } from '../../shared/contract';
 import { useToast } from '../components/toast';
 import { useI18n } from '../lib/i18n';
+import { isSignedIn } from '../lib/session';
 import { API, get, openEvents, post } from './client';
 import { LiveCtx, localDefaults, type LiveData } from './live';
 
-/** Routes that belong to the customer app (page views are reported for these only). */
-const isCustomerRoute = (p: string) => !p.startsWith('/staff') && p !== '/mobile-preview';
+/** Customer app screens whose views are reported to staff (not the sign-in screen). */
+const isCustomerRoute = (p: string) => !p.startsWith('/staff') && p !== '/login';
 
 /**
  * Keeps the customer's changeable data (installment, savings plan, inbox) in sync with the server:
@@ -19,6 +20,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const toast = useToast();
   const { pathname } = useLocation();
   const customerApp = !pathname.startsWith('/staff');
+  // Only a signed-in customer is "in the app" for staff; the sign-in screen stays offline.
+  const signedIn = customerApp && isSignedIn();
   const [online, setOnline] = useState(false);
   const [state, setState] = useState(localDefaults);
   const [resetVersion, setResetVersion] = useState(0);
@@ -67,9 +70,9 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       }
     };
     // The Customer Service view has its own stream; opening this one there would count staff as the customer.
-    if (!customerApp) return;
+    if (!signedIn) return;
     return openEvents('customer', onEvent, () => void load(), () => undefined);
-  }, [load, customerApp]);
+  }, [load, signedIn]);
 
   const send = useCallback((path: string, body: unknown) => {
     if (!onlineRef.current) return;
@@ -78,8 +81,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
 
   // Page views, so staff see where the customer is.
   useEffect(() => {
-    if (online && isCustomerRoute(pathname)) send(API.activity, { kind: 'page', route: pathname });
-  }, [online, pathname, send]);
+    if (online && signedIn && isCustomerRoute(pathname)) send(API.activity, { kind: 'page', route: pathname });
+  }, [online, signedIn, pathname, send]);
 
   const setInstallment = useCallback(async (amount: number) => {
     if (onlineRef.current) {

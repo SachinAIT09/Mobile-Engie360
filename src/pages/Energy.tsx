@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Line, LineChart, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ArrowRight, Clock, Euro, Flame, Sigma, TrendingUp, Zap, Moon, Sun } from 'lucide-react';
+import { ArrowRight, ChevronRight, Clock, Euro, Flame, Lightbulb, Sigma, TrendingUp, Zap, Moon, Sun } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
 import { contract } from '../data/customer';
@@ -70,6 +70,29 @@ export default function Energy() {
           ]}
         />
       </PageHead>
+
+      <div className="grid g-2 energy-links">
+        <Link to="/insights" className="link-card">
+          <span className="kpi-ic eur">
+            <Lightbulb size={19} />
+          </span>
+          <span className="grow">
+            <b>{t('Energy insights', 'Energie-inzichten')}</b>
+            <span className="small muted">{t('Personal savings tips and alerts', 'Persoonlijke bespaartips en meldingen')}</span>
+          </span>
+          <ChevronRight size={18} className="muted" />
+        </Link>
+        <Link to="/smart-energy" className="link-card">
+          <span className="kpi-ic pur">
+            <Zap size={19} />
+          </span>
+          <span className="grow">
+            <b>{t('Smart Energy', 'Slimme Energie')}</b>
+            <span className="small muted">{t(`Live power, your appliances and smart charging (${brand.partners.disaggregation})`, `Live vermogen, je apparaten en slim laden (${brand.partners.disaggregation})`)}</span>
+          </span>
+          <ChevronRight size={18} className="muted" />
+        </Link>
+      </div>
 
       <div className="grid g-4">
         <Kpi icon={metric === 'electricity' ? Zap : Flame} tone={metric === 'electricity' ? 'el' : 'gas'} label={t('Total', 'Totaal') + ' · ' + periodLabel.toLowerCase()} value={num(stats.total, period === 'hour' ? 1 : 0)} unit={unit} foot={compare ? <><Delta pct={stats.change} /> {compareLabel.toLowerCase()}</> : undefined} />

@@ -18,19 +18,34 @@ export const test = base.extend<{ consoleErrors: string[] }>({
 
 export { expect };
 
-/** Fresh start: English, light theme, presenter hidden. */
-/** `path` is a full URL path: the portal lives under /app, the staff app at /staff, the start page at /. */
-export async function fresh(page: Page, path = '/app') {
-  await page.addInitScript(() => {
-    if (sessionStorage.getItem('e2e-init')) return;
-    sessionStorage.setItem('e2e-init', '1');
-    localStorage.clear();
-    localStorage.setItem('engie-demo-lang', 'en');
-  });
-  // Every test starts from the seeded demo state on the server.
+/** The demo customer's session id (see src/lib/session.ts). */
+const SESSION = 'C-2003418762';
+
+/**
+ * Fresh start: English, light theme, presenter hidden, demo data reset on the server.
+ * `path` is a full URL path: the customer app lives under /app, the staff app at /staff, the start page at /.
+ * The customer is signed in unless `signedIn: false`.
+ */
+export async function fresh(page: Page, path = '/app', { signedIn = true } = {}) {
+  await page.addInitScript(
+    ({ session, signedIn }) => {
+      if (sessionStorage.getItem('e2e-init')) return;
+      sessionStorage.setItem('e2e-init', '1');
+      localStorage.clear();
+      localStorage.setItem('engie-demo-lang', 'en');
+      if (signedIn) localStorage.setItem('engie-demo-session', session);
+    },
+    { session: SESSION, signedIn },
+  );
   const r = await page.request.post('/api/demo/reset');
   expect(r.ok(), 'demo reset').toBe(true);
   await page.goto(path);
+}
+
+/** Open Eva from the button in the middle of the customer app's tab bar. */
+export async function openEva(page: Page) {
+  await page.locator('.app-eva').click();
+  await expect(page.locator('.chat-widget')).toBeVisible();
 }
 
 /** Send a question in the open chat panel and wait for the reply. */

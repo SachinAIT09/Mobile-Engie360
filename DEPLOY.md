@@ -5,9 +5,9 @@ One server process serves everything on one port:
 | Path | What |
 |---|---|
 | `/` | Start page: links to both apps, the phone QR code, the demo script, Reset demo |
-| `/app` | Customer portal (MijnENGIE, Sanne's account, Eva) |
-| `/staff` | ENGIE staff app (customer service view, live) |
-| `/app/mobile-preview` | The portal in a phone frame |
+| `/app` | Customer app (MijnENGIE): sign in as `sanne.devries@example.nl`, any password |
+| `/staff` | Staff app (ENGIE Customer Service): dashboard, activity, Eva conversations, messages, Demo control panel |
+| `/staff/preview` | The customer app in a phone frame |
 | `/api/...` | API; live updates at `/api/events` (Server-Sent Events) |
 
 Data lives in a SQLite file (Node's built-in `node:sqlite`, nothing to install). **Reset demo** (start page, staff app, or presenter bar `R`) restores the starting state.

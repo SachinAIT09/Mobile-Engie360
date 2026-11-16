@@ -279,3 +279,168 @@
 .staff-conn.live::before {
   display: none;
 }
+
+/* ---------- page header (icon tile, H1, subtitle), as in the Hydro staff app ---------- */
+.staff-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.staff-head-ic {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--blue);
+  color: #fff;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.staff-head-ic.sm {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+.staff-head-text {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.staff-head h1 {
+  font-size: 26px;
+}
+.staff-head p {
+  color: var(--muted);
+  margin-top: 3px;
+  max-width: 900px;
+}
+
+/* ---------- Customer activity: filter pills + table ---------- */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pills button {
+  min-height: 36px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pills button:hover {
+  border-color: var(--blue-100);
+}
+.pills button.on {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.staff-table td {
+  vertical-align: middle;
+}
+.staff-table tr.fresh td {
+  animation: staffFresh 4s ease;
+}
+@keyframes staffFresh {
+  0% {
+    background: var(--blue-50);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.staff-details {
+  white-space: normal !important;
+  min-width: 220px;
+}
+.staff-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--line-2);
+  color: var(--ink-2);
+}
+.staff-action.change {
+  background: var(--blue-50);
+  color: var(--blue-700);
+}
+
+/* ---------- Demo control panel: send-to-phone cards ---------- */
+.staff-note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--blue-50);
+  color: var(--ink-2);
+  font-size: 14px;
+}
+.send-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.send-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.send-card > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.send-card:hover:not(:disabled) {
+  border-color: var(--blue);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+.send-card.sent {
+  border-color: var(--ok);
+}
+.send-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.keys {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.keys kbd {
+  background: var(--line-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font: inherit;
+  font-weight: 900;
+  font-size: 12.5px;
+}
+.staff > .staff-main > section.card,
+.staff-grid + section.card {
+  margin-bottom: 20px;
+}

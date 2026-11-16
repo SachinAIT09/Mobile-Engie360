@@ -1,28 +1,25 @@
-import { CreditCard, Gauge, Headset, Home, LayoutGrid, Lightbulb, MessageCircle, Smartphone, User, Zap, type LucideIcon } from 'lucide-react';
+import { CreditCard, Gauge, Home, User, type LucideIcon } from 'lucide-react';
+import type { Text } from '../lib/i18n';
 
-/** Portal navigation. `to` is a route inside the portal (/app); `href` is a full-page link outside it. */
-export interface NavItem {
+/** Customer app bottom tabs (the Eva button sits in the middle). Routes are inside the portal (/app). */
+export interface Tab {
   to: string;
   icon: LucideIcon;
-  en: string;
-  nl: string;
-  tag?: string;
-  href?: string;
-  newTab?: boolean;
+  label: Text;
+  /** Other routes that keep this tab highlighted (its sub-pages). */
+  also?: string[];
 }
 
-export const NAV: NavItem[] = [
-  { to: '/', icon: Home, en: 'Home', nl: 'Home' },
-  { to: '/energy', icon: Gauge, en: 'Energy consumption', nl: 'Energieverbruik' },
-  { to: '/billing', icon: CreditCard, en: 'Bills & payments', nl: 'Nota’s & betalingen' },
-  { to: '/insights', icon: Lightbulb, en: 'Energy insights', nl: 'Energie-inzichten' },
-  { to: '/smart-energy', icon: Zap, en: 'Smart Energy', nl: 'Slimme Energie', tag: 'N2G' },
-  { to: '/assistant', icon: MessageCircle, en: 'Eva · AI assistant', nl: 'Eva · AI-assistent' },
-  { to: '/account', icon: User, en: 'My account', nl: 'Mijn account' },
+export const TABS: Tab[] = [
+  { to: '/', icon: Home, label: { en: 'Home', nl: 'Home' } },
+  { to: '/energy', icon: Gauge, label: { en: 'Energy', nl: 'Energie' }, also: ['/insights', '/smart-energy'] },
+  { to: '/billing', icon: CreditCard, label: { en: 'Billing', nl: 'Betalen' } },
+  { to: '/account', icon: User, label: { en: 'Profile', nl: 'Profiel' } },
 ];
 
-export const DEMO_NAV: NavItem[] = [
-  { to: '/mobile-preview', icon: Smartphone, en: 'Mobile preview', nl: 'Mobiele preview' },
-  { to: '/staff', href: '/staff', newTab: true, icon: Headset, en: 'Customer Service view', nl: 'Klantenservice-weergave' },
-  { to: '/start', href: '/', icon: LayoutGrid, en: 'Start page', nl: 'Startpagina' },
-];
+/** Screens opened from a tab: shown with a back arrow and a title in the app bar. */
+export const SUB_PAGES: Record<string, { title: Text; back: string }> = {
+  '/insights': { title: { en: 'Energy insights', nl: 'Energie-inzichten' }, back: '/energy' },
+  '/smart-energy': { title: { en: 'Smart Energy', nl: 'Slimme Energie' }, back: '/energy' },
+  '/assistant': { title: { en: 'Eva', nl: 'Eva' }, back: '/' },
+};

@@ -2,6 +2,7 @@ import { networkInterfaces } from 'node:os';
 import type { IncomingMessage } from 'node:http';
 import { API, type ActivityKind, type DemoInfo, type MessageIcon, type StaffMessageResult } from '../shared/contract.ts';
 import type { AssistantContext } from '../src/assistant/types';
+import { brand } from '../src/brand';
 import { config } from './config.ts';
 import { bool, num, obj, Router, str, text } from './http.ts';
 import type { Live } from './live.ts';
@@ -63,7 +64,7 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
     const kind = str(b, 'kind') as ActivityKind;
     if (!CLIENT_KINDS.includes(kind)) throw new HttpError(400, `Activity kind "${kind}" is logged by the server`);
     if (kind === 'page') return store.trackPage(str(b, 'route'));
-    if (kind === 'session') return void store.log('session', { en: 'Opened MijnENGIE', nl: 'Opende MijnENGIE' });
+    if (kind === 'session') return void store.log('session', { en: `Signed in to ${brand.portal}`, nl: `Ingelogd bij ${brand.portal}` });
     const t = b.text === undefined ? null : text(b, 'text');
     if (kind === 'invoice_download') return void store.log(kind, t ?? { en: 'Downloaded an invoice', nl: 'Downloadde een nota' }, '/billing');
     store.log(kind, t ?? { en: 'Turned on phone notifications', nl: 'Zette telefoonmeldingen aan' });

@@ -7,6 +7,8 @@ import { ToastProvider } from './components/ui';
 import { LiveProvider } from './api/LiveProvider';
 import Root from './Root';
 import { isPortalPath, isStaffPath, portalUrl } from './lib/routes';
+import { wantsPhoneFrame } from './lib/frame';
+import { PhoneFrame } from './components/PhoneFrame';
 // Lato is bundled with the app (no Google Fonts request), so the demo looks right offline and behind firewalls.
 import '@fontsource/lato/400.css';
 import '@fontsource/lato/700.css';
@@ -19,7 +21,17 @@ const { pathname, search, hash } = window.location;
 const staff = isStaffPath(pathname);
 if (!staff && !isPortalPath(pathname)) window.history.replaceState(null, '', `${portalUrl(pathname)}${search}${hash}`);
 
+// On a laptop the customer app is a phone-width column (an iframe of itself); the real app runs inside it.
+const framed = !staff && wantsPhoneFrame();
+
 createRoot(document.getElementById('root')!).render(
+  framed ? (
+    <StrictMode>
+      <I18nProvider>
+        <PhoneFrame />
+      </I18nProvider>
+    </StrictMode>
+  ) : (
   <StrictMode>
     <BrowserRouter basename={staff ? undefined : '/app'}>
       <ThemeProvider>
@@ -32,5 +44,6 @@ createRoot(document.getElementById('root')!).render(
       </I18nProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </StrictMode>,
+  </StrictMode>
+  ),
 );

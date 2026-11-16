@@ -399,9 +399,6 @@ button {
 }
 
 /* Mobile bottom tab bar */
-.tabbar {
-  display: none;
-}
 .drawer-backdrop {
   position: fixed;
   inset: 0;
@@ -1147,37 +1144,6 @@ input[type='range'] {
   .qa-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .tabbar {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 40;
-    background: var(--tabbar-bg);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid var(--line);
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
-  }
-  .tabbar a,
-  .tabbar button {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    padding: 6px 0;
-    min-height: 52px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--muted);
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-  }
-  .tabbar a.active {
-    color: var(--blue-700);
-  }
   .profile-btn .who,
   .hide-m {
     display: none !important;
@@ -1627,4 +1593,331 @@ input[type='range'] {
   .rs-logo .brand-sub {
     display: none;
   }
+}
+
+/* ------------------------------------------------------------------
+   Customer app: a phone app like the Hydro Mobile360 customer app.
+   App bar, floating bottom tabs with a raised Eva button, sign-in screen.
+------------------------------------------------------------------- */
+.app {
+  min-height: 100vh;
+  background: var(--bg);
+}
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  background: var(--topbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.app-bar-brand {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+}
+.app-bar-brand .brand {
+  padding: 8px 4px 0;
+}
+.app-bar-title {
+  font-size: 18px;
+}
+.app-bar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app-avatar {
+  width: 42px;
+  height: 42px;
+  color: #fff;
+}
+.content.app-content {
+  padding-bottom: 130px;
+}
+.app-tabs {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 50;
+  width: min(560px, calc(100vw - 24px));
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+}
+.app-tabs a,
+.app-eva {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border-radius: 16px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.app-tabs a:hover {
+  color: var(--ink);
+}
+.app-tabs a.active {
+  color: var(--blue-700);
+  background: var(--blue-50);
+}
+.app-eva {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: var(--ink);
+  cursor: pointer;
+  justify-content: flex-end;
+}
+.app-eva-orb {
+  width: 60px;
+  height: 60px;
+  margin-top: -30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--blue);
+  color: #fff;
+  border: 4px solid var(--surface);
+  box-shadow: 0 8px 22px rgba(0, 170, 255, 0.45);
+  transition: transform 0.15s, background 0.15s;
+}
+.app-eva:hover .app-eva-orb {
+  transform: translateY(-2px);
+}
+.app-eva.open .app-eva-orb {
+  background: var(--navy);
+}
+@media (min-width: 961px) {
+  /* Sit above the floating tab bar; on phones the chat is full screen. */
+  .chat-widget {
+    bottom: 104px;
+  }
+}
+.link-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, transform 0.15s;
+}
+.link-card:hover {
+  border-color: var(--blue-100);
+  transform: translateY(-1px);
+}
+.link-card b {
+  display: block;
+}
+.link-card .grow {
+  flex: 1;
+  min-width: 0;
+}
+.energy-links {
+  margin-bottom: 18px;
+}
+
+/* Sign-in */
+.login {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg);
+}
+.login-hero {
+  width: 100%;
+  padding: 18px 20px 76px;
+  background: linear-gradient(120deg, #0b2240 0%, #0d3561 55%, #005e94 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.login-hero::after {
+  content: '';
+  position: absolute;
+  right: -120px;
+  top: -130px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  border: 40px solid rgba(0, 170, 255, 0.18);
+}
+.login-hero > * {
+  position: relative;
+  z-index: 1;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.login-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+}
+.login-top .brand {
+  padding: 8px 0 0;
+}
+.login-top .brand-sub {
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.login-eyebrow {
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #7fd5ff;
+}
+.login-hero h1 {
+  font-size: 34px;
+  margin-top: 6px;
+  color: #fff;
+}
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: min(440px, calc(100% - 32px));
+  margin-top: -48px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
+}
+.login-card .input {
+  width: 100%;
+}
+.login-pw {
+  position: relative;
+  display: block;
+}
+.login-pw .input {
+  padding-right: 50px;
+}
+.login-pw .icon-btn {
+  position: absolute;
+  right: 1px;
+  top: 1px;
+  border: 0;
+  background: transparent;
+}
+.login-submit {
+  width: 100%;
+  min-height: 48px;
+}
+.login-error {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 13px;
+}
+.login-hint {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.login-foot {
+  margin: 20px 16px 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (max-width: 960px) {
+  .app-bar {
+    padding: 0 12px;
+  }
+  .app-tabs {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: auto;
+    border-radius: 22px 22px 0 0;
+    border-bottom: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  }
+  .content.app-content {
+    padding-bottom: 120px;
+  }
+}
+
+/* Laptop view of the customer app: a phone-width column on a dark page (the column is an iframe of the app). */
+.phone-frame {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--navy);
+  overflow: hidden;
+}
+.phone-frame iframe {
+  width: min(430px, 100%);
+  height: 100%;
+  border: 0;
+  background: var(--bg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Phone QR (start-on-phone code), used by the staff demo panel and phone preview */
+.phone-qr {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.phone-qr-code {
+  flex: none;
+  width: 112px;
+  height: 112px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.phone-qr-code svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.phone-qr-url {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--blue-700);
+  word-break: break-all;
 }

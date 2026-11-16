@@ -1,19 +1,16 @@
 .mp {
-  min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(280px, 420px) 1fr;
-  gap: 40px;
-  padding: 32px 40px;
-  background: radial-gradient(1200px 600px at 80% 20%, var(--blue-50) 0%, var(--bg) 60%);
+  grid-template-columns: minmax(260px, 380px) 1fr;
+  gap: 32px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  background: radial-gradient(1000px 500px at 80% 20%, var(--blue-50) 0%, var(--bg) 60%);
+  border: 1px solid var(--line);
 }
 .mp-side {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-top: 20px;
-}
-.mp-side .brand {
-  padding: 8px 0 0;
 }
 .mp-screens {
   display: flex;
@@ -43,7 +40,7 @@
   position: relative;
   width: 414px;
   height: 868px;
-  max-height: calc(100vh - 64px);
+  max-height: calc(100vh - 120px);
   border-radius: 56px;
   background: #0b1220;
   padding: 12px;
@@ -111,33 +108,4 @@
     width: min(414px, 100%);
     height: 760px;
   }
-}
-.phone-qr {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-.phone-qr-code {
-  flex: none;
-  width: 112px;
-  height: 112px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fff;
-}
-.phone-qr-code svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.phone-qr-url {
-  display: block;
-  margin-top: 6px;
-  font-size: 11.5px;
-  color: var(--blue-700);
-  word-break: break-all;
 }

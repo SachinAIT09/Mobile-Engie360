@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { syncFrameUrl } from './lib/frame';
 import { AppShell } from './components/Layout';
-import { PresenterBar } from './components/PresenterBar';
 import { PortalAssistantProvider } from './assistant/PortalAssistant';
 import { useLive } from './api/live';
 import { syncPush } from './api/push';
+import { isSignedIn } from './lib/session';
 
 // Route-level code splitting keeps the first load small; everything is preloaded right after.
 const loaders = {
@@ -15,7 +16,7 @@ const loaders = {
   smart: () => import('./pages/SmartEnergy'),
   assistant: () => import('./pages/Assistant'),
   account: () => import('./pages/Account'),
-  preview: () => import('./pages/MobilePreview'),
+  login: () => import('./pages/Login'),
 };
 const Dashboard = lazy(loaders.dashboard);
 const Energy = lazy(loaders.energy);
@@ -24,7 +25,18 @@ const Insights = lazy(loaders.insights);
 const SmartEnergy = lazy(loaders.smart);
 const Assistant = lazy(loaders.assistant);
 const Account = lazy(loaders.account);
-const MobilePreview = lazy(loaders.preview);
+const Login = lazy(loaders.login);
+
+// Both guards are components so the sign-in check runs on every navigation, not once when App rendered.
+/** The app needs a signed-in customer; otherwise it opens on the sign-in screen. */
+function RequireSignIn() {
+  return isSignedIn() ? <AppShell /> : <Navigate to="/login" replace />;
+}
+
+/** Already signed in → straight to the app. */
+function LoginRoute() {
+  return isSignedIn() ? <Navigate to="/" replace /> : <Login />;
+}
 
 
 export default function App() {
@@ -34,8 +46,12 @@ export default function App() {
     return () => clearTimeout(id);
   }, []);
 
-  // Bumped by "Reset demo" (presenter bar or staff app): remounts every screen so local state starts fresh.
-  const { resetVersion, resetDemo, online } = useLive();
+  // In the laptop phone column, the address bar follows the screen shown inside it.
+  const location = useLocation();
+  useEffect(() => syncFrameUrl(), [location]);
+
+  // Bumped by "Reset demo" (from the staff app or start page): remounts every screen so local state starts fresh.
+  const { resetVersion, online } = useLive();
 
   // Keep this browser registered for phone notifications after a server restart (no prompt).
   useEffect(() => {
@@ -46,7 +62,8 @@ export default function App() {
     <PortalAssistantProvider>
       <Suspense fallback={<div className="page-loading" aria-busy="true" />}>
       <Routes key={resetVersion}>
-        <Route element={<AppShell />}>
+        <Route path="login" element={<LoginRoute />} />
+        <Route element={<RequireSignIn />}>
           <Route index element={<Dashboard />} />
           <Route path="energy" element={<Energy />} />
           <Route path="billing" element={<Billing />} />
@@ -55,11 +72,9 @@ export default function App() {
           <Route path="assistant" element={<Assistant />} />
           <Route path="account" element={<Account />} />
         </Route>
-        <Route path="mobile-preview" element={<MobilePreview />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
-      <PresenterBar onReset={() => void resetDemo()} />
     </PortalAssistantProvider>
   );
 }

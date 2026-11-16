@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Gauge, Home, Landmark, Mail, MapPin, Pencil, Phone, Zap, Flame } from 'lucide-react';
+import { Gauge, Home, Landmark, LogOut, Mail, MapPin, Pencil, Phone, Zap, Flame } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
+import { signOut } from '../lib/session';
+import { useNavigate } from 'react-router-dom';
 import { contract, customer } from '../data/customer';
 import { Card, DemoFlag, Modal, PageHead } from '../components/ui';
 import { useToast } from '../components/toast';
@@ -35,7 +37,8 @@ function Toggle({ label, desc, defaultOn = false }: { label: string; desc?: stri
 
 export default function Account() {
   const { t, tx, num, eur, date, lang, setLang } = useI18n();
-  const { theme, setTheme } = useTheme();
+  const { pref, setPref } = useTheme();
+  const navigate = useNavigate();
   const toast = useToast();
   const [editing, setEditing] = useState(false);
   const [contact, setContact] = useState({ email: customer.email, phone: customer.phone });
@@ -176,14 +179,17 @@ export default function Account() {
           <div className="list-row">
             <div className="grow">
               <div className="small strong">{t('Theme', 'Thema')}</div>
-              <div className="xs muted">{t('Light or dark', 'Licht of donker')}</div>
+              <div className="xs muted">{t('Light, dark or match your phone', 'Licht, donker of zoals je telefoon')}</div>
             </div>
             <div className="seg">
-              <button className={theme === 'light' ? 'on' : ''} onClick={() => setTheme('light')}>
+              <button className={pref === 'light' ? 'on' : ''} aria-pressed={pref === 'light'} onClick={() => setPref('light')}>
                 {t('Light', 'Licht')}
               </button>
-              <button className={theme === 'dark' ? 'on' : ''} onClick={() => setTheme('dark')}>
+              <button className={pref === 'dark' ? 'on' : ''} aria-pressed={pref === 'dark'} onClick={() => setPref('dark')}>
                 {t('Dark', 'Donker')}
+              </button>
+              <button className={pref === 'system' ? 'on' : ''} aria-pressed={pref === 'system'} onClick={() => setPref('system')}>
+                {t('System', 'Systeem')}
               </button>
             </div>
           </div>
@@ -194,7 +200,16 @@ export default function Account() {
           <Toggle label={t('Monthly energy report by email', 'Maandelijks energierapport per e-mail')} />
         </Card>
       </div>
-      <div className="row mt" style={{ justifyContent: 'center' }}>
+      <div className="row mt" style={{ justifyContent: 'center', flexDirection: 'column', gap: 14 }}>
+        <button
+          className="btn btn-outline"
+          onClick={() => {
+            signOut();
+            navigate('/login', { replace: true });
+          }}
+        >
+          <LogOut size={17} /> {t('Sign out', 'Uitloggen')}
+        </button>
         <DemoFlag>{t('Fictional customer: not a real person', 'Fictieve klant: geen echt persoon')}</DemoFlag>
       </div>
 

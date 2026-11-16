@@ -29,62 +29,73 @@ npm run dev          # everything on http://localhost:3000 with hot reload
 
 Hosting (Docker, Catalyst, phone push over HTTPS): see [DEPLOY.md](DEPLOY.md).
 
-## Screens
+## Two apps, like Hydro Mobile360
 
-URLs work like the Hydro Mobile360 demo: `/` is the **start page** (both apps, phone QR, demo script, Reset), the **customer portal** is under `/app`, and the **staff app** is at `/staff`. Old portal links (`/energy`, `/billing`…) redirect under `/app`.
+URLs work like the Hydro Mobile360 demo: `/` is the **start page** (both apps, phone QR, demo script, Reset), the **customer app** is under `/app`, and the **staff app** is at `/staff`. Old portal links (`/energy`, `/billing`…) redirect under `/app`.
 
-Both apps share one shell: a top bar (language, theme menu Dark/Light/Match system, notifications with a live-connection dot, avatar) and a 72 px icon rail that widens on hover to show the labels, with **Ask Eva…** at the top. On phones the rail is a drawer behind the ☰ button; the portal also has a bottom tab bar.
+### Customer app (`/app`): a phone app
 
-| Portal route (under `/app`) | Screen |
+Opens on the **MijnENGIE sign-in** (`sanne.devries@example.nl` or customer number `2003 418 762`, any password). Bottom tabs **Home · Energy · Eva · Billing · Profile**, with Eva as the raised button in the middle; sub-pages have a back arrow. No demo tools in here.
+
+| Route (under `/app`) | Screen |
 |---|---|
-| `/` | Home dashboard: greeting, KPIs, energy overview chart, contract, quick actions, smart insights, live power |
-| `/energy` | Consumption analytics: hour/day/week/month, electricity/gas, comparisons, Net2Grid appliance breakdown, peak/off-peak, trend + table |
-| `/billing` | Bills & payments: installment, outstanding, annual overview, invoices (view/download), payment history, adjust installment (`?adjust=1`) |
-| `/insights` | Energy insights: savings, alerts, tips, savings plan, benchmark |
-| `/smart-energy` | Smart Energy / Net2Grid: live power, recognised appliances, 15-minute smart EV charging planner with CO₂, anomaly detection, capabilities |
-| `/assistant` | Full-page Eva (shares the session with the floating chat button) |
-| `/account` | Profile, contract, payment details, meter readings, preferences (language, theme) |
-| `/mobile-preview` | Phone frame showing the live app at 390 × 844, plus a QR code to open it on a real phone |
+| `/login` | Sign-in |
+| `/` | Home: greeting, KPIs, energy overview, contract, quick actions, smart insights, live power |
+| `/energy` | Usage: hour/day/week/month, comparisons, Net2Grid breakdown, peak/off-peak, trend; links to Insights and Smart Energy |
+| `/insights` | Energy insights (sub-page of Energy): savings, alerts, tips, savings plan, benchmark |
+| `/smart-energy` | Smart Energy / Net2Grid (sub-page of Energy): live power, appliances, 15-minute smart charging with CO₂ |
+| `/billing` | Bills & payments: installment (`?adjust=1`), invoices, payment history, annual overview |
+| `/account` | Profile: details, contract, payment, meter readings, preferences (language, theme, phone notifications), sign out |
+| `/assistant` | Eva full screen |
 
-The NL/EN switch translates the portal and the assistant. The theme menu offers Dark, Light or Match system (remembered).
+### Staff app (`/staff`): ENGIE Customer Service
 
-The **staff app** (`/staff`) shows Sanne's KPIs, details, live activity and Eva conversations, and sends her messages (in-app banner plus optional phone push). Its rail jumps to each section.
+Top bar (language, theme menu Dark/Light/Match system, live status, avatar) and an icon rail that widens on hover; a drawer on phones.
+
+| Route | Page |
+|---|---|
+| `/staff` | Dashboard: Sanne's KPIs, details ("in the app now"), latest activity |
+| `/staff/activity` | Customer activity: live table with filters (Account, Billing, Savings & charging, Eva, Messages, Views) |
+| `/staff/conversations` | Eva conversations, live |
+| `/staff/messages` | Write a message (templates or your own), see sent and read |
+| `/staff/demo` | **Demo control panel**: one-click *Send to phone* cards, phone pairing QR, presenter keys, Reset demo |
+| `/staff/preview` | Phone preview: the live customer app in a phone frame |
 
 ## Presenting
 
-Press **Shift+P** (or open `/?presenter=1`) for the presenter bar. It walks through the six-step script below and remembers where you are.
+The presenter drives the **staff app** on the laptop; the customer app runs on a phone (or in the phone preview). In the staff app press **Shift+P** for the presenter bar (or open `/staff?presenter=1`).
 
 | Key | Action |
 |---|---|
 | N or → | Next step |
 | B or ← | Previous step |
 | 1–6 | Jump to a step |
-| R | Reset the demo (chat, state, back to step 1) |
-| Esc | Hide the bar (when no dialog or chat is open) |
+| R | Reset the demo (back to step 1) |
+| Esc | Hide the bar (when no dialog is open) |
 
-1. **Customer dashboard**: KPIs, chart filters, notifications.
-2. **Usage analytics**: Hour view with the dynamic price; EV charging in purple; +12% insight.
-3. **Bills & installment**: opens the installment dialog; drag to €198; download an invoice.
-4. **AI assistant**: asks "Why is my energy bill higher this month?". Follow up with "and last month?" or "why was December higher?".
-5. **Net2Grid smart energy**: live power, recognised EV, smart charging in 15-minute blocks.
-6. **Mobile experience**: tap through the phone; scan the QR code with a real phone on the same Wi-Fi.
+1. **Customer at a glance** (Dashboard): Sanne signs in on the phone; the badge shows she is in the app.
+2. **Customer activity**: on the phone, Billing → Adjust installment → €198. It appears at once.
+3. **Eva conversations**: on the phone, tap Eva → "Why is my energy bill higher this month?" → "and last month?". Read along live.
+4. **Send to phone** (Demo control panel): "Cheapest hours tonight" → banner in the app (and a phone notification if on).
+5. **Personal message**: write your own; see when Sanne reads it.
+6. **Phone preview**: the same live app in a phone frame, for a laptop-only demo.
 
 ## Architecture
 
 ```
+server/             Node server: API, SQLite (node:sqlite), live events (SSE), web push, start page; one port
+shared/contract.ts  REST paths, types, live events shared by server and frontend
 src/
-  brand.ts        brand name, portal name, assistant name, partners: the only place they're written
-  data/           mock data (customer, energy, billing, insights): replace with API calls
-  assistant/      scripted assistant
-    nlu.ts          normalise (EN/NL, typos), entities (months, "last month"), weighted intent scoring, follow-ups
-    intents.ts      intent definitions + suggestion phrases
-    answers.ts      pure answer functions from the demo data
-    mockProvider.ts AssistantProvider = matchIntent + answerFor
-    ChatPanel.tsx   chat UI shared by the floating chat and the full page
-  lib/            i18n, demo clock (Amsterdam time), theme, presenter script, charging planner, live power
-  components/     layout, UI kit, charts, presenter bar, phone QR
-  pages/          one file per screen
-tests/e2e/        Playwright specs
+  main.tsx, Root.tsx  picks the app: /staff → staff app, everything else → customer app under /app
+  brand.ts          brand name, portal name, assistant name, partners: the only place they're written
+  data/             seed data (customer, energy, billing, insights), also used by the server
+  api/              API client, live provider (server state + SSE), Eva over HTTP, push opt-in
+  assistant/        scripted Eva: nlu.ts → intents.ts → answers.ts → mockProvider.ts; ChatPanel.tsx
+  pages/            customer app screens (+ Login.tsx); components/Layout.tsx is its phone-app shell
+  staff/            staff app: StaffApp.tsx (layout + routes), pages/, parts.tsx, useStaffData.ts
+  components/       RailShell (staff shell), ThemeMenu, UI kit, charts, presenter bar, phone QR
+  lib/              i18n, demo clock (Amsterdam time), theme, session, presenter script, charging planner
+tests/e2e/          Playwright: customer app, staff app, live customer ↔ staff, phone sizes
 ```
 
 ### Plugging in a real AI backend
@@ -98,5 +109,5 @@ tests/e2e/        Playwright specs
 - Day-ahead prices (quarter-hour values interpolated from hourly sample prices) and grid CO₂ intensity (illustrative).
 - Assistant answers: deterministic intent matching, no model or network calls.
 - Invoice download produces a demo HTML document, not a real PDF.
-- Installment changes, contact edits, preferences and smart-charging schedules are kept in page state only.
-- Sign-out and bank-account changes are disabled (toast message).
+- Changes go to the demo server's SQLite file (installment, savings plan, contact details, messages, Eva chats, activity) until **Reset demo**.
+- Sign-in accepts the sample customer with any password; bank-account changes are disabled (toast message).

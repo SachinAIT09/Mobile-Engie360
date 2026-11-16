@@ -1,5 +1,6 @@
 /**
- * Guided demo script for presenter mode (Shift+P), same idea as the Hydro One demo's presenter bar.
+ * Guided demo script for presenter mode (Shift+P in the staff app), as in Hydro Mobile360's presenter bar.
+ * The presenter drives the staff app on the laptop; the customer app runs on a phone (or the phone preview).
  * Progress and visibility live in localStorage so a page reload keeps the presenter's place.
  */
 import type { Text } from './i18n';
@@ -8,42 +9,40 @@ export interface DemoStep {
   title: Text;
   /** One talking point for the presenter. */
   say: Text;
+  /** Staff app route. */
   route: string;
-  /** Optional question the assistant asks on arrival (step 4). */
-  ask?: Text;
 }
 
 export const DEMO_STEPS: DemoStep[] = [
   {
-    title: { en: 'Customer dashboard', nl: 'Klantdashboard' },
-    say: { en: 'One view of usage, costs, contract and the next payment, personalised for Sanne.', nl: 'Eén overzicht van verbruik, kosten, contract en de volgende betaling, persoonlijk voor Sanne.' },
-    route: '/',
+    title: { en: 'Customer at a glance', nl: 'Klant in één oogopslag' },
+    say: { en: 'Sanne’s usage, costs and installment advice. The badge shows she is in the app on her phone right now.', nl: 'Verbruik, kosten en termijnadvies van Sanne. Het label laat zien dat ze nu in de app op haar telefoon zit.' },
+    route: '/staff',
   },
   {
-    title: { en: 'Usage analytics', nl: 'Verbruiksanalyse' },
-    say: { en: 'Switch to Hour: the dynamic price overlay shows why evening EV charging costs more (+12% in October).', nl: 'Kies Uur: de dynamische prijs laat zien waarom ’s avonds laden duurder is (+12% in oktober).' },
-    route: '/energy',
+    title: { en: 'Customer activity', nl: 'Klantactiviteit' },
+    say: { en: 'On the phone: Billing → Adjust installment → €198. The change appears here at once.', nl: 'Op de telefoon: Betalen → Termijnbedrag aanpassen → €198. De wijziging verschijnt hier meteen.' },
+    route: '/staff/activity',
   },
   {
-    title: { en: 'Bills & installment', nl: 'Nota’s & termijnbedrag' },
-    say: { en: 'Drag the installment to €198 and watch the year-end settlement shrink. Download an invoice.', nl: 'Sleep het termijnbedrag naar €198 en zie de eindafrekening kleiner worden. Download een nota.' },
-    route: '/billing?adjust=1',
+    title: { en: 'Eva conversations', nl: 'Gesprekken met Eva' },
+    say: { en: 'On the phone: tap Eva → “Why is my energy bill higher this month?”. Read along here, live.', nl: 'Op de telefoon: tik op Eva → “Waarom is mijn energierekening hoger deze maand?”. Lees hier live mee.' },
+    route: '/staff/conversations',
   },
   {
-    title: { en: 'Eva, the AI assistant', nl: 'Eva, de AI-assistent' },
-    say: { en: 'It answers from her own data, then follow up with “and last month?” or “why was December higher?”.', nl: 'Antwoord op basis van haar eigen data. Vraag daarna “en vorige maand?” of “waarom was december hoger?”.' },
-    route: '/',
-    ask: { en: 'Why is my energy bill higher this month?', nl: 'Waarom is mijn energierekening hoger deze maand?' },
+    title: { en: 'Send to phone', nl: 'Naar telefoon sturen' },
+    say: { en: 'Tap “Cheapest hours tonight”: a banner in the app, and a notification if they are on.', nl: 'Tik op “Goedkoopste uren vannacht”: een melding in de app, en op de telefoon als meldingen aan staan.' },
+    route: '/staff/demo',
   },
   {
-    title: { en: 'Net2Grid smart energy', nl: 'Net2Grid slimme energie' },
-    say: { en: 'Appliance recognition found the EV. Smart charging moves it to the cheapest 15-minute blocks.', nl: 'Apparaatherkenning vond de auto. Slim laden verschuift het naar de goedkoopste kwartieren.' },
-    route: '/smart-energy',
+    title: { en: 'Personal message', nl: 'Persoonlijk bericht' },
+    say: { en: 'Write your own message; see when Sanne reads it.', nl: 'Schrijf een eigen bericht en zie wanneer Sanne het leest.' },
+    route: '/staff/messages',
   },
   {
-    title: { en: 'Mobile experience', nl: 'Mobiele ervaring' },
-    say: { en: 'The full portal at phone size. Scan the QR code to open it on a real phone.', nl: 'Het hele portaal op telefoonformaat. Scan de QR-code om het op een echte telefoon te openen.' },
-    route: '/mobile-preview',
+    title: { en: 'Phone preview', nl: 'Telefoonweergave' },
+    say: { en: 'No phone at hand? The same live app in a phone frame.', nl: 'Geen telefoon bij de hand? Dezelfde live app in een telefoonframe.' },
+    route: '/staff/preview',
   },
 ];
 

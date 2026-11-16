@@ -3,18 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Presentation, RotateCcw, X } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { DEMO_STEPS, initialStep, initialVisible, isTyping, saveStep, saveVisible } from '../lib/presenter';
-import { usePortalAssistant } from '../assistant/portalContext';
-import { useToast } from './toast';
 
 /**
- * Presenter mode: Shift+P toggles a bar that walks through the demo script.
+ * Presenter mode in the staff app: Shift+P toggles a bar that walks through the demo script.
  * Hotkeys while shown: N / → next, B / ← back, 1–6 jump, R reset, Esc hide.
  */
 export function PresenterBar({ onReset }: { onReset: () => void }) {
   const { t, tx } = useI18n();
   const navigate = useNavigate();
-  const toast = useToast();
-  const { ask, session, setOpen } = usePortalAssistant();
   const [visible, setVisible] = useState(initialVisible);
   const [step, setStep] = useState(initialStep);
 
@@ -25,26 +21,17 @@ export function PresenterBar({ onReset }: { onReset: () => void }) {
       if (!s) return;
       setStep(i);
       saveStep(i);
-      setOpen(false);
       navigate(s.route);
-      if (s.ask) {
-        const q = tx(s.ask);
-        // Let the dashboard mount before the assistant opens over it.
-        setTimeout(() => ask(q), 450);
-      }
     },
-    [ask, navigate, setOpen, tx],
+    [navigate],
   );
 
   const reset = useCallback(() => {
-    session.reset();
-    setOpen(false);
     setStep(0);
     saveStep(0);
     onReset();
-    navigate('/');
-    toast(t('Demo reset', 'Demo gereset'));
-  }, [navigate, onReset, session, setOpen, t, toast]);
+    navigate(DEMO_STEPS[0]!.route);
+  }, [navigate, onReset]);
 
   const toggle = useCallback(() => {
     saveVisible(!visible);
@@ -64,11 +51,10 @@ export function PresenterBar({ onReset }: { onReset: () => void }) {
       else if (k === 'b' || e.key === 'ArrowLeft') go(step - 1);
       else if (k === 'r') reset();
       else if (e.key === 'Escape') {
-        // Escape belongs to an open dialog, menu or chat first.
-        if (document.querySelector('.modal, .popover, .chat-widget')) return;
+        // Escape belongs to an open dialog or menu first.
+        if (document.querySelector('.modal, .popover')) return;
         toggle();
-      }
-      else if (/^[1-9]$/.test(e.key) && Number(e.key) <= DEMO_STEPS.length) go(Number(e.key) - 1);
+      } else if (/^[1-9]$/.test(e.key) && Number(e.key) <= DEMO_STEPS.length) go(Number(e.key) - 1);
       else return;
       e.preventDefault();
     };
