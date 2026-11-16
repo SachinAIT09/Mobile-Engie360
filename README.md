@@ -1,93 +1,73 @@
-# ENGIE Netherlands: Customer Experience Portal & AI Assistant (prototype)
+# Hydro One EV & Energy Demo (PowerConnect.AI concept)
 
-Interactive demo of an ENGIE-style customer portal (MijnENGIE), an AI support assistant, Net2Grid-powered smart energy features, and the same assistant embedded in an engie.nl-style website.
+Two apps linked live through one server:
 
-> **Demo only.** Fictional customer ("Sanne de Vries"), sample data, scripted assistant. Not connected to any ENGIE system or AI backend, and nothing is deployed to engie.nl.
+- **Staff web app** (`/staff`): Hydro One staff see feeder-level EV visibility and use Campaign 360 to message customers behind a feeder.
+- **Customer mobile app** (`/app`): bill, Kubra payment, outage, real-time self-consumption, EV-detected DR enrollment, stop-charging alerts.
 
-## Run
+Open them in two tabs, or the customer app on a phone. An action in one shows up in the other immediately.
 
-Requires Node.js 20+.
+Everything is sample data. The logo, program name and incentive amounts are placeholders in `packages/shared/src/brand.ts`.
+
+## Quick start on Windows
+
+1. Install **Node.js LTS** from https://nodejs.org (skip if `node -v` already works).
+2. Double-click **`start-demo.cmd`** in this folder.
+3. Wait for the browser to open **http://localhost:3000** (the first run downloads packages and a database, so it takes a few minutes).
+
+No Docker or database install is needed: the app starts its own built-in database. Restarting the app resets the demo data.
+
+## Host it
+
+See **[DEPLOY.md](DEPLOY.md)**. Short version, on a server with Docker:
 
 ```bash
-npm install
-npm run dev          # http://localhost:5173 (Vite picks the next free port if taken)
+docker compose up -d --build
 ```
+
+Then open `http://<server>:3000`. The start page links to both apps and shows a QR code for the phone.
+
+## Demo script
+
+1. Open the **Staff app** in one tab and the **Customer app** in another tab or on a phone. Sign in as `manny@demo.test`, any password.
+2. **Use case 1, EV detected:** Staff → Demo control panel → *Simulate EV detected* for Manny. The pop-up appears on the phone, and the staff dashboard's unenrolled count goes up. Enroll on the phone, and the enrolled count goes up.
+3. **Use case 2a, enrollment offer:** *Reset demo* → *Simulate 284 EVs stopped charging* → Feeder visibility → **Target 118 with enrollment offer** → Send. The offer arrives on the phone; open it and enroll. Campaign results update live.
+4. **Use case 2b, stop charging:** sign the phone in as `priya@demo.test` → *Simulate forecast high on SUB-01-F1* → **Send stop-charging request** → Send. The alert appears on the phone → "Yes, I'll pause" → staff sees responses → *End event now* → the phone shows the event result.
+
+## Develop locally
+
+Requires Node.js 20+ and pnpm (`npm i -g pnpm`). The API starts a built-in database when `MONGO_URL` isn't set.
+
+```bash
+copy .env.example .env      # Windows (cp on macOS/Linux)
+pnpm i
+pnpm dev
+```
+
+`pnpm dev` runs the three parts separately with hot reload: API on http://localhost:3000, staff app on http://localhost:5173, customer app on http://localhost:8081.
+
+To try the production build locally: `pnpm build` then `pnpm start`, and open http://localhost:3000.
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Dev server with hot reload, reachable on the LAN (for the phone QR code) |
-| `npm run build` / `npm run preview` | Production build / serve it locally |
-| `npm run typecheck` | TypeScript, strict |
-| `npm run lint` | ESLint, zero warnings allowed (React Compiler rules on) |
-| `npm test` | Unit tests (Vitest): assistant NLU and answers, charging planner |
-| `npm run e2e` | Browser tests (Playwright, uses your installed Chrome): every demo flow, desktop + mobile, fails on console errors |
-| `npm run check` | typecheck + lint + unit tests |
+| `pnpm dev` | Develop with hot reload (3 ports) |
+| `pnpm build` / `pnpm start` | Production build / run everything on one port |
+| `pnpm seed:reset` | Wipe and reseed demo data |
+| `pnpm typecheck` | Type-check every app |
+| `pnpm lint` | ESLint, zero warnings allowed |
+| `pnpm test` | Unit tests (Vitest) for the API maths, shared helpers and web libs |
+| `pnpm e2e` | Playwright tests for all flows across both apps (`BASE_URL=http://localhost:3000` for the production build; first time: `pnpm --filter @engie/e2e exec playwright install chromium`) |
 
-## Screens
+## Project layout
 
-| Route | Screen |
+| Folder | What |
 |---|---|
-| `/` | Home dashboard: greeting, KPIs, energy overview chart, contract, quick actions, smart insights, live power |
-| `/energy` | Consumption analytics: hour/day/week/month, electricity/gas, comparisons, Net2Grid appliance breakdown, peak/off-peak, trend + table |
-| `/billing` | Bills & payments: installment, outstanding, annual overview, invoices (view/download), payment history, adjust installment (`?adjust=1`) |
-| `/insights` | Energy insights: savings, alerts, tips, savings plan, benchmark |
-| `/smart-energy` | Smart Energy / Net2Grid: live power, recognised appliances, 15-minute smart EV charging planner with CO₂, anomaly detection, capabilities |
-| `/assistant` | Full-page AI assistant (shares the session with the floating widget) |
-| `/account` | Profile, contract, payment details, meter readings, preferences (language, theme) |
-| `/website-demo` | engie.nl-style page with the embeddable assistant widget (visitor vs signed-in); always light |
-| `/mobile-preview` | Phone frame showing the live app at 390 × 844, plus a QR code to open it on a real phone |
+| `apps/api` | NestJS + MongoDB + Socket.IO. Also serves the built apps and the start page (`src/static.ts`) |
+| `apps/web` | Staff app: React + Vite |
+| `apps/mobile` | Customer app: Expo / React Native, built for the web at `/app`. Can also run in Expo Go on a phone |
+| `packages/shared` | Shared types, API client, socket events, design tokens, brand placeholders |
+| `tests/e2e` | Browser tests for the three demo flows |
+| `docs/` | Build spec and implementation notes |
+| `wireframes/` | Approved screen designs |
 
-The NL/EN switch translates the portal and the assistant. The sun/moon button switches light/dark (remembered).
-
-## Presenting
-
-Press **Shift+P** (or open `/?presenter=1`) for the presenter bar. It walks through the seven-step script below and remembers where you are.
-
-| Key | Action |
-|---|---|
-| N or → | Next step |
-| B or ← | Previous step |
-| 1–7 | Jump to a step |
-| R | Reset the demo (chat, state, back to step 1) |
-| Esc | Hide the bar (when no dialog or chat is open) |
-
-1. **Customer dashboard**: KPIs, chart filters, notifications.
-2. **Usage analytics**: Hour view with the dynamic price; EV charging in purple; +12% insight.
-3. **Bills & installment**: opens the installment dialog; drag to €198; download an invoice.
-4. **AI assistant**: asks "Why is my energy bill higher this month?". Follow up with "and last month?" or "why was December higher?".
-5. **Net2Grid smart energy**: live power, recognised EV, smart charging in 15-minute blocks.
-6. **Website widget**: ask as a visitor (sign-in prompt), sign in, ask again; show the embed code.
-7. **Mobile experience**: tap through the phone; scan the QR code with a real phone on the same Wi-Fi.
-
-## Architecture
-
-```
-src/
-  brand.ts        brand name, portal name, assistant name, partners: the only place they're written
-  data/           mock data (customer, energy, billing, insights): replace with API calls
-  assistant/      scripted assistant
-    nlu.ts          normalise (EN/NL, typos), entities (months, "last month"), weighted intent scoring, follow-ups
-    intents.ts      intent definitions + suggestion phrases
-    answers.ts      pure answer functions from the demo data
-    mockProvider.ts AssistantProvider = matchIntent + answerFor
-    ChatPanel.tsx   chat UI shared by widget, full page and website embed
-  widget/         EngieAssistantWidget (self-contained) + mount.tsx (mount into any page)
-  lib/            i18n, demo clock (Amsterdam time), theme, presenter script, charging planner, live power
-  components/     layout, UI kit, charts, presenter bar, phone QR
-  pages/          one file per screen
-tests/e2e/        Playwright specs
-```
-
-### Plugging in a real AI backend
-
-`src/assistant/types.ts` defines `AssistantProvider` (`reply(history, context)` and `suggestions(context)`). Implement it with a call to a backend that runs the LLM with tools for usage, billing and contract data, then swap the provider in `PortalAssistant.tsx` and `EngieAssistantWidget.tsx`. Replies can carry `facts`, `chart`, `actions` and `followUps`, so the UI stays the same. `context.lastIntent` is echoed back for follow-ups. Set `isMock = false` to replace the "demo assistant" disclaimer.
-
-### What is simulated
-
-- All customer, usage, invoice and payment data (`src/data/*`), on a fixed demo clock: Monday 16 November 2026, 14:20 Amsterdam time.
-- Net2Grid appliance recognition, anomaly detection and the live power stream (`src/lib/live.ts`).
-- Day-ahead prices (quarter-hour values interpolated from hourly sample prices) and grid CO₂ intensity (illustrative).
-- Assistant answers: deterministic intent matching, no model or network calls.
-- Invoice download produces a demo HTML document, not a real PDF.
-- Installment changes, contact edits, preferences and smart-charging schedules are kept in page state only.
-- Sign-out and bank-account changes are disabled (toast message).
+Working on it with Claude Code in VS Code: open this folder. `CLAUDE.md` gives it the context.

@@ -1,31 +1,49 @@
-# ENGIE Netherlands CX prototype
+# Hydro One EV & Energy Demo
 
-PowerConnect.AI concept demo for ENGIE Netherlands: a MijnENGIE-style customer portal, a scripted AI assistant, Net2Grid smart-energy features, and the same assistant embedded in an engie.nl-style page. Frontend only (Vite + React 19 + TypeScript); everything runs on local mock data. **It is built and working**; changes from here are iterations. Read `README.md` for screens, commands and the demo script.
+PowerConnect.AI concept demo for Hydro One: a customer **mobile app** and a staff **web app**, interlinked through one API. Net2Grid EV detection drives DR enrollment and Campaign 360 feeder messaging. **It is built and working**; changes from here are iterations.
 
-Sister project: `E:\hydro-one-ev-demo` (Hydro One). The assistant NLU, presenter mode, lint rules and test setup follow its patterns; borrow from there before inventing something new.
+Read first: `docs/BUILD_SPEC.md` (scope, flows, screens), `docs/IMPLEMENTATION_NOTES.md` (exact API behaviour, seed numbers, energy model). Look: the staff web app and start page follow the PowerConnect.AI dark dashboard spec, with a matching light theme (dark tokens on `:root`, light overrides on `:root[data-theme='light']` in `apps/web/src/styles.css`; Leaflet colours mirrored in `apps/web/src/lib/theme.ts`; the choice is stored by `lib/themeMode.ts` under `pc-theme`, dark by default, and applied before paint by `index.html` and the start page); the customer app follows its Figma restyle. `wireframes/` is the original layout reference.
 
 ## Layout
 
-- `src/brand.ts`: brand name, portal, assistant name, partner names. Never hard-code "ENGIE", "MijnENGIE", "Net2Grid" or "Stedin" elsewhere.
-- `src/data/*`: mock data. `src/lib/time.ts` holds the demo clock (`DEMO_NOW`, `DEMO_TZ` = Europe/Amsterdam). Use `zoned()` / `dayKey()`; never `getHours()` / `setDate()` on local time.
-- `src/assistant/`: `nlu.ts` (pure matcher) → `intents.ts` (definitions, phrases, suggestions) → `answers.ts` (pure answers) → `mockProvider.ts` (the `AssistantProvider`). UI in `ChatPanel.tsx`; portal session in `PortalAssistant.tsx` + `portalContext.ts`.
-- `src/widget/`: the embeddable website widget (`EngieAssistantWidget.tsx`) and `mount.tsx`.
-- `src/lib/`: i18n (`i18n.ts` hook + `I18nProvider.tsx`), theme (`theme.ts` + `ThemeProvider.tsx`), presenter script (`presenter.ts`), charging planner (`chargingPlan.ts`), live power simulation (`live.ts`).
-- `src/components/`: layout, UI kit (`ui.tsx`), toasts (`toast.ts`), nav items (`nav.ts`), charts, `PresenterBar.tsx`, `PhoneQr.tsx`.
-- `tests/e2e/`: Playwright specs; `src/**/*.spec.ts`: Vitest unit tests.
+- `packages/shared`: the contract. Types (`types.ts`), REST paths and client (`api.ts`), socket events (`socket.ts`), design tokens, `brand.ts` placeholders, format helpers. Compiled to CommonJS in `dist/`; run `pnpm build:shared` after changing it (`pnpm dev` does this).
+- `apps/api`: NestJS 12 (ESM, `module: nodenext`) + Mongoose + Socket.IO. One folder per module. Dev loop is `tsc -w` + `node --watch` (not tsx: Nest DI needs decorator metadata). Seeds itself on boot when the DB is empty. With `MONGO_URL` unset it starts a built-in MongoDB (`src/database.ts`, mongodb-memory-server). In production it also serves the built staff app at `/staff`, the customer app at `/app` and a start page at `/` (`src/static.ts`).
+- `apps/web`: React 19 + Vite + react-router. Production build uses base `/staff/`; API is same-origin in production. Pages in `src/pages`, API/socket client in `src/lib/client.tsx`.
+- `apps/mobile`: Expo SDK 58 + Expo Router (`src/app`). Providers in `src/lib`, UI kit in `src/components`. Runs on Expo Web (8081) and Expo Go. `pnpm --filter @engie/mobile build:web` exports it with base `/app` (`app.config.js`). Read `apps/mobile/AGENTS.md` before touching Expo APIs.
+- `tests/e2e`: Playwright scripts that drive flows A/B/C across both apps (needs `pnpm dev` running).
 
 ## Rules
 
-- The assistant is scripted on purpose: no LLM or network calls, and the "demo assistant" disclosure always shows. New questions = a new intent or keywords in `intents.ts`, an answer in `answers.ts`, and specs in `nlu.spec.ts` / `answers.spec.ts`. Every suggestion phrase must round-trip to its intent (spec enforces it). Prefix exact-only keywords with `=` (`'=auto'` must not match "automatische").
-- Every user-visible string is bilingual: `t('English', 'Nederlands')` in components, `{ en, nl }` (`Text`) in data.
-- Colours come from the CSS tokens in `src/styles/global.css`; each token has a light and a dark value (`:root[data-theme='dark']`). `--navy` is the brand navy for surfaces, `--ink` is text. Charts take colours from `useTheme().chart` (SVG attributes can't read CSS variables). The website demo (`.site`) is always light.
-- External systems are simulated and labelled as sample data. No real customer, payment or ID data. Nothing touches engie.nl.
-- TypeScript strict; touch targets ≥ 44 px; accessibility labels on icon-only buttons; no horizontal scroll at 390 px.
-- Lint is ESLint flat config with the React Compiler rules: no `setState` synchronously inside an effect (derive state, or set it in callbacks/promises), no ref writes or reads during render, and a `.tsx` file that exports a component exports nothing else (hooks and constants go in a `.ts` next to it).
-- After changes: `npm run check` (typecheck + lint + unit tests), then `npm run e2e`.
+- Mobile and web never talk directly. Cross-app effects go API → Socket.IO events.
+- External systems stay simulated behind interfaces: Net2Grid (`EvDetectionSource`), Kubra (`PaymentProvider`), SMS/email. Never collect real payment or ID data.
+- The staff feeder map uses real basemaps (Dark, a CSS-recoloured OpenStreetMap, and Streets from OpenStreetMap, Satellite from Esri) with feeders routed along real streets from the committed `apps/web/src/data/feeder-routes.json` (regenerate with `node scripts/gen-feeder-routes.mjs`); positions are synthetic (`packages/shared/src/geo.ts`) and labelled illustrative; it falls back to the schematic when tiles can't load. The customer outage map is still a schematic.
+- The assistant is scripted on purpose: no LLM or network calls. Answers come from live demo data and always show the disclosure.
+- Brand values and program names are placeholders in `packages/shared/src/brand.ts`. Don't hard-code them elsewhere.
+- Keep the current look (dark navy glass dashboard on staff, plus its light theme; no new colours, radii or shadows outside the tokens, and every new colour needs both a dark and a light value). Text on surfaces uses tokens (`--navy` for strong text), never literal `#fff`; white is only for text on blue accents. Don't redesign without being asked.
+- TypeScript strict; DTO validation on every API body; touch targets ≥ 44px; accessibility labels on icon-only buttons.
+- Lint is ESLint 10 flat config at the root (`eslint.config.mjs`) with the React Compiler rules on: no `setState` synchronously inside an effect (use promise chains or callbacks), no ref reads during render, and in `apps/web` a file that exports a component exports nothing else.
+- Unit tests are Vitest (`*.spec.ts` next to the code in `apps/api`, `apps/web/src/lib`, `packages/shared`). API tests never boot Nest DI (`AppModule`, `@nestjs/testing`): esbuild emits no decorator metadata. Test pure functions or hand-built services; the maths lives in small modules for that reason (`campaigns/merge.ts`, `campaigns/simulation-plan.ts`, `campaigns/ab.ts`, `campaigns/schedule.ts`, `dr-events/dr-result.ts`, `grid/feeder-stat.ts`, `energy/tariff.ts`, `energy/charging-plan.ts`, `energy/integrate.ts`, `assistant/nlu.ts`, `assistant/*-answers.ts`, `assistant/copy-drafts.ts`, `seed/allocate.ts`, `seed/bills.ts`, `activity/throttle.ts`).
+- After changes: `pnpm typecheck`, `pnpm lint`, `pnpm test`, then run `pnpm dev` and `pnpm e2e` (Playwright Test in `tests/e2e`, serial, asserts live socket updates).
 
-## Demo day
+## Hosting
 
-- `npm run dev`, open the printed URL. Shift+P for the presenter bar (N/B/1–7/R/Esc).
-- `/mobile-preview` shows a QR code with the laptop's LAN address; the phone must be on the same Wi-Fi.
-- Port 5173 is often taken on this machine by another app; Vite moves to the next free port.
+One server, one port: `docker compose up -d --build` (see DEPLOY.md), or `pnpm build && pnpm start`. Keep it that way. The point is that the demo needs no local setup.
+
+Zoho Catalyst AppSail (India DC) runs the same image: `pnpm deploy:catalyst` (`scripts/deploy-catalyst.ps1`; needs `catalyst login` + `catalyst init` once, and Docker Desktop). Hosting constraints the code relies on, don't undo them:
+- `apps/api/src/main.ts` opens the port before loading Nest, Express, Socket.IO or the database (AppSail kills apps not listening within 10 s); a 503 "Starting…" gate (`boot/gate.ts`) covers the ~3 s boot.
+- The port comes from `X_ZOHO_CATALYST_LISTEN_PORT`, then `API_PORT`, `PORT`, 3000 (`resolvePort` in `config.ts`).
+- The image ships the mongod binary (`MONGOMS_SYSTEM_BINARY`); nothing downloads at start.
+- Socket.IO clients use default transports (polling first, then WebSocket) and the server pings every 20 s, inside AppSail's 30 s request limit.
+- AppSail doesn't pass WebSockets: on AppSail the server serves polling only (`socketPollingOnly` in `config.ts`). Its proxy also rejects `[` `]` in paths, so `apps/mobile/scripts/fix-export-names.mjs` renames Expo's bracketed route chunks after export.
+- One instance only: live sync and the in-memory DB live in one process.
+
+## Commands
+
+- `pnpm i`: install
+- Database: built-in by default (no setup). `docker compose up -d mongo` + `MONGO_URL` for a persistent one
+- `start-demo.cmd`: Windows double-click install + build + start
+- `pnpm seed` / `pnpm seed:reset`: seed / wipe and reseed
+- `pnpm dev`: api (3000, Swagger at /docs) + web (5173) + mobile web (8081)
+- `pnpm build` then `pnpm start`: production, everything on :3000
+- `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm e2e`
+- Demo day: staff app `/demo` has the one-click "Send to phone" board and the phone QR; `Shift+P` on any staff page toggles the presenter bar (hotkeys N/B next/back, 1/2/3 simulate, E end event, R reset). "Reset (keep phone signed in)" is the default reset; demo customer ids are fixed so tokens survive it.

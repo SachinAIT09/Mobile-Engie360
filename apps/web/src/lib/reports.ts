@@ -1,0 +1,260 @@
+import type { AuditAction, BlindSpot, Campaign, FlexEvent, FlexEventStatus, EnrollmentSource, DistrictStat, GridAreaStat } from '@engie/shared';
+
+/**
+ * Pure aggregations behind the Reports page. Everything here is derived from the
+ * staff endpoints (campaigns, DR events, districts, gridAreas, blind spots); no fetching,
+ * no DOM, so it is unit-tested in reports.spec.ts.
+ */
+
+// ---------------------------------------------------------------- campaign funnel
+
+export type FunnelStageName = 'Sent' | 'Delivered' | 'Opened' | 'Enrolled' | 'Declined';
+
+export interface FunnelStage {
+  stage: FunnelStageName;
+  count: number;
+  /** Share of "Sent", 0–100 (0 when nothing was sent). */
+  pct: number;
+}
+
+export interface CampaignFunnel {
+  /** "Latest offer · <audience>" or "All offers (n campaigns)". */
+  label: string;
+  campaigns: number;
+  stages: FunnelStage[];
+}
+
+export type FunnelMode = 'latest' | 'all';
+
+function pctOf(n: number, base: number): number {
+  return base > 0 ? Math.round((n / base) * 1000) / 10 : 0;
+}
+
+function funnelStages(list: Campaign[]): FunnelStage[] {
+  const sum = (k: keyof Campaign['stats']) => list.reduce((a, c) => a + c.stats[k], 0);
+  const sent = sum('sent');
+  const rows: [FunnelStageName, number][] = [
+    ['Sent', sent],
+    ['Delivered', sum('delivered')],
+    ['Opened', sum('opened')],
+    ['Enrolled', sum('acted')],
+    ['Declined', sum('declined')],
+  ];
+  return rows.map(([stage, count]) => ({ stage, count, pct: pctOf(count, sent) }));
+}
+
+/** Only campaigns that actually went out count (not SCHEDULED, SENDING or CANCELLED). */
+const isSent = (c: Campaign) => c.status === 'SENT';
+
+/** Sent offer campaigns (ENROLL_OFFER), test sends excluded unless nothing else exists; newest first. */
+export function offerCampaigns(campaigns: Campaign[]): Campaign[] {
+  const offers = campaigns.filter((c) => c.type === 'ENROLL_OFFER' && isSent(c));
+  const real = offers.filter((c) => !c.isTest);
+  return [...(real.length > 0 ? real : offers)].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+}
+
+/** sent → delivered → opened → enrolled (+ declined) for the latest offer or all offers together. */
+export function campaignFunnel(campaigns: Campaign[], mode: FunnelMode): CampaignFunnel | null {
+  const offers = offerCampaigns(campaigns);
+  if (offers.length === 0) return null;
+  if (mode === 'latest') {
+    const c = offers[0];
+    return { label: `Latest offer · ${c.audienceLabel}${c.isTest ? ' (test)' : ''}`, campaigns: 1, stages: funnelStages([c]) };
+  }
+  return { label: `All offers (${offers.length} campaign${offers.length === 1 ? '' : 's'})`, campaigns: offers.length, stages: funnelStages(offers) };
+}
+
+// ---------------------------------------------------------------- DR performance
+
+export interface DrPerformanceRow {
+  campaignId: string;
+  flexEventId: string | null;
+  districtCode: string;
+  audienceLabel: string;
+  sentAt: string;
+  isTest: boolean;
+  targeted: number;
+  responded: number;
+  paused: number;
+  /** Responded but neither paused nor opted out ("remind me later"). Never negative. */
+  reminders: number;
+  optedOut: number;
+  peakReducedMw: number;
+  /** Status of the linked DR event, or null when the event is not in the list. */
+  status: FlexEventStatus | null;
+  windowStart: string | null;
+  windowEnd: string | null;
+}
+
+/** One row per sent FLEX_REQUEST campaign, newest first, with the linked DR event's status. */
+export function drPerformance(campaigns: Campaign[], flexEvents: FlexEvent[]): DrPerformanceRow[] {
+  const byId = new Map(flexEvents.map((e) => [e.id, e]));
+  return campaigns
+    .filter((c) => c.type === 'FLEX_REQUEST' && isSent(c))
+    .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
+    .map((c) => {
+      const ev = c.flexEventId ? byId.get(c.flexEventId) : undefined;
+      const s = c.stats;
+      return {
+        campaignId: c.id,
+        flexEventId: c.flexEventId,
+        districtCode:
+          ev?.districtCode ??
+          (c.audience.kind === 'DISTRICT' ? c.audience.districtCode : c.audience.kind === 'DISTRICTS' ? (c.audience.districtCodes[0] ?? '—') : '—'),
+        audienceLabel: c.audienceLabel,
+        sentAt: c.sentAt,
+        isTest: c.isTest,
+        targeted: s.targeted,
+        responded: s.acted,
+        paused: s.paused,
+        reminders: Math.max(0, s.acted - s.paused - s.optedOut),
+        optedOut: s.optedOut,
+        peakReducedMw: s.peakReducedMw,
+        status: ev?.status ?? null,
+        windowStart: ev?.windowStart ?? null,
+        windowEnd: ev?.windowEnd ?? null,
+      };
+    });
+}
+
+// ---------------------------------------------------------------- enrollment by district
+
+export interface DistrictEnrollmentRow {
+  code: string;
+  /** Code without the gridArea prefix, e.g. "F1". */
+  short: string;
+  known: number;
+  unenrolled: number;
+  evs: number;
+  knownPct: number;
+}
+
+export function shortDistrictCode(code: string, gridAreaCode: string): string {
+  return code.startsWith(`${gridAreaCode}-`) ? code.slice(gridAreaCode.length + 1) : code;
+}
+
+/** Districts with a known / unenrolled split, in district order (F1, F2, …). Districts without a split are left out. */
+export function enrollmentByDistrict(districts: DistrictStat[]): DistrictEnrollmentRow[] {
+  return districts
+    .filter((f) => f.known !== null && f.unenrolled !== null)
+    .map((f) => {
+      const known = f.known ?? 0;
+      const unenrolled = f.unenrolled ?? 0;
+      return {
+        code: f.code,
+        short: shortDistrictCode(f.code, f.gridAreaCode),
+        known,
+        unenrolled,
+        evs: known + unenrolled,
+        knownPct: pctOf(known, known + unenrolled),
+      };
+    });
+}
+
+// ---------------------------------------------------------------- enrollment source
+
+export const ENROLLMENT_SOURCE_LABEL: Record<EnrollmentSource, string> = {
+  APP_POPUP: 'In-app EV pop-up',
+  CAMPAIGN: 'Campaign offer',
+  LEGACY: 'Before the pilot',
+};
+
+export interface SourceRow {
+  source: EnrollmentSource;
+  label: string;
+  count: number;
+  pct: number;
+}
+
+export function enrollmentSources(bySource: Partial<Record<EnrollmentSource, number>>): SourceRow[] {
+  const order: EnrollmentSource[] = ['APP_POPUP', 'CAMPAIGN', 'LEGACY'];
+  const total = order.reduce((a, k) => a + (bySource[k] ?? 0), 0);
+  return order.map((source) => {
+    const count = bySource[source] ?? 0;
+    return { source, label: ENROLLMENT_SOURCE_LABEL[source], count, pct: pctOf(count, total) };
+  });
+}
+
+// ---------------------------------------------------------------- gridAreas
+
+export interface GridAreaKnownRow {
+  code: string;
+  region: string;
+  evs: number;
+  knownPct: number;
+}
+
+/** The `n` gridAreas with the most EVs, ordered by known share (highest first). */
+export function gridAreaKnownTop(subs: GridAreaStat[], n = 8): GridAreaKnownRow[] {
+  return [...subs]
+    .sort((a, b) => b.evs - a.evs)
+    .slice(0, n)
+    .sort((a, b) => b.knownPct - a.knownPct || b.evs - a.evs)
+    .map((s) => ({ code: s.code, region: s.region, evs: s.evs, knownPct: s.knownPct }));
+}
+
+// ---------------------------------------------------------------- blind spots
+
+export interface BlindSpotBar {
+  rank: number;
+  districtCode: string;
+  region: string | null;
+  known: number;
+  unenrolled: number;
+  gapPct: number;
+}
+
+/** The worst `n` blind spots by gap (the API already ranks them; this re-sorts defensively). */
+export function blindSpotBars(blind: BlindSpot[], n = 8): BlindSpotBar[] {
+  return [...blind]
+    .sort((a, b) => b.gapPct - a.gapPct || a.rank - b.rank)
+    .slice(0, n)
+    .map((b, i) => ({ rank: i + 1, districtCode: b.districtCode, region: b.region ?? null, known: b.known, unenrolled: b.unenrolled, gapPct: b.gapPct }));
+}
+
+// ---------------------------------------------------------------- CSV
+
+export type CsvCell = string | number | boolean | null | undefined;
+
+function csvEscape(v: CsvCell): string {
+  if (v === null || v === undefined) return '';
+  const s = typeof v === 'number' ? (Number.isFinite(v) ? String(v) : '') : String(v);
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** RFC 4180-style CSV with CRLF line ends; quotes only cells that need it. */
+export function toCsv(headers: string[], rows: CsvCell[][]): string {
+  return [headers, ...rows].map((r) => r.map(csvEscape).join(',')).join('\r\n') + '\r\n';
+}
+
+// ---------------------------------------------------------------- audit log display
+
+export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
+  CAMPAIGN_SENT: 'Sent campaign',
+  CAMPAIGN_SCHEDULED: 'Scheduled campaign',
+  CAMPAIGN_CANCELLED: 'Cancelled campaign',
+  CAMPAIGN_TEST_SENT: 'Sent test',
+  CAMPAIGN_DISPATCHED: 'Sent scheduled campaign',
+  FLEX_STARTED: 'Started DR event',
+  FLEX_ENDED: 'Ended DR event',
+  DEMO_RESET: 'Reset demo',
+};
+
+/** "Jordan Reyes" → "JR"; "Scheduler" → "S". */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
+/** "just now", "5 min ago", "3 h ago", "2 days ago"; future times read "in 4 min". */
+export function timeAgo(iso: string, now = Date.now()): string {
+  const diff = now - new Date(iso).getTime();
+  const abs = Math.abs(diff);
+  const fmt = (n: number, unit: string) => (diff >= 0 ? `${n} ${unit} ago` : `in ${n} ${unit}`);
+  if (abs < 45_000) return diff >= 0 ? 'just now' : 'in under a minute';
+  if (abs < 3600_000) return fmt(Math.round(abs / 60_000), 'min');
+  if (abs < 86400_000) return fmt(Math.round(abs / 3600_000), 'h');
+  const days = Math.round(abs / 86400_000);
+  return fmt(days, days === 1 ? 'day' : 'days');
+}

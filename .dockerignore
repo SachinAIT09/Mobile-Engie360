@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.expo
+**/web-build
+tests/e2e/shots
+.env
+.git
+tests/e2e/test-results
+tests/e2e/playwright-report
+.catalyst-build
+*.tar
+.backup
+Mobile360 Hydro
+.github

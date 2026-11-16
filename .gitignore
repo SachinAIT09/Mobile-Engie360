@@ -1,6 +1,25 @@
-node_modules
-dist
-*.local
-test-results
-playwright-report
-*.tsbuildinfo
+node_modules/
+dist/
+.expo/
+web-build/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+tests/e2e/shots/
+
+# Playwright
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+
+# Local snapshots and scratch
+.backup/
+.playwright-artifacts-*/
+
+# Catalyst deploy artefacts
+.catalyst-build/
+*.tar
+
+# Old single-app prototype (porting reference)
+legacy/node_modules/

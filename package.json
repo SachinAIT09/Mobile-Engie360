@@ -1,43 +1,38 @@
 {
-  "name": "engie-cx-prototype",
+  "name": "engie-360-demo",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
-  "description": "ENGIE Netherlands customer experience portal & AI assistant prototype (demo, mock data only).",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc -b",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "e2e": "playwright test",
-    "lint": "eslint . --max-warnings 0",
-    "check": "npm run typecheck && npm run lint && npm run test"
+  "version": "1.0.0",
+  "description": "ENGIE Netherlands demo: customer app (MijnENGIE) + staff app, interlinked through one API. Sample data only.",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20"
   },
-  "dependencies": {
-    "lucide-react": "^1.73.0",
-    "qrcode": "^1.5.4",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5",
-    "recharts": "^3.10.1"
+  "scripts": {
+    "build:shared": "pnpm --filter @engie/shared build",
+    "dev": "pnpm build:shared && concurrently -k -n api,web,mobile -c blue,green,magenta \"pnpm --filter @engie/api dev\" \"pnpm --filter @engie/web dev\" \"pnpm --filter @engie/mobile web\"",
+    "dev:api": "pnpm build:shared && pnpm --filter @engie/api dev",
+    "dev:web": "pnpm --filter @engie/web dev",
+    "dev:mobile": "pnpm --filter @engie/mobile start",
+    "seed": "pnpm build:shared && pnpm --filter @engie/api seed",
+    "seed:reset": "pnpm build:shared && pnpm --filter @engie/api seed:reset",
+    "typecheck": "pnpm build:shared && pnpm -r --filter=!@engie/shared typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r --if-present --filter=!@engie/e2e test",
+    "e2e": "pnpm --filter @engie/e2e test",
+    "e2e:legacy": "pnpm --filter @engie/e2e all",
+    "build": "pnpm build:shared && pnpm --filter @engie/web build && pnpm --filter @engie/mobile build:web && pnpm --filter @engie/api build",
+    "start": "node apps/api/dist/main.js",
+    "deploy:catalyst": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-catalyst.ps1"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.65.1",
-    "@types/node": "^24.19.2",
-    "@types/qrcode": "^1.5.6",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.3.0",
-    "eslint": "^10.15.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.8",
-    "globals": "^17.14.0",
+    "@eslint/js": "10.0.1",
+    "concurrently": "^10.0.6",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "^17.13.0",
     "typescript": "~6.0.3",
-    "typescript-eslint": "^8.72.2",
-    "vite": "^8.3.8",
-    "vitest": "^5.1.0"
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
   }
 }
