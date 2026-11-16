@@ -73,7 +73,7 @@ D:\Mobile Engie360
 - [x] 0 repo reset (4d)
 - [x] 1 contract (f4)
 - [x] 2a server (f4) · [ ] 2b frontend + staff app (4d)
-- [ ] 3 run/hosting (f4)
+- [x] 3 run/hosting (f4)
 - [ ] 4 checks + e2e (both)
 
 ## Changes

@@ -1,0 +1,13 @@
+**/node_modules
+dist
+.data
+.git
+.env
+.catalyst-build
+*.tar
+test-results
+playwright-report
+tests/e2e/shots
+Mobile Engie360
+legacy
+*.tsbuildinfo

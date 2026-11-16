@@ -6,22 +6,28 @@ Interactive demo of an ENGIE-style customer portal (MijnENGIE), an AI support as
 
 ## Run
 
-Requires Node.js 20+.
+**Windows, easiest:** double-click `start-demo.cmd`. It installs, builds, starts everything on one port and opens http://localhost:3000/start.
+
+By hand (Node.js 22.13+):
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173 (Vite picks the next free port if taken)
+npm run dev          # everything on http://localhost:3000 with hot reload (start page: /start)
 ```
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Dev server with hot reload, reachable on the LAN (for the phone QR code) |
-| `npm run build` / `npm run preview` | Production build / serve it locally |
+| `npm run dev` | One server on :3000: API, live events, push, and the frontend with hot reload |
+| `npm run build` / `npm start` | Production build / run it on :3000 (what `start-demo.cmd` and Docker do) |
+| `npm run dev:client` | Frontend only (Vite); the app falls back to built-in sample data without the server |
 | `npm run typecheck` | TypeScript, strict |
 | `npm run lint` | ESLint, zero warnings allowed (React Compiler rules on) |
-| `npm test` | Unit tests (Vitest): assistant NLU and answers, charging planner |
-| `npm run e2e` | Browser tests (Playwright, uses your installed Chrome): every demo flow, desktop + mobile, fails on console errors |
+| `npm test` | Unit tests (Vitest): assistant, charging planner, server store |
+| `npm run e2e` | Browser tests (Playwright, installed Chrome): customer + staff flows, desktop + mobile |
 | `npm run check` | typecheck + lint + unit tests |
+| `npm run deploy:catalyst` | Build the Docker image and deploy to Zoho Catalyst AppSail |
+
+Hosting (Docker, Catalyst, phone push over HTTPS): see [DEPLOY.md](DEPLOY.md).
 
 ## Screens
 

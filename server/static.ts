@@ -39,7 +39,7 @@ export function staticFiles(dir: string) {
       file = join(dir, 'index.html');
       info = await stat(file);
     }
-    const hashed = rel.startsWith('assets/');
+    const hashed = url.pathname.startsWith('/assets/');
     res.writeHead(200, {
       'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream',
       'Content-Length': info.size,
