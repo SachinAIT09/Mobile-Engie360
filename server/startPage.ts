@@ -23,10 +23,9 @@ export async function startPage(phoneUrl: string, otherUrls: string[]): Promise<
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(brand.name)}360 demo</title><link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root{--blue:#00aaff;--ink:#0b2240;--muted:#64758b;--line:#e3e9f0;--bg:#f4f7fa}
-*{box-sizing:border-box}body{margin:0;font-family:Lato,system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+*{box-sizing:border-box}body{margin:0;font-family:Lato,'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink)}
 .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 56px}
 header{display:flex;align-items:center;gap:14px;margin-bottom:28px}
 .mark{font-weight:900;font-size:28px;letter-spacing:.04em;color:var(--blue);border-top:3px solid var(--blue);border-radius:50% 50% 0 0/14px 14px 0 0;padding-top:2px}

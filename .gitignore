@@ -10,3 +10,4 @@ playwright-report
 # Local clone of the GitHub repo (not part of this project tree)
 /Mobile Engie360/
 .data/
+.data-e2e/

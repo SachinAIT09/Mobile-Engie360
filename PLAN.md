@@ -39,7 +39,7 @@ D:\Mobile Engie360
 | Step 0 (repo reset) | **mobile-engie360-4d** |
 | `shared/contract.ts` | **mobile-engie360-f4** writes it first; changes are agreed by message |
 | `server/`, Docker, `start-demo.cmd`, Catalyst script, start page | **mobile-engie360-f4** |
-| `src/` (customer app wired to the API, staff app, push opt-in, service worker) | **mobile-engie360-4d** |
+| `src/` (customer app wired to the API, staff app, push opt-in, service worker), `index.html`, `public/` | **mobile-engie360-4d** |
 | `tests/e2e/` | **mobile-engie360-f4** (at the end, both apps) |
 | `package.json` scripts/deps | either, by message first |
 
@@ -72,7 +72,7 @@ D:\Mobile Engie360
 
 - [x] 0 repo reset (4d)
 - [x] 1 contract (f4)
-- [x] 2a server (f4) · [ ] 2b frontend + staff app (4d)
+- [x] 2a server (f4) · [x] 2b frontend + staff app (4d)
 - [x] 3 run/hosting (f4)
 - [ ] 4 checks + e2e (both)
 

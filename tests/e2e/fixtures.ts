@@ -26,6 +26,9 @@ export async function fresh(page: Page, path = '/') {
     localStorage.clear();
     localStorage.setItem('engie-demo-lang', 'en');
   });
+  // Every test starts from the seeded demo state on the server.
+  const r = await page.request.post('/api/demo/reset');
+  expect(r.ok(), 'demo reset').toBe(true);
   await page.goto(path);
 }
 
