@@ -1,4 +1,4 @@
-import type { AuditEntry, Campaign, CustomerActivity, FlexEvent, EnergyReading, LiveEvent, Message } from './types';
+import type { AssistantLogEntry, AuditEntry, Campaign, CustomerActivity, FlexEvent, EnergyReading, LiveEvent, Message } from './types';
 
 /**
  * Socket.IO contract. Clients connect to the API origin with
@@ -14,6 +14,7 @@ export const SocketEvents = {
   campaignStatusChanged: 'campaign:statusChanged',
   auditNew: 'audit:new',
   activityNew: 'activity:new',
+  assistantLogged: 'assistant:logged',
   flexEventStatusChanged: 'flexEvent:statusChanged',
   energyReading: 'energy:reading',
   meChanged: 'me:changed',
@@ -23,11 +24,11 @@ export const SocketEvents = {
 export interface ServerToClientEvents {
   /** staff */
   'liveEvent:new': (e: LiveEvent) => void;
-  /** staff — refetch overview / gridAreas / districts / blind spots */
+  /** staff — refetch overview / grid areas / districts / segments */
   'district:statsChanged': (p: { gridAreaCode: string; districtCode: string | null }) => void;
   /** customer */
   'message:new': (m: Message) => void;
-  /** customer — open the EV-detected sheet */
+  /** customer — open the EV-detected (Slim Laden) sheet */
   'message:popup': (m: Message) => void;
   /** staff */
   'campaign:statsChanged': (c: Campaign) => void;
@@ -37,11 +38,13 @@ export interface ServerToClientEvents {
   'audit:new': (e: AuditEntry) => void;
   /** staff — a customer did something in the mobile app */
   'activity:new': (a: CustomerActivity) => void;
+  /** staff — a customer or website visitor asked the assistant something */
+  'assistant:logged': (e: AssistantLogEntry) => void;
   /** staff + affected customers */
   'flexEvent:statusChanged': (e: FlexEvent) => void;
   /** customer — every 5 s */
   'energy:reading': (r: EnergyReading) => void;
-  /** customer — refetch /me/summary (enrollment, bill paid, etc.) */
+  /** customer — refetch /me/summary (enrollment, installment, invoice paid, etc.) */
   'me:changed': () => void;
   /**
    * everyone — demo data was reset; clients should refetch. Payload is optional for older servers:

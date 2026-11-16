@@ -1,7 +1,10 @@
 /**
  * API contract shared by apps/api, apps/web and apps/mobile.
  * All ids are strings (Mongo ObjectId hex). All timestamps are ISO-8601 strings.
+ * Customer-facing copy that depends on the language is sent as `Text` ({ en, nl }).
  */
+import type { Lang, Text } from './i18n';
+import type { ApplianceKey, BreakdownItem, MonthSummary, ThisMonth, UsagePeriod, UsagePoint } from './usage';
 
 export type Role = 'CUSTOMER' | 'STAFF';
 
@@ -34,26 +37,71 @@ export interface Channels {
   email: boolean;
 }
 
+/** Which notifications the customer wants (Account → Notifications). */
+export interface Preferences {
+  usageAlerts: boolean;
+  priceAlerts: boolean;
+  invoiceReady: boolean;
+  tips: boolean;
+}
+
+export type ProductId = 'DYNAMIC' | 'DYNAMIC_FIXED_GAS' | 'FIXED' | 'VARIABLE';
+
+export interface Contract {
+  product: ProductId;
+  productName: Text;
+  startDate: string;
+  /** End of the fixed gas (or fixed electricity) price, null when not fixed. */
+  fixedUntil: string | null;
+  electricity: { type: Text; origin: Text; avgPrice: number; ean: string };
+  gas: { type: Text; price: number; ean: string };
+  /** Fixed costs per month: delivery + network − energy tax reduction. */
+  fixedPerMonth: number;
+  installment: number;
+  advisedInstallment: number;
+  installmentRange: { min: number; max: number };
+  /** Change of the installment that takes effect from `pendingFrom` (null when none). */
+  pendingInstallment: number | null;
+  pendingFrom: string | null;
+  estimatedAnnualCost: number;
+  annualUsage: { electricityKwh: number; gasM3: number };
+  meter: { type: Text; lastReading: string; electricityT1: number; electricityT2: number; gas: number };
+}
+
 export interface CustomerProfile {
   id: string;
+  customerNo: string;
   firstName: string;
   lastName: string;
+  initials: string;
   email: string;
-  accountNoMasked: string; // "•••• 4821"
-  address: string;
+  phone: string;
+  street: string;
+  postcode: string;
+  city: string;
+  /** Postcode area (PC4) the home is in, e.g. "3581". */
   districtCode: string;
+  /** Grid congestion area, e.g. "UT-OOST". */
   gridAreaCode: string;
+  gridOperator: string;
+  household: { residents: number; homeType: Text; sizeM2: number };
+  ibanMasked: string;
+  memberSince: string;
   hasSolar: boolean;
+  hasHeatPump: boolean;
+  lang: Lang;
   channels: Channels;
-  /** Automatic bill payment preference (demo only; no real payment data). */
+  preferences: Preferences;
+  /** Automatic collection of the monthly installment (direct debit). */
   autoPay: AutoPay;
+  contract: Contract;
 }
 
 export interface AutoPay {
   enabled: boolean;
   /** Payment method charged when enabled, null when off. */
   method: PaymentMethodKind | null;
-  /** ISO timestamp AutoPay was switched on, null when off. */
+  /** ISO timestamp it was switched on, null when off. */
   since: string | null;
 }
 export interface AutoPayUpdateRequest {
@@ -62,48 +110,74 @@ export interface AutoPayUpdateRequest {
   method?: PaymentMethodKind;
 }
 
-export interface BillLine {
-  label: string;
+export interface ContactUpdateRequest {
+  email: string;
+  phone: string;
+}
+
+// ---------------------------------------------------------------- invoices
+
+export type InvoiceKind = 'INSTALLMENT' | 'ANNUAL';
+export type InvoiceStatus = 'PAID' | 'OPEN' | 'SCHEDULED';
+
+export interface InvoiceLine {
+  label: Text;
   amount: number;
 }
-export type BillStatus = 'UNPAID' | 'PAID';
-export interface Bill {
+
+export interface Invoice {
   id: string;
-  periodStart: string;
-  periodEnd: string;
-  days: number;
-  kWh: number;
-  lines: BillLine[];
-  total: number;
-  dueDate: string;
-  status: BillStatus;
-  /** Share of this bill attributed to EV charging, 0–100, or null when no EV. */
-  evSharePct: number | null;
+  number: string;
+  kind: InvoiceKind;
+  period: Text;
+  issued: string;
+  due: string;
+  amount: number;
+  status: InvoiceStatus;
+  paidOn: string | null;
+  lines: InvoiceLine[];
 }
 
-/** One row of the bill history list (GET /bills), newest first. */
-export interface BillSummary {
+export interface PaymentRecord {
   id: string;
-  periodStart: string;
-  periodEnd: string;
-  kWh: number;
-  total: number;
-  status: BillStatus;
+  date: string;
+  amount: number;
+  method: PaymentMethodKind;
+  invoiceId: string;
+  invoiceNumber: string;
 }
 
-export interface UsageMonth {
-  month: string; // "May"
-  kWh: number;
+/** Contract-year overview: what was paid in advance vs the expected total. */
+export interface AnnualOverview {
+  year: Text;
+  paidSoFar: number;
+  monthsPaid: number;
+  estimatedTotal: number;
+  installmentsTotal: number;
+  /** Expected settlement at the annual statement if the installment stays the same (+ = to pay). */
+  expectedSettlement: number;
+  /** Same, with the advised installment. */
+  settlementWithAdvised: number;
 }
 
-export interface Outage {
-  id: string;
-  districtCode: string;
-  affectedCount: number;
-  status: 'CREW_ASSIGNED' | 'INVESTIGATING' | 'RESTORED';
-  estRestoreAt: string | null;
-  cause: string | null;
+export interface BillingOverview {
+  installment: number;
+  advisedInstallment: number;
+  installmentRange: { min: number; max: number };
+  pendingInstallment: number | null;
+  pendingFrom: string | null;
+  nextCollection: { date: string; amount: number };
+  outstanding: { count: number; amount: number };
+  annual: AnnualOverview;
+  invoices: Invoice[];
+  payments: PaymentRecord[];
 }
+
+export interface InstallmentUpdateRequest {
+  amount: number;
+}
+
+// ---------------------------------------------------------------- summary
 
 export interface ActiveFlexEventRef {
   id: string;
@@ -114,19 +188,36 @@ export interface ActiveFlexEventRef {
   myResponse: FlexResponse | null;
 }
 
+export interface PriceNow {
+  price: number;
+  level: 'low' | 'normal' | 'high';
+  cheapestHour: number;
+  cheapestPrice: number;
+}
+
 export interface MeSummary {
   customer: CustomerProfile;
-  bill: Bill;
+  billing: {
+    installment: number;
+    advisedInstallment: number;
+    nextCollection: { date: string; amount: number };
+    outstanding: { count: number; amount: number };
+    expectedSettlement: number;
+  };
   evStatus: EvStatus;
   evDetectedAt: string | null;
+  heatPumpDetectedAt: string | null;
   program: Program;
   activeFlexEvent: ActiveFlexEventRef | null;
   unreadCount: number;
   unreadAlerts: number;
   unreadOffers: number;
-  nearbyOutage: Outage | null;
-  today: { usedKwh: number; selfConsumptionPct: number | null };
+  thisMonth: ThisMonth;
+  lastMonth: MonthSummary;
   live: EnergyReading;
+  priceNow: PriceNow;
+  /** Top insights for Home. */
+  insights: Insight[];
   /** Smart-charging snapshot for the Home screen; null when the customer has never turned it on. */
   smartCharging: {
     enabled: boolean;
@@ -145,36 +236,64 @@ export interface EnergyReading {
   gridExportKw: number;
   homeKw: number; // total home load INCLUDING EV
   evKw: number;
+  /** Net2Grid live split of the home load. */
+  appliances: { key: ApplianceKey; kw: number }[];
+  /** Dynamic price this hour, € / kWh. */
+  price: number;
 }
 
-export type EnergyRange = 'day' | 'week' | 'month' | 'year';
+export type { UsagePeriod, UsagePoint, BreakdownItem, MonthSummary, ThisMonth };
 
-export interface EnergyBreakdownItem {
-  key: 'ev' | 'heating' | 'alwaysOn' | 'other';
-  label: string;
-  kWh: number;
+export interface UsageSeriesResponse {
+  period: UsagePeriod;
+  points: UsagePoint[];
 }
 
-export interface EnergySummary {
-  range: EnergyRange;
-  label: string; // "Today, Wed Oct 21"
-  hasSolar: boolean;
-  productionKwh: number;
-  consumptionKwh: number;
-  selfConsumedKwh: number;
-  selfConsumptionPct: number | null; // of production
-  exportedKwh: number;
-  exportedPct: number | null; // of production
-  importedKwh: number;
-  costEstimate: number;
-  breakdown: EnergyBreakdownItem[];
-  peakSolarW: number | null;
-  peakSolarAt: string | null;
+export interface UsageOverview {
+  thisMonth: ThisMonth;
+  lastMonth: MonthSummary;
+  breakdown: BreakdownItem[];
+  peakSplit: { peakPct: number; offPeakPct: number; peakKwh: number; offPeakKwh: number; peakEvPct: number };
+  benchmark: { similarHomesKwh: number; similarHomesM3: number; similarBaseloadW: number };
+  baseloadW: number;
+  annual: { electricityKwh: number; gasM3: number };
+  tomorrowPrices: { hour: number; price: number }[];
+}
+
+// ---------------------------------------------------------------- insights
+
+export type InsightKind = 'alert' | 'saving' | 'tip' | 'billing';
+
+export interface Insight {
+  id: string;
+  kind: InsightKind;
+  /** Icon name the apps map to their icon set. */
+  icon: 'moon' | 'car' | 'clock' | 'plug' | 'wallet' | 'flame' | 'sun' | 'thermo' | 'zap' | 'leaf';
+  title: Text;
+  body: Text;
+  /** € per year. */
+  saving: number | null;
+  /** Mobile route the CTA opens. */
+  route: string | null;
+  cta: Text | null;
+  source: 'net2grid' | 'engie';
+  /** Longer explanation for the savings plan. */
+  detail: Text | null;
+}
+
+export interface InsightsResponse {
+  insights: Insight[];
+  totalSavings: number;
+  plan: string[];
+}
+
+export interface SavingsPlanUpdateRequest {
+  plan: string[];
 }
 
 // ---------------------------------------------------------------- smart charging
 
-export type RatePlanId = 'TOU' | 'ULO' | 'TIERED';
+export type RatePlanId = 'DYNAMIC' | 'DUAL' | 'FIXED';
 
 export interface SmartChargingSettings {
   enabled: boolean;
@@ -189,7 +308,7 @@ export interface ChargeSlot {
   end: string;
   kw: number;
   ratePerKwh: number;
-  /** Rate period name, e.g. "off-peak" | "ultra-low". */
+  /** Rate period name, e.g. "goedkoop" | "dal". */
   period: string;
 }
 
@@ -209,8 +328,8 @@ export interface SmartChargingPlan {
   co2Kg: number;
   baselineCo2Kg: number;
   co2SavedKg: number;
-  /** DR windows the plan charges around. */
-  avoidedDrWindows: { start: string; end: string; title: string }[];
+  /** Flex windows the plan charges around. */
+  avoidedFlexWindows: { start: string; end: string; title: string }[];
   chargingNow: boolean;
   nextStart: string | null;
   /** Set while a "Charge now" boost is running. */
@@ -230,7 +349,7 @@ export interface RatePlanComparison {
   basisKwhPerMonth: number;
   plans: {
     id: RatePlanId;
-    label: string;
+    label: Text;
     monthlyCost: number;
     withSmartCharging: number;
     current: boolean;
@@ -242,12 +361,13 @@ export interface RatePlanComparison {
 
 export interface Program {
   id: string;
-  name: string;
-  signupIncentive: string;
-  perEventIncentive: string;
-  maxEventsPerSeason: string;
-  typicalEventHours: string;
+  name: Text;
+  signupIncentive: Text;
+  perEventIncentive: Text;
+  maxEventsPerSeason: Text;
+  typicalEventHours: Text;
   termsUrl: string;
+  termsSummary: Text[];
 }
 
 export type EnrollmentSource = 'APP_POPUP' | 'CAMPAIGN' | 'LEGACY';
@@ -271,42 +391,39 @@ export interface Enrollment {
   status: 'ACTIVE' | 'LEFT';
 }
 
-// ---------------------------------------------------------------- payments / outages
+// ---------------------------------------------------------------- payments
 
-export type PaymentMethodKind = 'SAVED_CARD' | 'BANK_PAD' | 'WALLET';
+export type PaymentMethodKind = 'DIRECT_DEBIT' | 'IDEAL' | 'TRANSFER';
 export interface PaymentRequest {
-  billId: string;
+  invoiceId: string;
   amount: number;
   method: PaymentMethodKind;
 }
 export interface Payment {
   id: string;
-  billId: string;
+  invoiceId: string;
   amount: number;
   method: PaymentMethodKind;
   status: 'CONFIRMED';
   confirmationNo: string;
-  provider: 'KUBRA_MOCK';
+  provider: 'IDEAL_MOCK';
   createdAt: string;
-}
-
-export type OutageReportType = 'NO_POWER' | 'PARTIAL' | 'FLICKER';
-export interface OutageReportRequest {
-  type: OutageReportType;
-  notifyOnRestore: boolean;
-  /** Required when not signed in. */
-  address?: string;
-}
-export interface OutageReportResponse {
-  id: string;
-  reference: string; // "OR-482113"
-  linkedOutage: Outage | null;
 }
 
 // ---------------------------------------------------------------- messages
 
-export type MessageKind = 'EV_DETECTED' | 'ENROLL_OFFER' | 'FLEX_REQUEST' | 'BILL' | 'OUTAGE' | 'CHARGING';
-export type MessageAction = 'ENROLLED' | 'DECLINED' | 'DISMISSED' | 'REMIND_LATER' | 'NOT_EV' | 'RESPONDED';
+export type MessageKind =
+  | 'EV_DETECTED'
+  | 'HEAT_PUMP_DETECTED'
+  | 'ENROLL_OFFER'
+  | 'FLEX_REQUEST'
+  | 'INSTALLMENT_ADVICE'
+  | 'BILL'
+  | 'USAGE'
+  | 'PRICE'
+  | 'METER'
+  | 'CHARGING';
+export type MessageAction = 'ENROLLED' | 'DECLINED' | 'DISMISSED' | 'REMIND_LATER' | 'NOT_EV' | 'RESPONDED' | 'INSTALLMENT_CHANGED';
 /** Inbox filter chip a message belongs to. */
 export type MessageCategory = 'Alerts' | 'Offers' | 'Billing';
 
@@ -315,14 +432,14 @@ export interface Message {
   customerId: string;
   kind: MessageKind;
   category: MessageCategory;
-  /** Short pill text: "Grid alert" | "Offer" | "Billing" | "Outage" | "EV". */
+  /** Short pill text in the customer's language: "Netdrukte" | "Aanbod" | "Nota" | … */
   tag: string;
   title: string;
   body: string;
   cta: string | null;
   campaignId: string | null;
   flexEventId: string | null;
-  /** Mobile route to open, e.g. "/messages/abc", "/flex-events/xyz", "/bill", "/program". */
+  /** Mobile route to open, e.g. "/messages/abc", "/flex-events/xyz", "/billing", "/program". */
   route: string;
   createdAt: string;
   openedAt: string | null;
@@ -336,9 +453,14 @@ export interface MessageActionRequest {
   action: Exclude<MessageAction, 'RESPONDED'>;
 }
 
-// ---------------------------------------------------------------- DR events
+export interface LangUpdateRequest {
+  lang: Lang;
+}
+
+// ---------------------------------------------------------------- flex events (grid congestion)
 
 export type FlexEventStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED';
+/** PAUSE = shift charging out of the window. */
 export type FlexResponse = 'PAUSE' | 'REMIND' | 'OPT_OUT';
 
 export interface FlexEvent {
@@ -357,7 +479,7 @@ export interface FlexEventForCustomer {
   event: FlexEvent;
   myResponse: FlexResponse | null;
   currentEvKw: number;
-  earnText: string; // program.perEventIncentive
+  earnText: Text; // program.perEventIncentive
 }
 
 export interface FlexRespondRequest {
@@ -367,7 +489,7 @@ export interface FlexRespondRequest {
 export interface FlexEventResultMe {
   event: FlexEvent;
   myResponse: FlexResponse | null;
-  earnedText: string | null; // "[$X]" when PAUSE, else null
+  earnedText: Text | null; // per-event credit when PAUSE, else null
   kwhShifted: number;
   peakReducedKw: number;
   /** 15-minute home-load series from 2h before to 2h after the window. */
@@ -379,11 +501,20 @@ export interface FlexEventResultMe {
 // ---------------------------------------------------------------- grid / district visibility
 
 export interface StatsOverview {
-  gridAreas: number; // with matched EVs
+  /** ENGIE portfolio in the demo areas. */
+  customers: number;
+  onDynamic: number;
+  installmentGapCustomers: number;
+  avgInstallmentGap: number;
+  heatPumps: number;
+  slimLadenHomes: number;
+  gridAreas: number; // with detected EVs
   districts: number; // with matched EVs
+  /** EVs in Slim Laden (flexible). */
   knownEvs: number;
+  /** EVs Net2Grid detected that are not in Slim Laden. */
   unenrolledEvs: number;
-  invisiblePct: number; // 0–100, 0 decimals
+  invisiblePct: number; // share of detected EVs not flexible, 0–100
   matchedPremises: number;
   noSignalPremises: number;
   noLocationPremises: number;
@@ -396,19 +527,29 @@ export interface StatsOverview {
 
 export interface GridAreaStat {
   code: string;
-  /** Service region, e.g. "Central" | "East" | "Northwest" | "South". */
+  /** Province, e.g. "Utrecht" | "Noord-Holland". */
   region: string;
+  /** Grid operator, e.g. "Stedin". */
+  operator: string;
+  /** Display name, e.g. "Utrecht-Oost". */
+  name: string;
+  /** Congestion status from the grid operator. */
+  congestion: 'NONE' | 'WATCH' | 'CONGESTED';
   evs: number;
   knownPct: number; // 0–100 integer
   penetrationPct: number; // one decimal
   districtCount: number;
-  /** True when per-district data exists (SUB-01 in the demo). */
+  /** True when per-district data exists (the demo area). */
   interactive: boolean;
 }
 
 export interface DistrictStat {
   code: string;
   gridAreaCode: string;
+  /** Neighbourhood name, e.g. "Oudwijk". */
+  name: string;
+  /** ENGIE customers with installment below the advice (null when not live). */
+  installmentGap: number | null;
   evs: number;
   /** null when the split is not available for this district. */
   known: number | null;
@@ -430,6 +571,7 @@ export interface BlindSpot {
   known: number;
   unenrolled: number;
   penetrationText: string; // "35.4% of 48"
+  name?: string;
   gapPct: number; // 88.2
 }
 
@@ -459,6 +601,7 @@ export interface ReportsSummary {
     total: number;
     offers: number;
     flexRequests: number;
+    installmentAdvice: number;
     testSends: number;
   };
   smartCharging: {
@@ -469,7 +612,7 @@ export interface ReportsSummary {
   };
 }
 
-export type LiveEventKind = 'EV_DETECTED' | 'STOPPED_CHARGING_CLUSTER' | 'DISTRICT_FORECAST_HIGH' | 'CAMPAIGN_SENT' | 'FLEX_EVENT_ENDED';
+export type LiveEventKind = 'EV_DETECTED' | 'EV_CLUSTER' | 'CONGESTION_FORECAST' | 'CAMPAIGN_SENT' | 'FLEX_EVENT_ENDED';
 
 export interface LiveEvent {
   id: string;
@@ -496,8 +639,9 @@ export interface LiveEvent {
 
 // ---------------------------------------------------------------- Campaign 360
 
-export type CampaignType = 'ENROLL_OFFER' | 'FLEX_REQUEST';
-export type CampaignSegment = 'UNENROLLED_EV' | 'ENROLLED_EV';
+export type CampaignType = 'ENROLL_OFFER' | 'FLEX_REQUEST' | 'INSTALLMENT_ADVICE';
+/** UNENROLLED_EV: detected EV, not in Slim Laden. ENROLLED_EV: in Slim Laden. INSTALLMENT_GAP: installment below the advice. */
+export type CampaignSegment = 'UNENROLLED_EV' | 'ENROLLED_EV' | 'INSTALLMENT_GAP';
 
 export type CampaignAudience =
   | { kind: 'DISTRICT'; districtCode: string; segment: CampaignSegment }
@@ -561,11 +705,11 @@ export interface CampaignStats {
   sent: number;
   delivered: number;
   opened: number;
-  acted: number; // enrolled (offer) or responded (DR)
-  paused: number; // DR only
-  optedOut: number; // DR only
-  declined: number; // offer only
-  peakReducedMw: number; // DR only
+  acted: number; // enrolled (offer), responded (flex) or changed installment (advice)
+  paused: number; // flex only: shifted charging
+  optedOut: number; // flex only
+  declined: number; // offer / advice
+  peakReducedMw: number; // flex only
 }
 
 export interface Campaign {
@@ -636,12 +780,19 @@ export type CustomerActivityKind =
   | 'FLEX_OPTED_OUT'
   | 'SMART_CHARGING_UPDATED'
   | 'CHARGING_BOOST'
-  | 'OUTAGE_REPORTED'
+  | 'INSTALLMENT_CHANGED'
+  | 'CONTACT_UPDATED'
+  | 'PREFERENCES_UPDATED'
+  | 'LANGUAGE_CHANGED'
+  | 'SAVINGS_PLAN_UPDATED'
+  | 'INVOICE_DOWNLOADED'
   | 'ASSISTANT_ASKED'
-  | 'VIEWED_BILL'
-  | 'VIEWED_BILL_HISTORY'
+  | 'ASSISTANT_HANDOFF'
+  | 'VIEWED_BILLING'
+  | 'VIEWED_INVOICE'
   | 'VIEWED_USAGE'
   | 'VIEWED_ENERGY'
+  | 'VIEWED_INSIGHTS'
   | 'VIEWED_FLEX_RESULT'
   | 'VIEWED_PROGRAM';
 
@@ -651,7 +802,6 @@ export type CustomerActivityCategory =
   | 'program'
   | 'flex'
   | 'charging'
-  | 'outage'
   | 'assistant'
   | 'view';
 
@@ -669,10 +819,11 @@ export interface CustomerActivity {
 /** Kinds the phone reports itself (screen views and sign-out); everything else is recorded by the API. */
 export const TRACKABLE_ACTIVITY_KINDS = [
   'SIGNED_OUT',
-  'VIEWED_BILL',
-  'VIEWED_BILL_HISTORY',
+  'VIEWED_BILLING',
+  'VIEWED_INVOICE',
   'VIEWED_USAGE',
   'VIEWED_ENERGY',
+  'VIEWED_INSIGHTS',
   'VIEWED_FLEX_RESULT',
   'VIEWED_PROGRAM',
 ] as const satisfies readonly CustomerActivityKind[];
@@ -721,6 +872,8 @@ export interface AssistantContext {
 
 export interface AssistantRequest {
   question: string;
+  /** Answer language (customer and website assistants); staff answers are English. */
+  lang?: Lang;
   /** Echo the previous answer's context for follow-ups. */
   context?: AssistantContext;
 }
@@ -751,6 +904,8 @@ export interface CampaignDraft {
 
 export type AssistantAction =
   | { kind: 'route'; label: string; route: string }
+  | { kind: 'prompt'; label: string; prompt: string }
+  | { kind: 'signIn'; label: string }
   | { kind: 'campaignDraft'; label: string; draft: CampaignDraft };
 
 export interface AssistantAnswer {
@@ -772,6 +927,42 @@ export interface AssistantSuggestions {
   suggestions: string[];
 }
 
+/** Where a question was asked. */
+export type AssistantChannel = 'APP' | 'WEBSITE' | 'WEBSITE_SIGNED_IN';
+
+/** One logged customer question (staff: Assistant insights). */
+export interface AssistantLogEntry {
+  id: string;
+  at: string;
+  channel: AssistantChannel;
+  customerId: string | null;
+  customerName: string | null;
+  question: string;
+  intent: string;
+  matched: boolean;
+  /** The answer asked the visitor to sign in. */
+  signInPrompt: boolean;
+  /** The answer handed the customer to customer service. */
+  handoff: boolean;
+  lang: Lang;
+}
+
+export interface AssistantInsights {
+  total: number;
+  last24h: number;
+  /** Share of questions the assistant answered itself (matched, no hand-off), 0–100. */
+  selfServicePct: number;
+  matchedPct: number;
+  handoffs: number;
+  signInPrompts: number;
+  byChannel: Record<AssistantChannel, number>;
+  topIntents: { intent: string; label: string; count: number; matchedPct: number }[];
+  /** Questions per hour over the last 24 h, oldest first. */
+  hourly: { hour: string; count: number }[];
+  recent: AssistantLogEntry[];
+  unanswered: AssistantLogEntry[];
+}
+
 // ---------------------------------------------------------------- demo control
 
 export interface DemoCustomer {
@@ -782,6 +973,8 @@ export interface DemoCustomer {
   evStatus: EvStatus;
   role: 'UNENROLLED_DEMO' | 'ENROLLED_DEMO';
   online: boolean; // a mobile socket is connected for this customer
+  /** Installment below the advice (fits the installment-advice preset). */
+  installmentGap: boolean;
 }
 
 export interface DemoState {
@@ -794,7 +987,7 @@ export interface DemoState {
   timezone: string;
   /** EV_ALWAYS_CHARGING: customers with an EV are modelled as charging whenever the clock allows. */
   evAlwaysCharging: boolean;
-  /** The DR window the simulators/campaigns would use right now. */
+  /** The flex window the simulators/campaigns would use right now. */
   nextEventWindow: { start: string; end: string };
   /** URL a phone on the same network should open for the customer app. */
   phoneAppUrl: string;
@@ -827,19 +1020,20 @@ export interface DemoResetRequest {
 }
 
 export interface SimEvDetectedRequest { customerId: string }
-export interface SimClusterRequest { gridAreaCode: string }
-export interface SimForecastRequest { districtCode: string }
+export interface SimClusterRequest { districtCode: string }
+export interface SimForecastRequest { gridAreaCode: string }
 
 /** One-click phone notifications on the demo control panel ("quick send"). Catalogue in demo-notify.ts. */
 export type NotifyPreset =
   | 'EV_DETECTED'
-  | 'CHARGING_STARTED'
+  | 'HEAT_PUMP_DETECTED'
   | 'CHARGING_COMPLETE'
-  | 'PEAK_SOON'
+  | 'CHEAP_HOURS'
   | 'FLEX_REQUEST'
   | 'ENROLL_OFFER'
-  | 'BILL_READY'
-  | 'HIGH_USAGE'
-  | 'OUTAGE';
+  | 'INSTALLMENT_ADVICE'
+  | 'ANNUAL_STATEMENT'
+  | 'NIGHT_USAGE'
+  | 'METER_READING';
 export interface SimNotifyRequest { customerId: string; preset: NotifyPreset }
 export interface SimNotifyResult { text: string }

@@ -15,7 +15,7 @@ describe('activity meta', () => {
   });
 
   it('labels', () => {
-    expect(activityLabel('PAYMENT_MADE')).toBe('Paid bill');
+    expect(activityLabel('PAYMENT_MADE')).toBe('Paid invoice (iDEAL)');
     expect(activityCategory('FLEX_OPTED_IN')).toBe('flex');
   });
 });

@@ -39,13 +39,13 @@ describe('createApi', () => {
   it('sends the bearer token and a JSON body for writes', async () => {
     fetchMock.mockResolvedValue(json({ token: 't', user: {} }));
     const api = createApi({ baseUrl: 'http://api.test', getToken: () => 'abc' });
-    await api.login({ email: 'manny@demo.test', password: 'demo' });
+    await api.login({ email: 'sanne@demo.test', password: 'demo' });
     const { url, init, headers } = lastRequest();
     expect(url).toBe('http://api.test/api/auth/login');
     expect(init.method).toBe('POST');
     expect(headers.Authorization).toBe('Bearer abc');
     expect(headers['Content-Type']).toBe('application/json');
-    expect(JSON.parse(init.body as string)).toEqual({ email: 'manny@demo.test', password: 'demo' });
+    expect(JSON.parse(init.body as string)).toEqual({ email: 'sanne@demo.test', password: 'demo' });
   });
 
   it('returns the parsed JSON body', async () => {

@@ -4,6 +4,7 @@ export * from './api';
 export * from './brand';
 export * from './tokens';
 export * from './format';
-export * from './geo';
+export * from './i18n';
+export * from './usage';
 export * from './demo-notify';
 export * from './activity';

@@ -1,80 +1,70 @@
 import { describe, expect, it } from 'vitest';
-import { fmtDate, fmtInt, fmtKw, fmtKwh, fmtMoney, fmtRelative, fmtTime, fmtWindow, minutesUntil } from './format';
+import { dayKey, fmtDate, fmtInt, fmtKw, fmtKwh, fmtMoney, fmtRelative, fmtTime, fmtWindow, minutesUntil, weekdayOf, zoned } from './format';
+import { fmtEur, fmtNum } from './i18n';
 
-// All instants below are expressed in UTC; labels come out in America/Toronto (EDT in October = UTC-4).
+// Instants are UTC; labels come out in Europe/Amsterdam (CET in November = UTC+1, CEST in October = UTC+2).
 
-describe('fmtWindow', () => {
-  it('shares the suffix for whole hours in the same half of the day: "5–8 PM"', () => {
-    expect(fmtWindow('2026-10-23T21:00:00Z', '2026-10-24T00:00:00Z')).toBe('5–8 PM');
+describe('times and windows', () => {
+  it('uses the 24-hour clock in Amsterdam time', () => {
+    expect(fmtTime('2026-11-16T16:00:00Z')).toBe('17:00');
+    expect(fmtTime('2026-10-16T15:00:00Z')).toBe('17:00');
   });
 
-  it('keeps minutes when they are not :00: "9:30–10:15 PM"', () => {
-    expect(fmtWindow('2026-10-24T01:30:00Z', '2026-10-24T02:15:00Z')).toBe('9:30–10:15 PM');
-  });
-
-  it('spells out both suffixes across noon: "11 AM–2 PM"', () => {
-    expect(fmtWindow('2026-10-23T15:00:00Z', '2026-10-23T18:00:00Z')).toBe('11 AM–2 PM');
-  });
-
-  it('mixes whole and partial hours: "6–7:30 PM"', () => {
-    expect(fmtWindow('2026-10-23T22:00:00Z', '2026-10-23T23:30:00Z')).toBe('6–7:30 PM');
-  });
-
-  it('switches to standard time after the November fall-back', () => {
-    expect(fmtWindow('2026-11-15T22:00:00Z', '2026-11-16T01:00:00Z')).toBe('5–8 PM');
+  it('formats a window as "17:00–20:00"', () => {
+    expect(fmtWindow('2026-11-16T16:00:00Z', '2026-11-16T19:00:00Z')).toBe('17:00–20:00');
   });
 });
 
 describe('fmtRelative', () => {
-  const now = new Date('2026-10-23T18:00:00Z'); // Fri Oct 23, 2:00 PM EDT
+  const now = new Date('2026-11-16T13:20:00Z'); // Mon 16 Nov, 14:20 CET
 
-  it('shows the clock time for today', () => {
-    expect(fmtRelative('2026-10-23T13:12:00Z', now)).toBe('9:12 AM');
-    // 11:30 PM EDT on Oct 23 is 03:30Z on Oct 24, still "today" in Toronto.
-    expect(fmtRelative('2026-10-24T03:30:00Z', now)).toBe('11:30 PM');
+  it('shows the time for today', () => {
+    expect(fmtRelative('2026-11-16T08:05:00Z', now)).toBe('09:05');
   });
 
-  it('says "Yesterday" for the previous local day', () => {
-    expect(fmtRelative('2026-10-22T23:00:00Z', now)).toBe('Yesterday');
-    // 00:30Z on Oct 23 is 8:30 PM EDT on Oct 22 → yesterday.
-    expect(fmtRelative('2026-10-23T00:30:00Z', now)).toBe('Yesterday');
+  it('says Yesterday / Gisteren', () => {
+    expect(fmtRelative('2026-11-15T20:00:00Z', now)).toBe('Yesterday');
+    expect(fmtRelative('2026-11-15T20:00:00Z', now, 'nl')).toBe('Gisteren');
   });
 
-  it('falls back to a short date for anything older', () => {
-    expect(fmtRelative('2026-10-15T14:00:00Z', now)).toBe('Oct 15');
-    expect(fmtRelative('2026-10-03T14:00:00Z', now)).toBe('Oct 3');
+  it('shows day and month before that', () => {
+    expect(fmtRelative('2026-11-02T10:00:00Z', now)).toBe('2 Nov');
+    expect(fmtRelative('2026-11-02T10:00:00Z', now, 'nl')).toBe('2 nov');
   });
 });
 
-describe('minutesUntil', () => {
-  const now = Date.parse('2026-10-23T18:00:00Z');
-
-  it('rounds to whole minutes', () => {
-    expect(minutesUntil('2026-10-23T18:45:00Z', now)).toBe(45);
-    expect(minutesUntil('2026-10-23T18:01:30Z', now)).toBe(2);
-    expect(minutesUntil('2026-10-23T18:01:20Z', now)).toBe(1);
+describe('money and numbers', () => {
+  it('formats euros in Dutch and English', () => {
+    expect(fmtEur(1234.5, 'nl').replace(/\s/g, ' ')).toBe('€ 1.234,50');
+    expect(fmtMoney(1234.5)).toBe('€1,234.50');
   });
 
-  it('clamps at zero once the instant has passed', () => {
-    expect(minutesUntil('2026-10-23T18:00:00Z', now)).toBe(0);
-    expect(minutesUntil('2026-10-23T17:00:00Z', now)).toBe(0);
-    expect(minutesUntil('2020-01-01T00:00:00Z', now)).toBe(0);
+  it('formats numbers, kWh and kW', () => {
+    expect(fmtNum(3195, 'nl')).toBe('3.195');
+    expect(fmtInt(3195)).toBe('3,195');
+    expect(fmtKwh(7.25)).toBe('7.3 kWh');
+    expect(fmtKwh(7.25, 1, 'nl')).toBe('7,3 kWh');
+    expect(fmtKw(11)).toBe('11.0 kW');
+  });
+
+  it('formats dates', () => {
+    expect(fmtDate('2026-11-28T10:00:00Z')).toBe('28 Nov 2026');
+    expect(fmtDate('2026-11-28T10:00:00Z', undefined, 'nl')).toBe('28 nov 2026');
   });
 });
 
-describe('simple formatters', () => {
-  it('format money, integers and energy units', () => {
-    expect(fmtMoney(184.27)).toBe('$184.27');
-    expect(fmtMoney(5)).toBe('$5.00');
-    expect(fmtInt(1726)).toBe('1,726');
-    expect(fmtKwh(19.8)).toBe('19.8 kWh');
-    expect(fmtKwh(1142, 0)).toBe('1142 kWh');
-    expect(fmtKw(7.2)).toBe('7.2 kW');
+describe('calendar helpers', () => {
+  it('reads Amsterdam wall-clock parts', () => {
+    expect(zoned(new Date('2026-11-16T23:30:00Z'))).toMatchObject({ day: 17, hour: 0, minute: 30, weekday: 2 });
   });
 
-  it('format times and dates in the utility timezone', () => {
-    expect(fmtTime('2026-10-23T21:00:00Z')).toBe('5:00 PM');
-    expect(fmtDate('2026-11-08T12:00:00Z')).toBe('Nov 8, 2026');
-    expect(fmtDate('2026-10-23T03:30:00Z', { month: 'short', day: 'numeric' })).toBe('Oct 22');
+  it('steps calendar days without time-zone drift', () => {
+    expect(dayKey(2026, 11, 1, -1)).toBe('2026-10-31');
+    expect(weekdayOf('2026-11-16')).toBe(1);
+  });
+
+  it('counts minutes until a time, never negative', () => {
+    expect(minutesUntil('2026-11-16T14:00:00Z', Date.parse('2026-11-16T13:20:00Z'))).toBe(40);
+    expect(minutesUntil('2026-11-16T13:00:00Z', Date.parse('2026-11-16T13:20:00Z'))).toBe(0);
   });
 });

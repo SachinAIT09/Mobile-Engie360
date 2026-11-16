@@ -1,65 +1,83 @@
+import type { Text } from './i18n';
 import type { RatePlanId } from './types';
+import { DYNAMIC_PRICE } from './usage';
 
 /**
- * Every client-specific placeholder lives here so the real values can be
- * dropped in once Hydro One's brand assets and program details arrive.
+ * Every client-facing name and placeholder lives here. The demo is ENGIE Netherlands-styled; all
+ * customer data is fictional and amounts marked [..] are placeholders until ENGIE supplies real values.
  */
 export const BRAND = {
-  utilityName: 'Hydro One',
-  /** Shown inside the dashed placeholder box until a real logo is supplied. */
-  logoPlaceholder: '[Hydro One logo]',
-  /** Company presenting the demo; its logo and theme are used until the utility's brand assets arrive. */
+  utilityName: 'ENGIE',
+  /** Text wordmark used until official logo files are supplied. */
+  logoPlaceholder: 'ENGIE',
+  /** Company presenting the demo. */
   vendorName: 'PowerConnect.AI',
   /** Customer-facing app name (login heading, settings). */
-  appName: 'My Account',
-  staffProductName: 'Grid Edge Insights',
+  appName: 'MijnENGIE',
+  staffProductName: 'ENGIE Klantinzicht',
   conceptLabel: 'Concept demo · Sample data',
-  emergencyNumber: '[Hydro One emergency number]',
+  conceptLabelNl: 'Conceptdemo · Voorbeelddata',
+  customerServicePhone: '[ENGIE klantenservice]',
+  website: 'engie.nl',
   /** Partner products named in the UI. Simulated in the demo. */
   partners: {
-    evDetection: 'Net2Grid',
-    payments: 'Kubra',
+    disaggregation: 'Net2Grid',
+    payments: 'iDEAL',
+    networkOperator: 'Stedin',
   },
-  /** Town used in the seeded demo addresses. */
-  demoTown: 'Peterborough',
-  /**
-   * Centre of the demo service area on the staff map. GridArea and district positions are
-   * generated around it (packages/shared/src/geo.ts); they are illustrative, not real assets.
-   */
-  demoMapCenter: { lat: 44.3091, lng: -78.3197 },
+  /** City used in the seeded demo addresses. */
+  demoTown: 'Utrecht',
+  /** Centre of the demo area on the staff map (Utrecht-Oost); positions are illustrative. */
+  demoMapCenter: { lat: 52.0907, lng: 5.1214 },
 } as const;
 
+/** The flex program customers enroll in: smart charging that also answers grid-congestion requests. */
 export const PROGRAM = {
-  name: '[DR Program Name]',
-  signupIncentive: '[Incentive]',
-  perEventIncentive: '[$X]',
-  maxEventsPerSeason: '[N]',
-  typicalEventHours: '[2–3]',
-  termsUrl: '#terms',
-  /** Placeholder terms shown in the app until the real terms page exists. */
+  name: { en: 'Slim Laden', nl: 'Slim Laden' } as Text,
+  signupIncentive: { en: '[€25 welcome credit]', nl: '[€25 welkomstkorting]' } as Text,
+  perEventIncentive: { en: '[€2.50]', nl: '[€2,50]' } as Text,
+  maxEventsPerSeason: { en: '[20]', nl: '[20]' } as Text,
+  typicalEventHours: { en: '2–3', nl: '2–3' } as Text,
+  termsUrl: '#voorwaarden',
   termsSummary: [
-    'You agree to let [Hydro One] use your smart meter data to detect EV charging and measure event results.',
-    'During a grid event you may be asked to pause EV charging for [2–3] hours. Taking part is always your choice.',
-    'You earn [Incentive] on sign-up and [$X] for each event you take part in, up to [N] events per season.',
-    'You can leave the program at any time from Settings. Rewards already earned are kept.',
-  ],
+    {
+      en: 'You let ENGIE use your smart meter data (via Net2Grid) to recognise EV charging and measure flex results.',
+      nl: 'Je geeft ENGIE toestemming je slimme-meterdata (via Net2Grid) te gebruiken om laden te herkennen en flexresultaten te meten.',
+    },
+    {
+      en: 'When the grid is busy we may ask you to shift charging for 2–3 hours. Taking part is always your choice.',
+      nl: 'Als het stroomnet druk is, vragen we je soms het laden 2–3 uur te verschuiven. Meedoen is altijd jouw keuze.',
+    },
+    {
+      en: 'You get [€25] on sign-up and [€2.50] for each flex moment you join, up to [20] a year.',
+      nl: 'Je krijgt [€25] bij aanmelding en [€2,50] per flexmoment waaraan je meedoet, tot [20] per jaar.',
+    },
+    {
+      en: 'You can stop at any time in the app. Credit already earned is kept.',
+      nl: 'Je kunt altijd stoppen in de app. Opgebouwde korting houd je.',
+    },
+  ] as Text[],
 } as const;
 
-/** Placeholder electricity rate used only to show an estimated cost. */
-export const DEMO_RATE_PER_KWH = 0.13;
+/** Placeholder average all-in electricity rate (€/kWh) for rough cost estimates. */
+export const DEMO_RATE_PER_KWH = 0.25;
 
-/** Scripted assistant naming and copy (placeholders). */
+/** Scripted assistant naming and copy. */
 export const ASSISTANT = {
-  staffName: 'Grid Edge Assistant',
-  customerName: 'Energy Assistant',
+  staffName: 'Klantinzicht Assistant',
+  customerName: { en: 'ENGIE Assistant', nl: 'ENGIE Assistent' } as Text,
   disclosure: 'Scripted demo assistant · answers from live demo data',
-  placeholderStaff: 'Ask me anything about your districts…',
-  placeholderCustomer: 'Ask about your bill, usage or charging…',
+  disclosureCustomer: {
+    en: 'Demo assistant: scripted answers from sample data, no AI backend connected.',
+    nl: 'Demo-assistent: vooraf ingestelde antwoorden op voorbeelddata, geen AI-backend gekoppeld.',
+  } as Text,
+  placeholderStaff: 'Ask about segments, campaigns, flex events or customers…',
+  placeholderCustomer: { en: 'Ask about your bill, usage or charging…', nl: 'Vraag naar je nota, verbruik of laden…' } as Text,
 } as const;
 
 /**
  * One rate period rule. Hours are local, `from` inclusive and `to` exclusive (0–24).
- * When `from > to` the rule wraps past midnight (e.g. 19 → 7 means 19:00–07:00).
+ * When `from > to` the rule wraps past midnight (e.g. 23 → 7 means 23:00–07:00).
  * Rules are checked in order; the first rule whose `days` and hours match wins.
  */
 export interface RatePeriodRule {
@@ -71,52 +89,40 @@ export interface RatePeriodRule {
 }
 
 export interface RatePlanDef {
-  label: string;
-  /** Time-based periods. Every hour of every day matches exactly one rule (TIERED has one all-day rule). */
+  label: Text;
+  /** Time-based periods. Every hour of every day matches exactly one rule. */
   periods: RatePeriodRule[];
-  /** Monthly consumption tiers (TIERED only). `upToKwhPerMonth` null = no upper bound. */
-  tiers?: { name: string; rate: number; upToKwhPerMonth: number | null }[];
 }
 
-/** [Placeholder rates, Ontario-style] Not Hydro One's actual prices; $/kWh, energy charge only. */
+const priceName = (p: number) => (p <= 0.2 ? 'goedkoop' : p >= 0.3 ? 'piek' : 'normaal');
+
+/** [Placeholder rates] € / kWh all-in (supply, energy tax, VAT). Not ENGIE's actual prices. */
 export const RATE_PLANS: Record<RatePlanId, RatePlanDef> = {
-  TOU: {
-    label: 'Time-of-use',
+  DYNAMIC: {
+    label: { en: 'Dynamic (hourly price)', nl: 'Dynamisch (uurprijs)' },
+    periods: DYNAMIC_PRICE.map((rate, h) => ({ name: priceName(rate), rate, days: 'all' as const, from: h, to: h + 1 })),
+  },
+  DUAL: {
+    label: { en: 'Fixed, peak/off-peak', nl: 'Vast, normaal/dal' },
     periods: [
-      { name: 'off-peak', rate: 0.076, days: 'weekend', from: 0, to: 24 },
-      { name: 'off-peak', rate: 0.076, days: 'weekday', from: 19, to: 7 },
-      { name: 'mid-peak', rate: 0.122, days: 'weekday', from: 11, to: 17 },
-      { name: 'on-peak', rate: 0.158, days: 'weekday', from: 7, to: 11 },
-      { name: 'on-peak', rate: 0.158, days: 'weekday', from: 17, to: 19 },
+      { name: 'dal', rate: 0.231, days: 'weekend', from: 0, to: 24 },
+      { name: 'dal', rate: 0.231, days: 'weekday', from: 23, to: 7 },
+      { name: 'normaal', rate: 0.268, days: 'weekday', from: 7, to: 23 },
     ],
   },
-  ULO: {
-    label: 'Ultra-low overnight',
-    periods: [
-      { name: 'ultra-low', rate: 0.028, days: 'all', from: 23, to: 7 },
-      { name: 'off-peak', rate: 0.076, days: 'weekend', from: 7, to: 23 },
-      { name: 'mid-peak', rate: 0.122, days: 'weekday', from: 7, to: 16 },
-      { name: 'mid-peak', rate: 0.122, days: 'weekday', from: 21, to: 23 },
-      { name: 'on-peak', rate: 0.284, days: 'weekday', from: 16, to: 21 },
-    ],
-  },
-  TIERED: {
-    label: 'Tiered',
-    periods: [{ name: 'tier 1', rate: 0.093, days: 'all', from: 0, to: 24 }],
-    tiers: [
-      { name: 'tier 1', rate: 0.093, upToKwhPerMonth: 600 },
-      { name: 'tier 2', rate: 0.11, upToKwhPerMonth: null },
-    ],
+  FIXED: {
+    label: { en: 'Fixed, single rate', nl: 'Vast, enkeltarief' },
+    periods: [{ name: 'vast', rate: 0.259, days: 'all', from: 0, to: 24 }],
   },
 };
 
-/** [Placeholder] Grid carbon intensity by local hour 0–23, g CO₂ per kWh (clean overnight, dirtiest at the evening peak). */
+/** [Placeholder] Dutch grid carbon intensity by local hour 0–23, g CO₂ per kWh (solar at midday, gas at the evening peak). */
 export const GRID_CO2_G_PER_KWH: readonly number[] = [
-  27, 26, 25, 25, 25, 27, 34, 48, 58, 60, 57, 54, 52, 54, 60, 70, 86, 105, 110, 110, 104, 82, 55, 36,
+  290, 285, 280, 278, 280, 290, 320, 340, 300, 240, 190, 160, 150, 160, 200, 260, 330, 380, 390, 380, 360, 340, 320, 300,
 ];
 
 export const SMART_CHARGING = {
-  name: '[Smart Charging]',
+  name: { en: 'Slim Laden', nl: 'Slim Laden' } as Text,
   defaultReadyBy: '07:00',
   defaultTargetKwh: 30,
   minTargetKwh: 5,
