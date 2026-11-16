@@ -7,7 +7,9 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet" />
+    <!-- Loaded without blocking the page: if Google Fonts is slow or unreachable (demo Wi-Fi), the app
+         still starts at once in the system font. -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <script>
       try {
         var t = localStorage.getItem('engie-demo-theme');

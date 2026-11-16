@@ -298,3 +298,22 @@
     display: none;
   }
 }
+@media (max-width: 560px) {
+  .staff-top {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .staff-top-actions {
+    gap: 6px;
+  }
+  .staff-top .avatar,
+  .staff-conn {
+    display: none;
+  }
+  .staff-kpis {
+    grid-template-columns: 1fr;
+  }
+  .staff-bubble {
+    max-width: 94%;
+  }
+}

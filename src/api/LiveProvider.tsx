@@ -18,6 +18,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const { tx } = useI18n();
   const toast = useToast();
   const { pathname } = useLocation();
+  const customerApp = !pathname.startsWith('/staff');
   const [online, setOnline] = useState(false);
   const [state, setState] = useState(localDefaults);
   const [resetVersion, setResetVersion] = useState(0);
@@ -65,8 +66,10 @@ export function LiveProvider({ children }: { children: ReactNode }) {
           break;
       }
     };
+    // The Customer Service view has its own stream; opening this one there would count staff as the customer.
+    if (!customerApp) return;
     return openEvents('customer', onEvent, () => void load(), () => undefined);
-  }, [load]);
+  }, [load, customerApp]);
 
   const send = useCallback((path: string, body: unknown) => {
     if (!onlineRef.current) return;
