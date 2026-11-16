@@ -5,76 +5,113 @@ import { customer } from '../src/data/customer';
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const VENDOR = 'PowerConnect.AI';
 
+/** Lato weights the start page uses, served from the bundled @fontsource package (see app.ts). */
+export const START_FONTS = ['400', '700', '900'] as const;
+
 /**
- * Start page at `/`, in the same style as the Hydro Mobile360 start page: the two apps, the phone QR and the
- * demo script. ENGIE content only; PowerConnect.AI is the vendor shown in the header.
+ * Start page at `/`: the two apps, the phone QR and the demo script (the Hydro Mobile360 layout), in the
+ * ENGIE look of the portal: light page, ENGIE blue, navy hero, Lato, ENGIE wordmark. Follows the
+ * portal's theme choice (light, dark or system).
  */
 export async function startPage(phoneUrl: string, otherUrls: string[]): Promise<string> {
-  const qr = await QRCode.toString(phoneUrl, { type: 'svg', margin: 1, color: { dark: '#0b1b45', light: '#ffffff' } });
+  const qr = await QRCode.toString(phoneUrl, { type: 'svg', margin: 1, color: { dark: '#0b2240', light: '#ffffff' } });
   const lan = phoneUrl.startsWith('http://');
-  const reach = lan
-    ? 'The phone must be on the same Wi-Fi as this laptop.'
-    : 'It works on any phone, on Wi-Fi or mobile data.';
-  const card = (href: string, title: string, sub: string, primary: boolean) =>
-    `<a class="card${primary ? ' pri' : ''}" href="${href}" target="_blank" rel="noopener"><strong>${esc(title)}</strong><span>${esc(sub)}</span></a>`;
+  const reach = lan ? 'The phone must be on the same Wi-Fi as this laptop.' : 'It works on any phone, on Wi-Fi or mobile data.';
   const eva = esc(brand.assistant.name);
   const name = esc(`${customer.firstName} ${customer.lastName}`);
+  const fonts = START_FONTS.map((w) => `@font-face{font-family:Lato;font-style:normal;font-weight:${w};font-display:swap;src:url(/fonts/lato-${w}.woff2) format('woff2')}`).join('');
+
+  const app = (href: string, title: string, sub: string, icon: string, primary: boolean) =>
+    `<a class="app${primary ? ' pri' : ''}" href="${href}" target="_blank" rel="noopener"><span class="ic" aria-hidden="true">${icon}</span><span class="txt"><strong>${esc(title)}</strong><span>${esc(sub)}</span></span><span class="go" aria-hidden="true">→</span></a>`;
+  const svg = (d: string) => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const headset = svg('<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>');
+  const phone = svg('<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>');
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(brand.name)}360 demo · ${VENDOR}</title>
+<title>${esc(brand.name)}360 demo</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>(function(){try{var t=localStorage.getItem('engie-demo-theme');if(t==='system')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(t==='dark')document.documentElement.dataset.theme='dark'}catch(e){}})()</script>
 <style>
-:root{color-scheme:dark;--font:#e2e8f0;--muted:#8aa0c4;--line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.12);--blue:#2563eb;--card:rgba(255,255,255,.045);--card-line:rgba(255,255,255,.10);--chip:rgba(255,255,255,.05);--hover-line:rgba(96,165,250,.22);--link:#60a5fa;--soft:rgba(232,237,248,.72);--strong:#fff;--hover:rgba(255,255,255,.07)}
+${fonts}
+:root{--blue:#00aaff;--blue-600:#0089d1;--blue-700:#006fa8;--blue-50:#e8f6ff;--blue-100:#cdeeff;--green:#23d2b5;--green-50:#e3faf5;--green-700:#0f8f7a;--ink:#0b2240;--ink-2:#33475e;--muted:#64758b;--line:#e3e9f0;--line-2:#eef2f6;--bg:#f4f7fa;--surface:#fff;--navy:#0b2240;--shadow:0 1px 2px rgba(11,34,64,.05),0 6px 20px rgba(11,34,64,.06);--logo:url(/brand/powerconnect-logo-trimmed.png)}
+:root[data-theme=dark]{color-scheme:dark;--blue-700:#5cc8ff;--blue-50:#0f2a42;--blue-100:#17436a;--green-50:#0f2f2b;--green-700:#4fe0c4;--ink:#e8eef6;--ink-2:#c3cfdd;--muted:#8fa1b8;--line:#24374f;--line-2:#1b2b41;--bg:#0a1524;--surface:#111f33;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);--logo:url(/brand/powerconnect-logo-white.png)}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;font-family:Lato,'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,sans-serif;font-size:14px;color:var(--font);background:radial-gradient(95% 80% at 82% -8%,rgba(37,99,235,.42) 0%,rgba(37,99,235,0) 58%),linear-gradient(180deg,#0c1c47 0%,#0a1538 48%,#070f26 100%);background-color:#070f26;background-attachment:fixed}
-a{color:var(--link)}a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.top{height:66px;border-bottom:1px solid var(--line);display:flex;align-items:center}.top .in{max-width:880px;width:100%;margin:0 auto;padding:0 24px}
-.logo{height:40px;width:auto;display:block}
-main{max-width:880px;margin:0 auto;padding:28px 24px 24px;display:flex;flex-direction:column;gap:20px}
-.head{display:flex;align-items:center;gap:14px}.tile{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#3b82f6);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
-h1{margin:0;font-size:24px;font-weight:900;letter-spacing:-.4px;color:var(--strong)}.head p{margin:2px 0 0;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-.card{display:flex;flex-direction:column;gap:6px;padding:20px;border-radius:16px;background:var(--card);border:1px solid var(--card-line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);text-decoration:none;color:var(--font);min-height:44px;transition:background .15s,border-color .15s}
-.card strong{font-size:16px;font-weight:700;color:var(--strong)}.card span{font-size:14px;color:var(--soft);line-height:1.45}
-.card:hover{background:var(--hover);border-color:var(--hover-line)}
-.card.pri{background:var(--blue);border-color:var(--blue)}.card.pri span{color:#fff;opacity:.85}.card.pri:hover{background:#3b82f6;border-color:#3b82f6}
-.panel{background:var(--card);border:1px solid var(--card-line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;padding:20px}
-.phone{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
-.phone svg{width:180px;height:180px;background:#fff;border-radius:12px;padding:8px;border:1px solid var(--line2)}
-.phone div{flex:1 1 260px;display:flex;flex-direction:column;gap:6px;line-height:1.5}
-strong{color:var(--strong);font-weight:700}
-code,kbd{background:var(--chip);border:1px solid var(--line);padding:1px 6px;border-radius:6px;font-size:13px;color:var(--font)}kbd{font-family:inherit;font-weight:700}
-code{font-family:ui-monospace,Consolas,monospace;word-break:break-all}
-ol{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;line-height:1.5}
-.muted{color:var(--muted);font-size:12.5px}
-button{font:inherit;font-weight:700;border:1px solid var(--line2);border-radius:999px;padding:9px 16px;background:var(--chip);color:var(--strong);cursor:pointer;min-height:40px}
-button:hover{background:var(--hover)}
-.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
-footer{max-width:880px;margin:0 auto;padding:0 24px 28px;font-size:12px;color:var(--muted)}
+body{margin:0;min-height:100vh;font-family:Lato,'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.5;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:var(--blue-700);text-decoration:none}a:focus-visible,button:focus-visible{outline:3px solid rgba(0,170,255,.45);outline-offset:2px;border-radius:8px}
+.top{height:68px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center}
+.in{max-width:960px;width:100%;margin:0 auto;padding:0 24px}
+.top .in{display:flex;align-items:center;gap:12px}
+.mark{font-weight:900;font-size:26px;letter-spacing:.04em;color:var(--blue);position:relative;line-height:1}
+.mark::before{content:'';position:absolute;left:-2px;right:-2px;top:-8px;height:9px;border-top:3px solid var(--blue);border-radius:50% 50% 0 0}
+.sub{font-size:12.5px;font-weight:700;color:var(--muted);border-left:1px solid var(--line);padding-left:12px}
+.by{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.by i{display:block;width:118px;height:26px;background:var(--logo) left center/contain no-repeat}
+.hero{background:linear-gradient(120deg,#0b2240 0%,#0d3561 55%,#005e94 100%);color:#fff;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-140px;top:-160px;width:420px;height:420px;border-radius:50%;border:46px solid rgba(0,170,255,.18)}
+.hero .in{position:relative;z-index:1;padding-top:36px;padding-bottom:40px}
+.eyebrow{display:inline-block;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#7fd5ff;margin-bottom:8px}
+h1{margin:0;font-size:34px;font-weight:900;letter-spacing:-.01em;line-height:1.15}
+.hero p{margin:8px 0 0;max-width:640px;color:rgba(255,255,255,.8)}
+main{max-width:960px;margin:-22px auto 0;padding:0 24px 32px;display:flex;flex-direction:column;gap:18px;position:relative;z-index:2}
+.apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.app{display:flex;align-items:center;gap:16px;padding:20px 22px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);color:var(--ink);min-height:44px;transition:border-color .15s,transform .15s,box-shadow .15s}
+.app:hover{border-color:var(--blue-100);transform:translateY(-2px)}
+.app .ic{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--blue-50);color:var(--blue-700)}
+.app .txt{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.app strong{font-size:17px;font-weight:900}.app .txt span{font-size:14px;color:var(--muted)}
+.app .go{font-size:20px;font-weight:900;color:var(--blue)}
+.app.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.app.pri .ic{background:rgba(255,255,255,.2);color:#fff}.app.pri .txt span{color:rgba(255,255,255,.9)}.app.pri .go{color:#fff}
+.app.pri:hover{background:var(--blue-600);border-color:var(--blue-600);box-shadow:0 10px 24px rgba(0,170,255,.3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
+.phone{display:flex;flex-wrap:wrap;gap:22px;align-items:center}
+.phone svg{width:176px;height:176px;background:#fff;border-radius:14px;padding:8px;border:1px solid var(--line)}
+.phone .txt{flex:1 1 280px;display:flex;flex-direction:column;gap:6px}
+h2{margin:0;font-size:17px;font-weight:900}
+code,kbd{background:var(--line-2);border:1px solid var(--line);padding:1px 7px;border-radius:7px;font-size:13px;color:var(--ink)}
+code{font-family:ui-monospace,Consolas,monospace;word-break:break-all;color:var(--blue-700)}kbd{font-family:inherit;font-weight:900}
+.muted{color:var(--muted);font-size:13px}
+ol{margin:12px 0 0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
+ol li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start}
+ol li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:var(--blue-50);color:var(--blue-700);font-weight:900;font-size:14px;display:grid;place-items:center}
+strong{font-weight:900}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2)}
+button{font:inherit;font-weight:700;font-size:14px;border:0;border-radius:999px;padding:0 20px;min-height:44px;background:var(--navy);color:#fff;cursor:pointer}
+:root[data-theme=dark] button{background:var(--blue)}
+button:hover{filter:brightness(1.1)}
+.links{display:flex;gap:16px;flex-wrap:wrap;font-weight:700;font-size:14px}
+footer{max-width:960px;margin:0 auto;padding:0 24px 32px;font-size:12.5px;color:var(--muted)}
+.flag{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line);padding:3px 10px;border-radius:999px}
+@media(max-width:600px){h1{font-size:27px}.by span{display:none}.sub{display:none}.phone svg{width:150px;height:150px}}
 </style></head><body>
-<header class="top"><div class="in"><img class="logo" src="/brand/powerconnect-logo-white.png" alt="${VENDOR}"></div></header>
+<header class="top"><div class="in"><span class="mark">${esc(brand.name)}</span><span class="sub">${esc(brand.name)}360 demo</span><span class="by"><span>Concept by</span><i role="img" aria-label="${VENDOR}"></i></span></div></header>
+<section class="hero"><div class="in">
+<span class="eyebrow">${esc(brand.portal)} · ${esc(brand.country)}</span>
+<h1>${esc(brand.name)}360 demo</h1>
+<p>${VENDOR} concept for ${esc(brand.name)} ${esc(brand.country)}. Open the two apps in separate tabs, or the customer app on a phone. Everything stays in sync through this server.</p>
+</div></section>
 <main>
-<div class="head"><span class="tile" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>
-<div><h1>${esc(brand.name)}360 demo</h1><p>${VENDOR} concept for ${esc(brand.name)} ${esc(brand.country)}. Open the two apps in separate tabs, or the customer app on a phone.</p></div></div>
-<div class="grid">
-${card('/staff', 'Staff app', `${brand.name} Customer Service: ${customer.firstName}’s activity and ${brand.assistant.name} conversations live, and messages to her phone.`, true)}
-${card('/app', 'Customer app', `${brand.portal}, signed in as ${customer.firstName} ${customer.lastName} (sample customer). Open it on a phone too.`, false)}
+<div class="apps">
+${app('/staff', 'Staff app', `${brand.name} Customer Service: ${customer.firstName}’s activity and ${brand.assistant.name} conversations live, and messages to her phone.`, headset, true)}
+${app('/app', 'Customer app', `${brand.portal}, signed in as ${customer.firstName} ${customer.lastName} (sample customer). Open it on a phone too.`, phone, false)}
 </div>
-<section class="panel phone">${qr}<div><strong>Open the customer app on a phone</strong><span>Scan with the phone camera, or open <code>${esc(phoneUrl)}</code>. ${reach} The phone and the staff app stay in sync through this server.</span>
+<section class="card phone">${qr}<div class="txt"><h2>Open the customer app on a phone</h2>
+<span>Scan with the phone camera, or open <code>${esc(phoneUrl)}</code>. ${reach}</span>
 ${otherUrls.length ? `<span class="muted">Other addresses for this laptop: ${otherUrls.map(esc).join(', ')}</span>` : ''}
 <span class="muted">Phone notifications need HTTPS (a hosted URL); on this laptop they work at localhost.</span></div></section>
-<section class="panel"><strong style="font-size:15px">Demo script</strong>
+<section class="card"><h2>Demo script</h2>
 <ol>
-<li>Open the <strong>Staff app</strong> in one tab and the <strong>Customer app</strong> (${name}) in another tab or on a phone.</li>
-<li><strong>Live activity:</strong> Customer app → <em>Bills &amp; payments</em> → <em>Adjust installment</em> → €198 → Confirm. It appears in the staff app’s <em>Live activity</em> at once.</li>
-<li><strong>${eva}:</strong> press <kbd>Shift</kbd>+<kbd>P</kbd> for the presenter bar → <kbd>4</kbd>. ${eva} explains why the bill is higher; follow up with “and last month?”. The conversation shows live in the staff app.</li>
-<li><strong>Message the customer:</strong> Staff app → <em>Cheapest hours tonight</em> → Send. A banner pops up in the customer app, and a phone notification if it is on (<em>My account</em> → <em>Preferences</em>).</li>
-<li><strong>Reset:</strong> <kbd>R</kbd> in the presenter bar, <em>Reset demo</em> in the staff app, or the button below.</li>
+<li><span>Open the <strong>Staff app</strong> in one tab and the <strong>Customer app</strong> (${name}) in another tab or on a phone.</span></li>
+<li><span><strong>Live activity:</strong> Customer app → <em>Bills &amp; payments</em> → <em>Adjust installment</em> → €198 → Confirm. It appears in the staff app’s <em>Live activity</em> at once.</span></li>
+<li><span><strong>${eva}:</strong> press <kbd>Shift</kbd>+<kbd>P</kbd> for the presenter bar → <kbd>4</kbd>. ${eva} explains why the bill is higher; follow up with “and last month?”. The conversation shows live in the staff app.</span></li>
+<li><span><strong>Message the customer:</strong> Staff app → <em>Cheapest hours tonight</em> → Send. A banner pops up in the customer app, and a phone notification if it is on (<em>My account</em> → <em>Preferences</em>).</span></li>
+<li><span><strong>Reset:</strong> <kbd>R</kbd> in the presenter bar, <em>Reset demo</em> in the staff app, or the button below.</span></li>
 </ol>
-<div class="row"><button id="reset" type="button">Reset demo</button><span id="msg" class="muted" role="status"></span></div></section>
+<div class="row"><button id="reset" type="button">Reset demo</button><span id="msg" class="muted" role="status"></span>
+<span class="links" style="margin-left:auto"><a href="/app/mobile-preview">Mobile preview</a></span></div></section>
 </main>
-<footer>Concept demo · Sample data, not connected to ${esc(brand.name)} systems · <a href="/app/mobile-preview">Mobile preview</a></footer>
+<footer><span class="flag">Sample data · not connected to ${esc(brand.name)} systems</span></footer>
 <script>
 document.getElementById('reset').onclick=async()=>{const m=document.getElementById('msg');m.textContent='Resetting…';const r=await fetch('/api/demo/reset',{method:'POST'});m.textContent=r.ok?'Demo reset.':'Reset failed.';};
 </script>

@@ -70,7 +70,9 @@ test.describe('customer ↔ staff, live', () => {
   test('start page links every app and shows the phone QR', async ({ page }) => {
     await fresh(page, '/');
     await expect(page.locator('h1')).toHaveText('ENGIE360 demo');
-    await expect(page.locator('img[alt="PowerConnect.AI"]')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'PowerConnect.AI' })).toBeVisible();
+    await expect(page.locator('.mark')).toHaveText('ENGIE');
+    expect((await page.request.get('/fonts/lato-900.woff2')).headers()['content-type']).toBe('font/woff2');
     for (const href of ['/staff', '/app', '/app/mobile-preview']) await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
     await expect(page.locator('.phone svg')).toBeVisible();
     await expect(page.locator('.phone code')).toContainText('/app');

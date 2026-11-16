@@ -1,5 +1,6 @@
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
-import { existsSync } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { config } from './config.ts';
 import { Db } from './db.ts';
 import { sendError } from './http.ts';
@@ -44,6 +45,14 @@ export async function createApp(server: Server): Promise<{ handler: RequestHandl
         if (await api.handle(req, res, url)) return;
         if (url.pathname.startsWith('/api/')) {
           sendError(res, new HttpError(404, `No API route ${url.pathname}`));
+          return;
+        }
+        // Lato for the server-rendered start page, from the bundled @fontsource package (no external fonts).
+        const font = /^\/fonts\/lato-(400|700|900)\.woff2$/.exec(url.pathname);
+        if (font) {
+          const file = join(config.root, 'node_modules', '@fontsource', 'lato', 'files', `lato-latin-${font[1]}-normal.woff2`);
+          res.writeHead(200, { 'Content-Type': 'font/woff2', 'Cache-Control': 'public, max-age=31536000, immutable' });
+          createReadStream(file).on('error', () => res.end()).pipe(res);
           return;
         }
         // Start page at the root, like Hydro Mobile360; the old /start address still works.
