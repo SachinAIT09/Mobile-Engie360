@@ -1,8 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/Layout';
 import { PresenterBar } from './components/PresenterBar';
 import { PortalAssistantProvider } from './assistant/PortalAssistant';
+import { useLive } from './api/live';
+import { syncPush } from './api/push';
 
 // Route-level code splitting keeps the first load small; everything is preloaded right after.
 const loaders = {
@@ -15,6 +17,7 @@ const loaders = {
   account: () => import('./pages/Account'),
   website: () => import('./pages/WebsiteDemo'),
   preview: () => import('./pages/MobilePreview'),
+  staff: () => import('./staff/StaffApp'),
 };
 const Dashboard = lazy(loaders.dashboard);
 const Energy = lazy(loaders.energy);
@@ -25,6 +28,7 @@ const Assistant = lazy(loaders.assistant);
 const Account = lazy(loaders.account);
 const WebsiteDemo = lazy(loaders.website);
 const MobilePreview = lazy(loaders.preview);
+const StaffApp = lazy(loaders.staff);
 
 
 export default function App() {
@@ -34,13 +38,18 @@ export default function App() {
     return () => clearTimeout(id);
   }, []);
 
-  // Bumped by presenter "Reset demo": remounts every screen so local state starts fresh.
-  const [resetKey, setResetKey] = useState(0);
+  // Bumped by "Reset demo" (presenter bar or staff app): remounts every screen so local state starts fresh.
+  const { resetVersion, resetDemo, online } = useLive();
+
+  // Keep this browser registered for phone notifications after a server restart (no prompt).
+  useEffect(() => {
+    if (online) void syncPush().catch(() => undefined);
+  }, [online]);
 
   return (
     <PortalAssistantProvider>
       <Suspense fallback={<div className="page-loading" aria-busy="true" />}>
-      <Routes key={resetKey}>
+      <Routes key={resetVersion}>
         <Route element={<AppShell />}>
           <Route index element={<Dashboard />} />
           <Route path="energy" element={<Energy />} />
@@ -52,10 +61,11 @@ export default function App() {
         </Route>
         <Route path="website-demo" element={<WebsiteDemo />} />
         <Route path="mobile-preview" element={<MobilePreview />} />
+        <Route path="staff" element={<StaffApp />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
-      <PresenterBar onReset={() => setResetKey((k) => k + 1)} />
+      <PresenterBar onReset={() => void resetDemo()} />
     </PortalAssistantProvider>
   );
 }

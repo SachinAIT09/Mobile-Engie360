@@ -6,6 +6,8 @@ import { contract, customer } from '../data/customer';
 import { Card, DemoFlag, Modal, PageHead } from '../components/ui';
 import { useToast } from '../components/toast';
 import { brand } from '../brand';
+import { useLive } from '../api/live';
+import { PushCard } from '../components/PushCard';
 
 function Toggle({ label, desc, defaultOn = false }: { label: string; desc?: string; defaultOn?: boolean }) {
   const [on, setOn] = useState(defaultOn);
@@ -38,6 +40,7 @@ export default function Account() {
   const [editing, setEditing] = useState(false);
   const [contact, setContact] = useState({ email: customer.email, phone: customer.phone });
   const [draft, setDraft] = useState(contact);
+  const { saveContact } = useLive();
 
   return (
     <>
@@ -184,6 +187,7 @@ export default function Account() {
               </button>
             </div>
           </div>
+          <PushCard />
           <Toggle label={t('Usage alerts', 'Verbruiksmeldingen')} desc={t('Unusual consumption and appliance faults', 'Afwijkend verbruik en storingen aan apparaten')} defaultOn />
           <Toggle label={t('Cheapest-hours notification', 'Melding goedkoopste uren')} desc={t('Daily push at 15:00 with tomorrow’s prices', 'Dagelijkse push om 15:00 met prijzen van morgen')} defaultOn />
           <Toggle label={t(`Appliance recognition (${brand.partners.disaggregation})`, `Apparaatherkenning (${brand.partners.disaggregation})`)} desc={t('Uses your smart-meter data for personal advice', 'Gebruikt je slimme-meterdata voor persoonlijk advies')} defaultOn />
@@ -207,6 +211,7 @@ export default function Account() {
                 className="btn btn-primary"
                 onClick={() => {
                   setContact(draft);
+                  saveContact(draft);
                   setEditing(false);
                   toast(t('Contact details updated', 'Contactgegevens bijgewerkt'));
                 }}

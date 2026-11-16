@@ -1,3 +1,4 @@
+import { useLive } from '../api/live';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Check, PiggyBank, Plus, Sparkles, Target } from 'lucide-react';
@@ -87,7 +88,7 @@ export default function Insights() {
   const navigate = useNavigate();
   const { ask } = usePortalAssistant();
   const [filter, setFilter] = useState<Filter>('all');
-  const [plan, setPlan] = useState<string[]>(['ev-peak']);
+  const { plan, togglePlan } = useLive();
 
   const list = insights.filter((i) => filter === 'all' || i.kind === filter);
   const planned = insights.filter((i) => plan.includes(i.id));
@@ -97,7 +98,7 @@ export default function Insights() {
   const toggle = (id: string) => {
     const has = plan.includes(id);
     toast(has ? t('Removed from your savings plan', 'Verwijderd uit je bespaarplan') : t('Added to your savings plan', 'Toegevoegd aan je bespaarplan'));
-    setPlan((p) => (has ? p.filter((x) => x !== id) : [...p, id]));
+    togglePlan(id, !has);
   };
 
   return (

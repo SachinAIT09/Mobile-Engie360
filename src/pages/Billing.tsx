@@ -1,3 +1,4 @@
+import { useLive } from '../api/live';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -184,8 +185,9 @@ export default function Billing() {
   const toast = useToast();
   const [params, setParams] = useSearchParams();
   const [filter, setFilter] = useState<Filter>('all');
-  const installment = contract.installment;
-  const [pending, setPending] = useState<number | null>(null);
+  const live = useLive();
+  const installment = live.installment.current;
+  const pending = live.installment.pending?.amount ?? null;
   const [adjustState, setAdjustOpen] = useState(false);
   // ?adjust=1 (from insights, the dashboard or the assistant) opens the modal.
   const adjustOpen = adjustState || params.get('adjust') === '1';
@@ -366,6 +368,7 @@ export default function Billing() {
                         style={{ width: 36, height: 36 }}
                         onClick={() => {
                           downloadInvoice(inv, tx, eur, date);
+                          live.track('invoice_download', inv.id);
                           toast(t('Invoice downloaded (demo document)', 'Nota gedownload (demodocument)'));
                         }}
                         aria-label={t(`Download ${inv.id}`, `Download ${inv.id}`)}
@@ -425,9 +428,11 @@ export default function Billing() {
           current={pending ?? installment}
           onClose={closeAdjust}
           onSave={(v) => {
-            setPending(v);
             closeAdjust();
-            toast(t(`Installment changed to €${v} from December`, `Termijnbedrag gewijzigd naar €${v} vanaf december`));
+            live.setInstallment(v).then(
+              () => toast(t(`Installment changed to €${v} from December`, `Termijnbedrag gewijzigd naar €${v} vanaf december`)),
+              () => toast(t('Could not save the installment. Please try again.', 'Het termijnbedrag kon niet worden opgeslagen. Probeer het opnieuw.')),
+            );
           }}
         />
       )}

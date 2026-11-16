@@ -8,7 +8,7 @@
 import { useImperativeHandle, useState, forwardRef } from 'react';
 import { Sparkles, X, LogIn, CheckCircle2 } from 'lucide-react';
 import { ChatPanel } from '../assistant/ChatPanel';
-import { MockAssistantProvider } from '../assistant/mockProvider';
+import { HttpAssistantProvider } from '../api/httpAssistant';
 import { useChatSession } from '../assistant/useChatSession';
 import type { AssistantProvider, Audience, ChatAction } from '../assistant/types';
 import { useI18n } from '../lib/i18n';
@@ -30,7 +30,7 @@ interface Props {
   onAudienceChange?: (a: Audience) => void;
 }
 
-const defaultProvider = new MockAssistantProvider();
+const defaultProvider = new HttpAssistantProvider('website');
 
 export const EngieAssistantWidget = forwardRef<EngieAssistantHandle, Props>(function EngieAssistantWidget(
   { provider = defaultProvider, onNavigate, audience: controlled, defaultAudience = 'visitor', onAudienceChange },

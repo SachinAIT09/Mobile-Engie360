@@ -14,7 +14,9 @@ import {
 import { useI18n, type Lang } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
 import { customer } from '../data/customer';
-import { notificationsSeed, type Notification } from '../data/insights';
+import { DEMO_NOW } from '../lib/time';
+import type { InboxMessage } from '../../shared/contract';
+import { useLive } from '../api/live';
 import { DEMO_NAV, NAV, type NavItem } from './nav';
 import { FloatingAssistant } from '../assistant/FloatingAssistant';
 import { InsightIc } from './ui';
@@ -73,16 +75,29 @@ function ThemeSwitch() {
   );
 }
 
+/** "1 hour ago" / "5 dagen geleden", measured on the demo clock for seeded items and the real clock for new ones. */
+function timeAgo(iso: string, lang: Lang): string {
+  const then = new Date(iso).getTime();
+  const now = Math.max(Date.now(), DEMO_NOW.getTime());
+  const min = Math.max(0, Math.round((now - then) / 60000));
+  const rtf = new Intl.RelativeTimeFormat(lang === 'nl' ? 'nl-NL' : 'en-GB', { numeric: 'auto' });
+  if (min < 1) return lang === 'nl' ? 'zojuist' : 'just now';
+  if (min < 60) return rtf.format(-min, 'minute');
+  if (min < 60 * 36) return rtf.format(-Math.round(min / 60), 'hour');
+  if (min < 60 * 24 * 45) return rtf.format(-Math.round(min / 1440), 'day');
+  return rtf.format(-Math.round(min / 43200), 'month');
+}
+
 function Notifications() {
-  const { t, tx } = useI18n();
+  const { t, tx, lang } = useI18n();
   const navigate = useNavigate();
-  const [items, setItems] = useState<Notification[]>(notificationsSeed);
+  const { messages: items, markRead, markAllRead } = useLive();
   const [open, setOpen] = useState(false);
   const ref = useOutside<HTMLDivElement>(open, () => setOpen(false));
-  const unread = items.filter((i) => i.unread).length;
+  const unread = items.filter((i) => !i.read).length;
 
-  const openItem = (n: Notification) => {
-    setItems((xs) => xs.map((x) => (x.id === n.id ? { ...x, unread: false } : x)));
+  const openItem = (n: InboxMessage) => {
+    if (!n.read) markRead(n.id);
     setOpen(false);
     navigate(n.to);
   };
@@ -99,12 +114,12 @@ function Notifications() {
             <h3>
               {t('Notifications', 'Meldingen')} {unread > 0 && <span className="badge info">{unread}</span>}
             </h3>
-            <button className="btn btn-ghost btn-sm" disabled={!unread} onClick={() => setItems((xs) => xs.map((x) => ({ ...x, unread: false })))}>
+            <button className="btn btn-ghost btn-sm" disabled={!unread} onClick={markAllRead}>
               <CheckCheck size={15} /> {t('Mark all read', 'Alles gelezen')}
             </button>
           </div>
           {items.map((n) => (
-            <button key={n.id} className={`pop-item${n.unread ? ' unread' : ''}`} onClick={() => openItem(n)}>
+            <button key={n.id} className={`pop-item${n.read ? '' : ' unread'}`} onClick={() => openItem(n)}>
               <InsightIc icon={n.icon} kind={n.icon === 'moon' ? 'alert' : n.icon === 'wallet' ? 'billing' : undefined} size={34} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span className="strong small" style={{ display: 'block' }}>
@@ -113,9 +128,12 @@ function Notifications() {
                 <span className="xs muted" style={{ display: 'block' }}>
                   {tx(n.body)}
                 </span>
-                <span className="xs muted">{tx(n.time)}</span>
+                <span className="xs muted">
+                  {n.sender ? `${n.sender} · ` : ''}
+                  {timeAgo(n.createdAt, lang)}
+                </span>
               </span>
-              {n.unread && <span className="dot" style={{ position: 'static', width: 8, height: 8, borderRadius: 4, background: 'var(--blue)', marginTop: 6 }} />}
+              {!n.read && <span className="dot" style={{ position: 'static', width: 8, height: 8, borderRadius: 4, background: 'var(--blue)', marginTop: 6 }} />}
             </button>
           ))}
         </div>

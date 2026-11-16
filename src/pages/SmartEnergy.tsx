@@ -1,3 +1,4 @@
+import { useLive } from '../api/live';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Area, AreaChart, Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -34,6 +35,7 @@ export default function SmartEnergy() {
   const [kwh, setKwh] = useState(24);
   const [readyBy, setReadyBy] = useState(7);
   const [active, setActive] = useState(false);
+  const { saveCharging } = useLive();
   const { chart: c } = useTheme();
   const plan = useMemo(() => planCharging({ kwh, readyBy, plugInHour: 18, hourPrices: tomorrowPrices.map((p) => p.price) }), [kwh, readyBy]);
   const saving = plan.directCost - plan.smartCost;
@@ -163,6 +165,7 @@ export default function SmartEnergy() {
               aria-label={t('Smart charging', 'Slim laden')}
               onClick={() => {
                 setActive(!active);
+                saveCharging({ active: !active, kwh, readyBy });
                 toast(active ? t('Smart charging paused', 'Slim laden gepauzeerd') : t('Smart charging scheduled for tonight', 'Slim laden ingepland voor vannacht'));
               }}
             />

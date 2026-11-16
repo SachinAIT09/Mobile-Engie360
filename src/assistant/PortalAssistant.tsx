@@ -2,11 +2,12 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { PortalAssistantCtx } from './portalContext';
 import { useLocation } from 'react-router-dom';
 import { useI18n } from '../lib/i18n';
-import { MockAssistantProvider } from './mockProvider';
+import { HttpAssistantProvider } from '../api/httpAssistant';
 import { useChatSession } from './useChatSession';
 
-// Swap for a real provider (e.g. an HTTP client to an LLM backend) without touching the UI.
-const provider = new MockAssistantProvider();
+// Eva answers on the server (same scripted answers), which also shows the conversation to staff.
+// Without a server the provider falls back to the local scripted answers.
+const provider = new HttpAssistantProvider('portal');
 
 /** One chat session for the whole portal, shared by the floating widget and the full-page view. */
 export function PortalAssistantProvider({ children }: { children: ReactNode }) {

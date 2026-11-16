@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { I18nProvider } from './lib/I18nProvider';
 import { ThemeProvider } from './lib/ThemeProvider';
 import { ToastProvider } from './components/ui';
+import { LiveProvider } from './api/LiveProvider';
 import App from './App';
 import './styles/global.css';
 
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider>
       <I18nProvider>
         <ToastProvider>
-          <App />
+          <LiveProvider>
+            <App />
+          </LiveProvider>
         </ToastProvider>
       </I18nProvider>
       </ThemeProvider>
