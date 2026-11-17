@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Search, Users } from 'lucide-react';
+import { Search, Users } from 'lucide-react';
 import type { CustomerFilter, CustomersResponse } from '../../../shared/contract';
 import { API, get } from '../../api/client';
 import { Card } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { useStaff } from '../context';
 import { ago } from '../kinds';
-import { StaffHead } from '../parts';
+import { DEFAULT_PAGE_SIZE, PAGE_SIZES } from '../paging';
+import { Pager, StaffHead } from '../parts';
 import { FlagBadges, Initials } from '../portfolio';
 
 const FILTERS: { id: CustomerFilter; label: [string, string] }[] = [
@@ -28,6 +29,7 @@ export default function StaffCustomers() {
   const filter = (params.get('filter') ?? 'all') as CustomerFilter;
   const q = params.get('q') ?? '';
   const page = Number(params.get('page') ?? 1) || 1;
+  const size = PAGE_SIZES.find((n) => n === Number(params.get('size'))) ?? DEFAULT_PAGE_SIZE;
   const [data, setData] = useState<CustomersResponse | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -35,7 +37,7 @@ export default function StaffCustomers() {
   const version = `${portfolio?.needAttention ?? 0}-${portfolio?.onlineNow ?? 0}`;
   useEffect(() => {
     let stale = false;
-    const url = `${API.staffCustomers}?q=${encodeURIComponent(q)}&filter=${filter}&page=${page}`;
+    const url = `${API.staffCustomers}?q=${encodeURIComponent(q)}&filter=${filter}&page=${page}&size=${size}`;
     get<CustomersResponse>(url).then(
       (r) => {
         if (stale) return;
@@ -47,14 +49,15 @@ export default function StaffCustomers() {
     return () => {
       stale = true;
     };
-  }, [q, filter, page, version, connection]);
+  }, [q, filter, page, size, version, connection]);
 
   const set = (next: Record<string, string>) => {
-    const merged = { q, filter, page: String(page), ...next };
+    const merged = { q, filter, page: String(page), size: String(size), ...next };
     const clean: Record<string, string> = {};
     if (merged.q) clean.q = merged.q;
     if (merged.filter !== 'all') clean.filter = merged.filter;
     if (merged.page !== '1') clean.page = merged.page;
+    if (merged.size !== String(DEFAULT_PAGE_SIZE)) clean.size = merged.size;
     setParams(clean, { replace: true });
   };
   const pages = data ? Math.max(1, Math.ceil(data.matched / data.pageSize)) : 1;
@@ -141,17 +144,7 @@ export default function StaffCustomers() {
                 </tbody>
               </table>
             </div>
-            <div className="row between pager">
-              <span className="small muted">{t(`Page ${data.page} of ${pages}`, `Pagina ${data.page} van ${pages}`)}</span>
-              <span className="row" style={{ gap: 8 }}>
-                <button className="btn btn-outline btn-sm" disabled={data.page <= 1} onClick={() => set({ page: String(data.page - 1) })}>
-                  <ChevronLeft size={14} /> {t('Previous', 'Vorige')}
-                </button>
-                <button className="btn btn-outline btn-sm" disabled={data.page >= pages} onClick={() => set({ page: String(data.page + 1) })}>
-                  {t('Next', 'Volgende')} <ChevronRight size={14} />
-                </button>
-              </span>
-            </div>
+            <Pager paged={{ page: data.page, pages, total: data.matched, size: data.pageSize, setPage: (n) => set({ page: String(n) }), setSize: (n) => set({ size: String(n), page: '1' }) }} />
           </>
         )}
       </Card>

@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useId, useRef, useState, type FormEve
 import { useNavigate } from 'react-router-dom';
 import { ArrowUp, History, Mic, PenLine, Send, Sparkles, SquarePen } from 'lucide-react';
 import type { EnergyResponse } from '../../../shared/contract';
-import { STAFF_PHRASES, STAFF_SUGGESTIONS, staffPhrase, type StaffIntent } from '../../assistant/staff';
+import { STAFF_SUGGESTIONS, staffPhrase } from '../../assistant/staff';
 import type { AssistantReply } from '../../assistant/types';
 import { useI18n } from '../../lib/i18n';
 import { revealWords, useTypewriter, wordCount } from '../../lib/useTypewriter';
@@ -10,10 +10,6 @@ import { useStaff } from '../context';
 import { STAFF_NAME } from '../kinds';
 import { StaffHead } from '../parts';
 import type { Turn } from '../useStaffAssistant';
-
-/** Suggestions shown as chips on the empty screen; the rest stay one click away under "More questions". */
-const CHIPS_SHOWN = 4;
-const ALL_CHIPS: StaffIntent[] = [...STAFF_SUGGESTIONS, ...(Object.keys(STAFF_PHRASES) as StaffIntent[]).filter((id) => !STAFF_SUGGESTIONS.includes(id))];
 
 /** Paragraphs, "• " bullets and **bold**. */
 function Rich({ text }: { text: string }) {
@@ -35,14 +31,20 @@ function Rich({ text }: { text: string }) {
   );
 }
 
-/** Inline SVG bar chart with a screen-reader table (no chart library needed on this page). */
+/** Usage per month or per appliance, from the sample energy data. */
 function MiniChart({ kind, energy }: { kind: 'monthly' | 'breakdown'; energy: EnergyResponse }) {
   const { t, tx } = useI18n();
-  const id = useId();
   const points =
     kind === 'monthly'
       ? energy.monthly.map((m) => ({ label: tx(m.label).slice(0, 3), value: m.electricity, hi: (m.ev ?? 0) > 0 }))
       : energy.breakdown.map((b, i) => ({ label: tx(b.label).split(' ')[0] ?? '', value: b.kwh, hi: i === 0 }));
+  const caption = kind === 'monthly' ? t('Electricity per month, kWh (months with EV charging highlighted)', 'Stroom per maand, kWh (maanden met auto laden gemarkeerd)') : t('Electricity per appliance in October, kWh', 'Stroom per apparaat in oktober, kWh');
+  return <BarsChart caption={caption} points={points} />;
+}
+
+/** Inline SVG bar chart with a screen-reader table (no chart library needed on this page). */
+function BarsChart({ caption, points }: { caption: string; points: { label: string; value: number; hi?: boolean }[] }) {
+  const id = useId();
   const W = 320;
   const H = 140;
   const base = H - 22;
@@ -50,7 +52,6 @@ function MiniChart({ kind, energy }: { kind: 'monthly' | 'breakdown'; energy: En
   const max = Math.max(...points.map((p) => p.value));
   const slot = W / points.length;
   const bw = Math.min(26, slot * 0.6);
-  const caption = kind === 'monthly' ? t('Electricity per month, kWh (months with EV charging highlighted)', 'Stroom per maand, kWh (maanden met auto laden gemarkeerd)') : t('Electricity per appliance in October, kWh', 'Stroom per apparaat in oktober, kWh');
   return (
     <figure className="ai-chart" aria-labelledby={`${id}-cap`}>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby={`${id}-cap`} preserveAspectRatio="none">
@@ -60,10 +61,10 @@ function MiniChart({ kind, energy }: { kind: 'monthly' | 'breakdown'; energy: En
           const x = i * slot + (slot - bw) / 2;
           return (
             <g key={i}>
-              <rect x={x} y={base - h} width={bw} height={h} rx={Math.min(6, bw / 3)} className={p.hi ? 'bar hi' : 'bar'} />
+              <rect x={x} y={base - h} width={bw} height={h} rx={Math.min(6, bw / 3)} className={p.hi ? 'ai-bar hi' : 'ai-bar'} />
               {points.length <= 8 && (
                 <text x={x + bw / 2} y={base - h - 4} textAnchor="middle" className="val">
-                  {p.value}
+                  {p.value.toLocaleString('en-GB')}
                 </text>
               )}
               <text x={x + bw / 2} y={H - 7} textAnchor="middle" className="lab">
@@ -118,6 +119,7 @@ function AnswerView({ answer, animate, onAsk, onNavigate, onGrow }: { answer: As
               ))}
             </ul>
           )}
+          {answer.bars && <BarsChart caption={answer.bars.caption} points={answer.bars.points} />}
           {answer.chart && energy && <MiniChart kind={answer.chart} energy={energy} />}
           {answer.draft && (
             <div className="ai-draft">
@@ -126,7 +128,7 @@ function AnswerView({ answer, animate, onAsk, onNavigate, onGrow }: { answer: As
               </span>
               <strong>{answer.draft.title}</strong>
               <p>{answer.draft.body}</p>
-              <button type="button" className="btn btn-primary btn-sm" onClick={() => onNavigate(`/staff/messages?template=${answer.draft!.templateId}`)}>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => onNavigate(answer.draft!.to ?? `/staff/messages?template=${answer.draft!.templateId}`)}>
                 <Send size={14} /> {t('Open in the composer', 'Open in de editor')}
               </button>
             </div>
@@ -184,14 +186,12 @@ function TurnView({ turn, latest, onAsk, onNavigate, onGrow }: { turn: Turn; lat
 export default function StaffAssistantPage() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
-  const { overview, assistant } = useStaff();
+  const { assistant } = useStaff();
   const { turns, busy, ask, clear, history } = assistant;
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState('');
-  const [allChips, setAllChips] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const name = overview?.customer.firstName ?? '';
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -226,11 +226,11 @@ export default function StaffAssistantPage() {
     inputRef.current?.focus();
   };
 
-  const chips = (allChips ? ALL_CHIPS : ALL_CHIPS.slice(0, CHIPS_SHOWN)).map((id) => staffPhrase(id, lang));
+  const chips = STAFF_SUGGESTIONS.map((id) => staffPhrase(id, lang));
 
   return (
     <div className="ai-page">
-      <StaffHead icon={Sparkles} title={t('AI assistant', 'AI-assistent')} sub={t('Ask about the customer’s usage, bill, installment and activity. Answers come from the same data as the other pages.', 'Vraag naar het verbruik, de nota, het termijnbedrag en de activiteit van de klant. Antwoorden komen uit dezelfde gegevens als de andere pagina’s.')} />
+      <StaffHead icon={Sparkles} title={t('AI assistant', 'AI-assistent')} sub={t('Ask about the whole customer base: what needs attention, installments, EV charging, app activity and message results, or look up a customer by name.', 'Vraag naar het hele klantenbestand: wat aandacht vraagt, termijnbedragen, laden, app-activiteit en resultaten van berichten, of zoek een klant op naam.')} />
       <div className="ai-layout">
         <section className="ai-main" aria-label={t('Service assistant', 'Service-assistent')}>
           <div ref={logRef} className="ai-log" role="log" aria-live="polite" aria-label={t('Conversation', 'Gesprek')}>
@@ -242,8 +242,8 @@ export default function StaffAssistantPage() {
                 <h2 className="ai-title">{t('Service assistant', 'Service-assistent')}</h2>
                 <p className="ai-greet">
                   {t(
-                    `Hi ${STAFF_NAME}! Ask me anything about ${name}: the bill, the installment, EV charging or what to do next. I can also draft a message for you.`,
-                    `Hoi ${STAFF_NAME}! Vraag me alles over ${name}: de nota, het termijnbedrag, laden van de auto of wat je nu het best kunt doen. Ik kan ook een bericht voor je schrijven.`,
+                    `Hi ${STAFF_NAME}! Ask me about your customers: who needs attention, how installments and messages are doing, or what is happening in the app. I can also look up a customer by name and draft a message.`,
+                    `Hoi ${STAFF_NAME}! Vraag me naar je klanten: wie aandacht nodig heeft, hoe het gaat met termijnbedragen en berichten, of wat er in de app gebeurt. Ik kan ook een klant opzoeken op naam en een bericht schrijven.`,
                   )}
                 </p>
                 <div className="ai-chips" role="group" aria-label={t('Suggested questions', 'Voorgestelde vragen')}>
@@ -253,11 +253,6 @@ export default function StaffAssistantPage() {
                       {s}
                     </button>
                   ))}
-                  {!allChips && ALL_CHIPS.length > CHIPS_SHOWN && (
-                    <button type="button" className="ai-chip more" onClick={() => setAllChips(true)}>
-                      {t('More questions', 'Meer vragen')}
-                    </button>
-                  )}
                 </div>
               </div>
             ) : (
@@ -295,7 +290,7 @@ export default function StaffAssistantPage() {
               <ArrowUp size={18} />
             </button>
           </form>
-          <p className="ai-disclosure">{t('Answers are based on this customer’s data. Check before you act on them.', 'Antwoorden zijn gebaseerd op de gegevens van deze klant. Controleer ze voordat je ernaar handelt.')}</p>
+          <p className="ai-disclosure">{t('Answers are based on your customers’ data. Check before you act on them.', 'Antwoorden zijn gebaseerd op de gegevens van je klanten. Controleer ze voordat je ernaar handelt.')}</p>
         </section>
 
         <aside className="ai-tools" aria-label={t('Conversation tools', 'Gesprekshulpmiddelen')}>

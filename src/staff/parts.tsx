@@ -11,7 +11,7 @@ import { useToast } from '../components/toast';
 import { useI18n, type Lang, type Text } from '../lib/i18n';
 import { brand } from '../brand';
 import { STAFF_NAME, ago, clock } from './kinds';
-import type { Paged } from './paging';
+import { PAGE_SIZES, type Paged } from './paging';
 import type { Connection, StaffData } from './useStaffData';
 
 export function ConnectionBadge({ state }: { state: Connection }) {
@@ -155,13 +155,30 @@ export function CustomerCard({ o, now }: { o: StaffOverview; now: number }) {
   );
 }
 
-/** "Page 2 of 7" with previous/next, under any paged table. Hidden when everything fits on one page. */
-export function Pager<T>({ paged }: { paged: Paged<T> }) {
-  const { t } = useI18n();
-  if (paged.pages <= 1) return null;
+/**
+ * Under every table: rows per page (10, 15, 30 or 50), which rows are showing, and previous/next.
+ * Always shown, also when everything fits on one page, so the choice is always there.
+ */
+export function Pager<T>({ paged }: { paged: Omit<Paged<T>, 'rows'> }) {
+  const { t, num } = useI18n();
+  if (paged.total === 0) return null;
+  const from = (paged.page - 1) * paged.size + 1;
+  const to = Math.min(paged.total, paged.page * paged.size);
   return (
-    <div className="row between pager">
-      <span className="small muted">{t(`Page ${paged.page} of ${paged.pages}`, `Pagina ${paged.page} van ${paged.pages}`)}</span>
+    <div className="pager">
+      <label className="pager-size small">
+        {t('Rows per page', 'Rijen per pagina')}
+        <select className="input" value={paged.size} onChange={(e) => paged.setSize(Number(e.target.value))}>
+          {PAGE_SIZES.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="small muted pager-range">
+        {t(`${num(from)}–${num(to)} of ${num(paged.total)}`, `${num(from)}–${num(to)} van ${num(paged.total)}`)} · {t(`Page ${paged.page} of ${paged.pages}`, `Pagina ${paged.page} van ${paged.pages}`)}
+      </span>
       <span className="row" style={{ gap: 8 }}>
         <button className="btn btn-outline btn-sm" disabled={paged.page <= 1} onClick={() => paged.setPage(paged.page - 1)}>
           <ChevronLeft size={14} /> {t('Previous', 'Vorige')}

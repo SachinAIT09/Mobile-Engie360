@@ -148,7 +148,7 @@ export function useStaffData(onActivity?: (a: Activity) => void): StaffData {
           refreshOverviewSoon();
           break;
         case 'audit:new':
-          setAudit((list) => (list.some((x) => x.id === e.entry.id) ? list : [e.entry, ...list].slice(0, MAX_ACTIVITY)));
+          setAudit((list) => (list.some((x) => x.id === e.entry.id) ? list : [e.entry, ...list].slice(0, 400)));
           break;
         case 'presence':
           setOverview((o) => (o ? { ...o, online: e.online } : o));

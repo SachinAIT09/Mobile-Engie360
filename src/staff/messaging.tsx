@@ -136,7 +136,7 @@ export function MessageHistory({ items, onCancel }: { items: OutboxItem[]; onCan
   const [status, setStatus] = useState<StatusFilter>('all');
   const [kind, setKind] = useState<'all' | 'group' | 'one'>('all');
   const rows = items.filter((o) => (status === 'all' || o.status === status) && (kind === 'all' || (kind === 'group' ? !!o.audience : !o.audience)));
-  const paged = usePaged(rows, 8);
+  const paged = usePaged(rows);
   const when = (iso: string) => date(iso, { day: 'numeric', month: 'short' });
   const filters: { id: StatusFilter; label: string }[] = [
     { id: 'all', label: t('All', 'Alle') },

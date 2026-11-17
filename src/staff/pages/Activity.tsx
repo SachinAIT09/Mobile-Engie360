@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { History, Smartphone } from 'lucide-react';
+import { History, Search, Smartphone } from 'lucide-react';
 import { Card } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { brand } from '../../brand';
 import { useStaff } from '../context';
 import { ACTION_KINDS, CATEGORIES, KIND_ICON, KIND_LABEL, ago } from '../kinds';
-import { StaffHead } from '../parts';
+import { usePaged } from '../paging';
+import { Pager, StaffHead } from '../parts';
 
 /** Everything the customer does in the app, as a live table with filters (the Hydro "Customer activity" page). */
 export default function StaffActivity() {
@@ -14,7 +15,10 @@ export default function StaffActivity() {
   const { feed: activity, fresh, now } = useStaff();
   const [filter, setFilter] = useState('all');
   const cat = CATEGORIES.find((c) => c.id === filter);
-  const rows = cat ? activity.filter((a) => cat.kinds.includes(a.kind)) : activity;
+  const [q, setQ] = useState('');
+  const needle = q.trim().toLowerCase();
+  const rows = activity.filter((a) => (!cat || cat.kinds.includes(a.kind)) && (!needle || `${a.customerName ?? ''} ${tx(a.text)}`.toLowerCase().includes(needle)));
+  const paged = usePaged(rows);
 
   return (
     <>
@@ -29,6 +33,12 @@ export default function StaffActivity() {
             <History size={20} aria-hidden /> {t('Live feed', 'Live feed')}
           </span>
         }
+        action={
+          <label className="cust-search">
+            <Search size={16} aria-hidden />
+            <input className="input" type="search" value={q} placeholder={t('Search customer or action', 'Zoek klant of actie')} aria-label={t('Search activity', 'Zoek in activiteit')} onChange={(e) => setQ(e.target.value)} />
+          </label>
+        }
         sub={t(`${rows.length} of the latest ${activity.length} entries`, `${rows.length} van de laatste ${activity.length} regels`)}
       >
         <div className="pills" role="group" aria-label={t('Filter', 'Filter')}>
@@ -42,7 +52,7 @@ export default function StaffActivity() {
           ))}
         </div>
         {rows.length === 0 ? (
-          <p className="small muted staff-empty">{t(`Nothing here yet. Sign in to ${brand.portal} on a phone or in another tab.`, `Nog niets. Log in bij ${brand.portal} op een telefoon of in een ander tabblad.`)}</p>
+          <p className="small muted staff-empty">{t('Nothing matches this filter or search.', 'Niets gevonden bij dit filter of deze zoekopdracht.')}</p>
         ) : (
           <div className="table-wrap mt">
             <table className="table staff-table">
@@ -55,7 +65,7 @@ export default function StaffActivity() {
                 </tr>
               </thead>
               <tbody aria-live="polite">
-                {rows.map((a) => {
+                {paged.rows.map((a) => {
                   const Icon = KIND_ICON[a.kind];
                   return (
                     <tr key={a.id} className={fresh.has(a.id) ? 'fresh' : undefined}>
@@ -81,6 +91,7 @@ export default function StaffActivity() {
             </table>
           </div>
         )}
+        <Pager paged={paged} />
       </Card>
     </>
   );

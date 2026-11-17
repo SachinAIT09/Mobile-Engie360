@@ -103,7 +103,7 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
   r.on('GET', API.staffPortfolio, () => store.portfolio(live.customersOnline, push.devices));
   r.on('GET', API.staffFeed, () => store.feed());
   r.on('GET', API.staffCustomers, ({ url }) =>
-    store.customers({ q: url.searchParams.get('q') ?? '', filter: (url.searchParams.get('filter') ?? 'all') as CustomerFilter, page: Number(url.searchParams.get('page') ?? 1) || 1 }, live.customersOnline, push.devices),
+    store.customers({ q: url.searchParams.get('q') ?? '', filter: (url.searchParams.get('filter') ?? 'all') as CustomerFilter, page: Number(url.searchParams.get('page') ?? 1) || 1, size: Number(url.searchParams.get('size') ?? 10) || 10 }, live.customersOnline, push.devices),
   );
   r.on('GET', '/api/staff/customers/:id', ({ params }) => store.customerDetail(params.id!, live.customersOnline, push.devices));
   r.on('POST', '/api/staff/outbox/:id/cancel', ({ params }) => store.cancelOutbox(params.id!));

@@ -400,7 +400,7 @@ export interface CustomerSummary {
 
 export type CustomerFilter = 'all' | 'attention' | 'online' | AttentionFlag;
 
-/** GET /api/staff/customers?q=&filter=&page= */
+/** GET /api/staff/customers?q=&filter=&page=&size= (size: 10, 15, 30 or 50; default 10) */
 export interface CustomersResponse {
   total: number;
   matched: number;

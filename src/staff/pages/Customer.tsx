@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Activity as ActivityIcon, BellRing, CarFront, ChevronLeft, FileText, Send, Sparkles, UserRound } from 'lucide-react';
 import type { CustomerDetail } from '../../../shared/contract';
-import { API, get } from '../../api/client';
+import { API, get, post } from '../../api/client';
 import { Card, InsightIc } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
 import { brand } from '../../brand';
@@ -13,6 +13,7 @@ import { ACTION_KINDS, CATEGORIES, KIND_ICON, ago, clock } from '../kinds';
 import { Conversations, StaffHead } from '../parts';
 
 type Tab = 'overview' | 'timeline' | 'billing' | 'appliances' | 'messages' | 'eva';
+const TABS: Tab[] = ['overview', 'timeline', 'billing', 'appliances', 'messages', 'eva'];
 
 /** Everything about the customer in one place: timeline, contract and billing, appliances, messages, Eva. */
 export default function StaffCustomer() {
@@ -54,7 +55,15 @@ export default function StaffCustomer() {
   const outbox = ctx.outbox.filter((m) => (isLive ? !m.customer && (!m.audience || m.audience.includesLive) : m.customer?.id === id || (m.audience && flagIds.includes(m.audience.segment))));
   const inbox = isLive ? ctx.inbox : [];
   const conversations = isLive ? ctx.conversations : [];
-  const [tab, setTab] = useState<Tab>('overview');
+  // A link can open a tab directly (?tab=eva).
+  const [params] = useSearchParams();
+  const wantedTab = params.get('tab') as Tab | null;
+  const [tab, setTab] = useState<Tab>(wantedTab && TABS.includes(wantedTab) ? wantedTab : 'overview');
+  // Opening a customer record is part of the audit trail.
+  const name = isLive && ctx.overview ? `${ctx.overview.customer.firstName} ${ctx.overview.customer.lastName}` : detail ? `${detail.summary.firstName} ${detail.summary.lastName}` : '';
+  useEffect(() => {
+    if (name) post(API.staffAudit, { action: 'CUSTOMER_VIEWED', target: name }).catch(() => undefined);
+  }, [name]);
   const [filter, setFilter] = useState('all');
   if (!o) return <StaffHead icon={UserRound} title={t('Customer', 'Klant')} sub={missing ? t('This customer could not be found.', 'Deze klant is niet gevonden.') : t('Loading the customer…', 'Klant wordt geladen…')} />;
 
@@ -115,7 +124,7 @@ export default function StaffCustomer() {
           </div>
         </div>
         <div className="cust-actions">
-          <Link to={isLive ? '/staff/messages' : `/staff/messages?customer=${id}`} className="btn btn-primary btn-sm">
+          <Link to={`/staff/messages?customer=${id}`} className="btn btn-primary btn-sm">
             <Send size={14} /> {t('Send message', 'Stuur bericht')}
           </Link>
           <Link to="/staff/assistant" className="btn btn-outline btn-sm">
@@ -136,7 +145,7 @@ export default function StaffCustomer() {
       {tab === 'overview' && (
         <>
           <div className="staff-grid wide-left even">
-            <AttentionPanel items={attention} customerId={isLive ? undefined : id} />
+            <AttentionPanel items={attention} customerId={id} />
             {billing && <CostCard billing={billing} installment={o.installment} />}
           </div>
           {energy && (

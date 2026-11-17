@@ -94,7 +94,8 @@ const FLAG_INFO: Record<AttentionFlag, { label: Text; detail: Text; icon: QueueI
   'ev-peak': { label: T('EV charging at peak hours', 'Auto laden in piekuren'), detail: T('They charge in the most expensive hours. Smart charging saves about €142 a year each.', 'Ze laden in de duurste uren. Slim laden bespaart elk zo’n €142 per jaar.'), icon: 'ev', tone: 'info', templateId: 'cheap-hours' },
   'night-use': { label: T('Unusual night-time use', 'Ongebruikelijk nachtverbruik'), detail: T('Several times the normal night load in the past week. Ask if something was left on.', 'Meerdere keren het normale nachtverbruik in de afgelopen week. Vraag of er iets aan bleef staan.'), icon: 'moon', tone: 'alert', templateId: 'night-use' },
 };
-const PAGE_SIZE = 25;
+/** Rows per page the customer list accepts; anything else falls back to 10. */
+const PAGE_SIZES = [10, 15, 30, 50];
 /** How busy the app is through the day: actions per 100 app users, per hour (Amsterdam time). */
 const HOURLY = [1, 1, 0, 0, 1, 2, 5, 9, 11, 9, 8, 8, 10, 9, 8, 8, 9, 12, 15, 17, 14, 10, 6, 3];
 const EVA_QUESTIONS = ['Why is my energy bill higher this month?', 'When should I charge my EV?', 'What is my current monthly installment?', 'How can I reduce my electricity costs?', 'Can you explain my latest invoice?'];
@@ -111,7 +112,12 @@ export class Store {
 
   // ------------------------------------------------------------ seed / reset
 
+  /** Back to the starting data. All of it is written in one transaction, so a reset takes milliseconds. */
   seed(): void {
+    this.db.transaction(() => this.writeSeed());
+  }
+
+  private writeSeed(): void {
     this.db.set<InstallmentState>('installment', { current: contract.installment, advised: contract.advisedInstallment, pending: null });
     this.db.set<PayState>('pay', { ...PAY_DEFAULTS });
     this.db.set<string[]>('plan', ['ev-peak']);
@@ -370,8 +376,9 @@ export class Store {
     return [live, ...rest];
   }
 
-  /** The customer list: search, filter, 25 a page. The live customer first, then most recently seen. */
-  customers(query: { q?: string; filter?: CustomerFilter; page?: number }, online: number, pushDevices: number): CustomersResponse {
+  /** The customer list: search, filter, 10/15/30/50 a page. The live customer first, then most recently seen. */
+  customers(query: { q?: string; filter?: CustomerFilter; page?: number; size?: number }, online: number, pushDevices: number): CustomersResponse {
+    const PAGE_SIZE = PAGE_SIZES.includes(query.size ?? 0) ? query.size! : 10;
     const all = this.summaries(online, pushDevices);
     const q = (query.q ?? '').trim().toLowerCase();
     const filter = query.filter ?? 'all';
@@ -629,7 +636,7 @@ export class Store {
     const since = now - months * 30.4 * DAY;
     // More customers use the app every month; the latest month is today's figure.
     const USE = [0.5, 0.52, 0.55, 0.57, 0.58, 0.61, 0.63, 0.66, 0.68, 0.7, 0.72, 0.74];
-    const active = sel.filter((c) => c.lastSeen && now - new Date(c.lastSeen).getTime() < 30 * DAY).length;
+    const active = Math.round(appUsers * USE[11]!);
     const campaigns = this.outbox()
       .filter((o) => o.status === 'sent' && o.audience && o.sentAt && new Date(o.sentAt).getTime() >= since)
       .map((o) => ({ id: o.id, title: o.title, audience: o.audience!.label, sentAt: o.sentAt!, sent: Math.round(o.audience!.count * share), delivered: Math.round(o.audience!.delivered * share), opened: Math.round(o.audience!.read * share), acted: Math.round(o.audience!.acted * share) }))
@@ -657,7 +664,7 @@ export class Store {
           gasKm3: Math.round(m3 / 100) / 10,
           costK: Math.round((kwh * contract.electricity.avgPrice + m3 * contract.gas.price + contract.fixedPerMonth * sel.length) / 100) / 10,
           installmentsK: Math.round(installments / 100) / 10,
-          activeUsers: i === list.length - 1 ? active : Math.round(appUsers * USE[12 - list.length + i]!),
+          activeUsers: Math.round(appUsers * USE[12 - list.length + i]!),
         };
       }),
       attention: FLAGS.map((f) => ({ id: f, label: FLAG_INFO[f].label, count: sel.filter((c) => c.flags.includes(f)).length })),

@@ -64,6 +64,18 @@ export class Db {
     return (this.sql.prepare('SELECT COUNT(*) AS n FROM docs WHERE tbl = ?').get(tbl) as { n: number }).n;
   }
 
+  /** Run many writes as one transaction: one disk sync instead of one per write. */
+  transaction(fn: () => void): void {
+    this.sql.exec('BEGIN');
+    try {
+      fn();
+      this.sql.exec('COMMIT');
+    } catch (e) {
+      this.sql.exec('ROLLBACK');
+      throw e;
+    }
+  }
+
   close(): void {
     this.sql.close();
   }

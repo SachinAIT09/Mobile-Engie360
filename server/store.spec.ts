@@ -248,15 +248,18 @@ describe('customer base', () => {
 
   it('has 1,248 customers with US names, the live customer first', () => {
     const page = store.customers({}, 1, 0);
-    expect(page).toMatchObject({ total: 1248, matched: 1248, page: 1, pageSize: 25 });
-    expect(page.rows).toHaveLength(25);
+    expect(page).toMatchObject({ total: 1248, matched: 1248, page: 1, pageSize: 10 });
+    expect(page.rows).toHaveLength(10);
+    // Rows per page: 10, 15, 30 or 50; anything else falls back to 10.
+    expect(store.customers({ size: 30 }, 0, 0).rows).toHaveLength(30);
+    expect(store.customers({ size: 7 }, 0, 0).pageSize).toBe(10);
     expect(page.rows[0]).toMatchObject({ firstName: 'Olivia', lastName: 'Carter', live: true, online: true });
-    const all = store.customers({ page: 50 }, 0, 0);
-    expect(all.page).toBe(50);
-    expect(all.rows).toHaveLength(1248 - 49 * 25);
+    const all = store.customers({ page: 99, size: 50 }, 0, 0); // past the end: the last page
+    expect(all.page).toBe(25);
+    expect(all.rows).toHaveLength(1248 - 24 * 50);
     // Unique names.
     const names = new Set<string>();
-    for (let p = 1; p <= 50; p++) for (const c of store.customers({ page: p }, 0, 0).rows) names.add(`${c.firstName} ${c.lastName}`);
+    for (let p = 1; p <= 25; p++) for (const c of store.customers({ page: p, size: 50 }, 0, 0).rows) names.add(`${c.firstName} ${c.lastName}`);
     expect(names.size).toBe(1248);
   });
 

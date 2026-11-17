@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
-import { BarChart3, History, LayoutDashboard, MessageSquareText, RotateCw, Send, Settings, Smartphone, Sparkles, Users } from 'lucide-react';
+import { BarChart3, History, LayoutDashboard, RotateCw, Send, Settings, Smartphone, Sparkles, Users } from 'lucide-react';
 import type { Activity, ActivityKind } from '../../shared/contract';
 import { Brand } from '../components/Layout';
 import { PresenterBar } from '../components/PresenterBar';
@@ -22,7 +22,6 @@ const loaders = {
   customers: () => import('./pages/Customers'),
   customer: () => import('./pages/Customer'),
   activity: () => import('./pages/Activity'),
-  conversations: () => import('./pages/Conversations'),
   messages: () => import('./pages/Messages'),
   assistant: () => import('./pages/Assistant'),
   reports: () => import('./pages/Reports'),
@@ -32,7 +31,6 @@ const loaders = {
 const StaffCustomers = lazy(loaders.customers);
 const StaffCustomer = lazy(loaders.customer);
 const StaffActivity = lazy(loaders.activity);
-const StaffConversations = lazy(loaders.conversations);
 const StaffMessages = lazy(loaders.messages);
 const StaffAssistant = lazy(loaders.assistant);
 const StaffReports = lazy(loaders.reports);
@@ -107,7 +105,6 @@ function StaffLayout() {
     { key: 'dash', icon: LayoutDashboard, label: t('Dashboard', 'Dashboard'), to: '/staff', end: true },
     { key: 'customers', icon: Users, label: t('Customers', 'Klanten'), to: '/staff/customers' },
     { key: 'activity', icon: Smartphone, label: t('Customer activity', 'Klantactiviteit'), to: '/staff/activity' },
-    { key: 'conv', icon: MessageSquareText, label: t(`${brand.assistant.name} conversations`, `Gesprekken met ${brand.assistant.name}`), to: '/staff/conversations' },
     { key: 'messages', icon: Send, label: t('Messages', 'Berichten'), to: '/staff/messages' },
     { key: 'reports', icon: BarChart3, label: t('Reports', 'Rapporten'), to: '/staff/reports' },
     { key: 'assistant', icon: Sparkles, label: t('AI assistant', 'AI-assistent'), to: '/staff/assistant' },
@@ -180,7 +177,8 @@ export default function StaffApp() {
         <Route path="customers/:id" element={<StaffCustomer />} />
         <Route path="customer" element={<Navigate to={`/staff/customers/${LIVE_CUSTOMER_ID}`} replace />} />
         <Route path="activity" element={<StaffActivity />} />
-        <Route path="conversations" element={<StaffConversations />} />
+        {/* The separate conversations page is gone; a customer's chats are on their own page. */}
+        <Route path="conversations" element={<Navigate to={`/staff/customers/${LIVE_CUSTOMER_ID}?tab=eva`} replace />} />
         <Route path="messages" element={<StaffMessages />} />
         <Route path="assistant" element={<StaffAssistant />} />
         <Route path="reports" element={<StaffReports />} />

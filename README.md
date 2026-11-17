@@ -58,7 +58,6 @@ Top bar (language, theme menu Dark/Light/Match system, live status, avatar) and 
 | `/staff/customers` | Customer list: 1,248 customers (US names), search, filters, paging |
 | `/staff/customers/:id` | Customer page: attention points, cost, usage, visits, timeline, contract and billing, appliances, messages, Eva |
 | `/staff/activity` | Customer activity: live table with filters (Account, Billing, Savings & charging, Eva, Messages, Views) |
-| `/staff/conversations` | Eva conversations, live |
 | `/staff/messages` | Write a message (templates or your own), see sent and read |
 | `/staff/reports` | Reports: usage, cost against the installment, appliances, app activity, message delivery, Eva topics; CSV export per card |
 | `/staff/assistant` | AI assistant (scripted): questions about the customer, message drafts that open in the composer |

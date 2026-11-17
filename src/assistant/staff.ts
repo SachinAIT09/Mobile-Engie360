@@ -307,8 +307,8 @@ export function staffReply(question: string, s: StaffAssistantState): AssistantR
         intent,
         text:
           L(
-            `In the last three months the team sent **${n(s.campaigns.length)} messages to groups**, ${n(sent)} deliveries in all. **${pct(opened, delivered)}%** were opened and **${pct(acted, delivered)}%** of customers did what the message asked.`,
-            `In de laatste drie maanden stuurde het team **${n(s.campaigns.length)} berichten aan groepen**, samen ${n(sent)} afleveringen. **${pct(opened, delivered)}%** werd geopend en **${pct(acted, delivered)}%** van de klanten deed wat het bericht vroeg.`,
+            `In the last four months the team sent **${n(s.campaigns.length)} messages to groups**, ${n(sent)} deliveries in all. **${pct(opened, delivered)}%** were opened and **${pct(acted, delivered)}%** of customers did what the message asked.`,
+            `In de laatste vier maanden stuurde het team **${n(s.campaigns.length)} berichten aan groepen**, samen ${n(sent)} afleveringen. **${pct(opened, delivered)}%** werd geopend en **${pct(acted, delivered)}%** van de klanten deed wat het bericht vroeg.`,
           ) + (best ? `\n${L(`Best result: “${best.title.en}” to ${n(best.audience!.count)} customers, ${pct(best.audience!.acted, best.audience!.delivered)}% acted on it.`, `Beste resultaat: “${best.title.nl}” aan ${n(best.audience!.count)} klanten, ${pct(best.audience!.acted, best.audience!.delivered)}% deed er iets mee.`)}` : ''),
         facts: [
           { label: L('Sent', 'Verstuurd'), value: n(sent) },

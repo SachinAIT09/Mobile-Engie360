@@ -27,7 +27,7 @@ export const DEMO_STEPS: DemoStep[] = [
   {
     title: { en: 'Eva conversations', nl: 'Gesprekken met Eva' },
     say: { en: 'On the phone: tap Eva → “Why is my energy bill higher this month?”. Read along here, live.', nl: 'Op de telefoon: tik op Eva → “Waarom is mijn energierekening hoger deze maand?”. Lees hier live mee.' },
-    route: '/staff/conversations',
+    route: '/staff/customers/C-2003418762?tab=eva',
   },
   {
     title: { en: 'Send to phone', nl: 'Naar telefoon sturen' },

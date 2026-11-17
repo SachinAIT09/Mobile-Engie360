@@ -113,9 +113,11 @@ test.describe('customer ↔ staff, live', () => {
     await ctx.close();
   });
 
-  test('Eva conversations appear live for staff', async ({ page, browser }) => {
+  test('Eva conversations appear live on the customer\'s page', async ({ page, browser }) => {
     await fresh(page);
+    // The separate conversations page is gone; its old address opens the customer's Eva tab.
     const staff = await staffPage(browser, '/staff/conversations');
+    await expect(staff).toHaveURL(/\/staff\/customers\/C-2003418762\?tab=eva$/);
     await openEva(page);
     await ask(page, 'Why is my energy bill higher this month?');
     await expect(staff.locator('.staff-thread')).toContainText('Why is my energy bill higher this month?', { timeout: 8000 });
@@ -162,13 +164,16 @@ test.describe('customer ↔ staff, live', () => {
 
 test('a staff message written by hand is shown as read once the customer opens it', async ({ page, browser }) => {
   await fresh(page);
-  const staff = await staffPage(browser, '/staff/messages');
+  const staff = await staffPage(browser, '/staff/messages?customer=C-2003418762');
+  await expect(staff.locator('.aud-picked')).toContainText('Olivia Carter');
   await staff.getByLabel('Title', { exact: true }).fill('Hello Olivia');
   await staff.getByLabel('Message', { exact: true }).fill('Thanks for being a customer.');
   await staff.getByRole('button', { name: /^Send$/ }).click();
   await expect(page.locator('.toast').last()).toContainText('Hello Olivia', { timeout: 8000 });
+  const row = staff.locator('.history-table tbody tr', { hasText: 'Hello Olivia' });
+  await expect(row).toContainText('Not yet');
   await page.getByRole('button', { name: /Notifications/ }).click();
   await page.locator('.pop-item', { hasText: 'Hello Olivia' }).click();
-  await expect(staff.locator('.outbox li', { hasText: 'Hello Olivia' })).toContainText(/Read \d\d:\d\d/, { timeout: 8000 });
+  await expect(row).toContainText('Yes', { timeout: 8000 });
   await staff.context().close();
 });
