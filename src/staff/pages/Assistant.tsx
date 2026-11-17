@@ -1,9 +1,10 @@
 import { Fragment, useCallback, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUp, History, Mic, PenLine, Send, Sparkles, SquarePen } from 'lucide-react';
+import { ArrowUp, History, PenLine, Send, Sparkles, SquarePen } from 'lucide-react';
 import type { EnergyResponse } from '../../../shared/contract';
 import { STAFF_SUGGESTIONS, staffPhrase } from '../../assistant/staff';
 import type { AssistantReply } from '../../assistant/types';
+import { VoiceButton } from '../../components/VoiceButton';
 import { useI18n } from '../../lib/i18n';
 import { revealWords, useTypewriter, wordCount } from '../../lib/useTypewriter';
 import { brand } from '../../brand';
@@ -284,9 +285,7 @@ export default function StaffAssistantPage() {
                 }
               }}
             />
-            <button type="button" className="ai-round ghost" aria-label={t('Voice input (not available)', 'Spraakinvoer (niet beschikbaar)')} title={t('Voice input is not available', 'Spraakinvoer is niet beschikbaar')} disabled>
-              <Mic size={18} />
-            </button>
+            <VoiceButton value={draft} onChange={setDraft} className="ai-round ghost" />
             <button type="submit" className="ai-round" aria-label={t('Send question', 'Verstuur vraag')} disabled={!draft.trim() || busy}>
               <ArrowUp size={18} />
             </button>

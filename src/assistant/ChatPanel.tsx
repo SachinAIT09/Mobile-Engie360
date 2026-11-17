@@ -4,6 +4,7 @@ import { useI18n } from '../lib/i18n';
 import { breakdown, monthly } from '../data/energy';
 import type { ChatAction, ChatMessage } from './types';
 import type { ChatSession } from './useChatSession';
+import { VoiceButton } from '../components/VoiceButton';
 import './chat.css';
 import { brand } from '../brand';
 
@@ -199,26 +200,25 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
       </header>
 
       <div className="chat-scroll" ref={scroller}>
-        <div className="msg bot">
-          <div className="bot-ic" aria-hidden>
-            <Sparkles size={14} />
-          </div>
-          <div className="bot-body">
-            <div className="bubble">
+        {/* A new chat opens on a greeting with things to ask, not on an empty transcript. */}
+        {messages.length === 0 && (
+          <div className="chat-hero">
+            <span className="chat-orb" aria-hidden>
+              <Sparkles size={26} />
+            </span>
+            <div className="chat-hero-text">
               <Rich text={welcome} />
             </div>
             {intro}
-          </div>
-        </div>
-
-        {messages.length === 0 && (
-          <div className="chat-suggest">
-            <span>{t('Suggested questions', 'Veelgestelde vragen')}</span>
-            {suggestions.map((s) => (
-              <button key={s} onClick={() => send(s)}>
-                {s}
-              </button>
-            ))}
+            <div className="chat-suggest">
+              <span>{t('Suggested questions', 'Veelgestelde vragen')}</span>
+              {suggestions.map((s) => (
+                <button key={s} onClick={() => send(s)}>
+                  <Sparkles size={13} aria-hidden />
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -271,6 +271,7 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
             }
           }}
         />
+        <VoiceButton value={draft} onChange={setDraft} className="chat-mic" />
         <button type="submit" className="chat-send" disabled={!draft.trim() || typing} aria-label={t('Send', 'Verstuur')}>
           <ArrowUp size={18} />
         </button>

@@ -228,3 +228,68 @@ test.describe('customer app on a laptop', () => {
     expect((await page.frameLocator('.phone-frame iframe').locator('.chat-widget').boundingBox())?.width).toBeGreaterThan(400);
   });
 });
+
+test('a finished payment plays the payment-done sound', async ({ page }) => {
+  // Count the notes the page plays (the test cannot hear them).
+  await page.addInitScript(() => {
+    const w = window as unknown as { __notes: number };
+    w.__notes = 0;
+    const create = AudioContext.prototype.createOscillator;
+    AudioContext.prototype.createOscillator = function (this: AudioContext) {
+      w.__notes++;
+      return create.call(this);
+    };
+  });
+  await fresh(page, '/app/billing');
+  await page.getByRole('button', { name: 'Pay now instead' }).click();
+  const sheet = page.locator('.modal.sheet');
+  await sheet.getByRole('button', { name: /^Pay €185\.00/ }).click();
+  // Nothing yet while it is processing…
+  expect(await page.evaluate(() => (window as unknown as { __notes: number }).__notes)).toBe(0);
+  await expect(sheet.locator('.pay-tick')).toBeVisible({ timeout: 8000 });
+  // …and the chime (three notes) once the payment is done.
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __notes: number }).__notes)).toBe(3);
+});
+
+test('voice to text in Eva: speak, the words appear in the box, then send', async ({ page }) => {
+  // A stand-in for the browser's speech recognition: "hears" a question shortly after it starts.
+  await page.addInitScript(() => {
+    class FakeRecognition {
+      lang = '';
+      interimResults = false;
+      continuous = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        (window as unknown as { __speechLang: string }).__speechLang = this.lang;
+        setTimeout(() => this.onresult?.({ results: [[{ transcript: 'Why is my energy bill' }]] }), 150);
+        setTimeout(() => this.onresult?.({ results: [[{ transcript: 'Why is my energy bill higher this month' }]] }), 300);
+      }
+      stop() {
+        this.onend?.();
+      }
+      abort() {
+        this.onend?.();
+      }
+    }
+    // Chrome has both names; the app prefers the unprefixed one.
+    const w = window as unknown as { SpeechRecognition: unknown; webkitSpeechRecognition: unknown };
+    w.SpeechRecognition = FakeRecognition;
+    w.webkitSpeechRecognition = FakeRecognition;
+  });
+  await fresh(page);
+  await openEva(page);
+  const box = page.locator('.chat-input textarea');
+  await page.getByRole('button', { name: 'Speak your question' }).click();
+  // While listening the button says so, and the words arrive as they are spoken.
+  await expect(page.getByRole('button', { name: 'Stop listening' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(box).toHaveValue('Why is my energy bill higher this month');
+  expect(await page.evaluate(() => (window as unknown as { __speechLang: string }).__speechLang)).toBe('en-US');
+  await page.getByRole('button', { name: 'Stop listening' }).click();
+  await expect(page.getByRole('button', { name: 'Speak your question' })).toBeVisible();
+  // Nothing was sent by speaking; the customer sends it.
+  await expect(page.locator('.msg.user')).toHaveCount(0);
+  await page.locator('.chat-send').click();
+  await expect(page.locator('.msg.bot .bubble').last()).toContainText('12% higher');
+});
