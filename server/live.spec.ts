@@ -38,15 +38,21 @@ describe('Live: event ids and catching up after a reconnect', () => {
     const first = stream(live, 'customer');
     live.emit(plan(1));
     live.emit(plan(2));
-    expect(first.events().map((e) => e.id)).toEqual([0, 1, 2]); // hello has no id
+    expect(first.events().map((e) => e.id)).toEqual([0, 1, 2]); // hello carries the position so far (0)
     first.close();
     live.emit(plan(3));
     live.emit({ type: 'outbox:changed' }); // staff only
     live.emit(plan(4));
     const again = stream(live, 'customer', { lastId: '2' });
-    expect(again.events().filter((e) => e.id).map((e) => e.id)).toEqual([3, 5]); // 4 was not for customers
+    expect(again.events().filter((e) => e.event.type !== 'hello').map((e) => e.id)).toEqual([3, 5]); // 4 was not for customers
     const staff = stream(live, 'staff', { lastId: '2' });
-    expect(staff.events().filter((e) => e.id).map((e) => e.id)).toEqual([3, 4, 5]);
+    expect(staff.events().filter((e) => e.event.type !== 'hello').map((e) => e.id)).toEqual([3, 4, 5]);
+    // A stream that only ever got its hello still knows where it was: the hello carries the position.
+    const idle = stream(live, 'customer');
+    expect(idle.events()[0]).toMatchObject({ id: 5, event: { type: 'hello' } });
+    idle.close();
+    live.emit(plan(6));
+    expect(stream(live, 'customer', { lastId: '5' }).events().map((e) => e.id)).toEqual([6, 6]); // hello at 6, then event 6
     // A first connection (no Last-Event-ID) gets no history.
     expect(stream(live, 'staff').types()).toEqual(['hello']);
   });
@@ -69,9 +75,14 @@ describe('Live: event ids and catching up after a reconnect', () => {
     live.emit(plan(2)); // 3 s ago
     live.emit({ type: 'outbox:changed' }); // staff only
     vi.advanceTimersByTime(3000);
-    expect(stream(live, 'customer', { replayMs: 5000 }).events().filter((e) => e.id).map((e) => e.id)).toEqual([2]);
-    expect(stream(live, 'staff', { replayMs: 5000 }).events().filter((e) => e.id).map((e) => e.id)).toEqual([2, 3]);
-    expect(stream(live, 'staff', { replayMs: 60_000 }).events().filter((e) => e.id).map((e) => e.id)).toEqual([1, 2, 3]);
+    const replayed = (role: Role, o: { lastId?: string; replayMs?: number }) =>
+      stream(live, role, o)
+        .events()
+        .filter((e) => e.event.type !== 'hello')
+        .map((e) => e.id);
+    expect(replayed('customer', { replayMs: 5000 })).toEqual([2]);
+    expect(replayed('staff', { replayMs: 5000 })).toEqual([2, 3]);
+    expect(replayed('staff', { replayMs: 60_000 })).toEqual([1, 2, 3]);
     // A stream that knows where it was uses its id, not the age.
     expect(stream(live, 'staff', { lastId: '3', replayMs: 60_000 }).types()).toEqual(['hello']);
   });

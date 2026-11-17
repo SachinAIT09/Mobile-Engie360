@@ -74,7 +74,9 @@ export class Live {
     const oldest = this.recent[0]?.id ?? this.seq + 1;
     // Too far behind to replay, or ids from before a restart: tell the client to reload its data.
     const stale = last !== null && (!Number.isFinite(last) || last > this.seq || last < oldest - 1);
-    res.write(`event: hello\ndata: ${JSON.stringify({ type: 'hello', serverTime: new Date().toISOString(), role, ...(stale ? { stale: true } : {}) } satisfies LiveEvent)}\n\n`);
+    // The hello carries the current position, so a stream that ends before any other event arrives still
+    // reconnects with a Last-Event-ID and gets whatever was sent in between.
+    res.write(`id: ${this.seq}\nevent: hello\ndata: ${JSON.stringify({ type: 'hello', serverTime: new Date().toISOString(), role, ...(stale ? { stale: true } : {}) } satisfies LiveEvent)}\n\n`);
     if (last !== null && !stale) for (const r of this.recent) if (r.id > last && this.allowed(role, r.event)) this.write(client, r.id, r.event);
     if (last === null && replayMs > 0) {
       const since = Date.now() - Math.min(replayMs, MAX_REPLAY_MS);
