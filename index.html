@@ -11,6 +11,23 @@
         if (t === 'system') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t;
       } catch (e) {}
+      // If one of the app's own script files fails to download (a dropped request), the app cannot start
+      // and the page would stay blank. Reload once; `src/lib/recover.ts` clears the mark when the app is up.
+      window.addEventListener(
+        'error',
+        function (e) {
+          var el = e.target;
+          if (!el || (el.tagName !== 'SCRIPT' && el.tagName !== 'LINK')) return;
+          try {
+            if (sessionStorage.getItem('engie-demo-recovering')) return;
+            sessionStorage.setItem('engie-demo-recovering', '1');
+          } catch (x) {
+            return;
+          }
+          location.reload();
+        },
+        true
+      );
     </script>
     <title>MijnENGIE</title>
   </head>

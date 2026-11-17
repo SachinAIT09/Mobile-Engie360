@@ -7,6 +7,7 @@ import { ToastProvider } from './components/ui';
 import { LiveProvider } from './api/LiveProvider';
 import Root from './Root';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { recovered } from './lib/recover';
 import { isPortalPath, isStaffPath, portalUrl } from './lib/routes';
 import { wantsPhoneFrame } from './lib/frame';
 import { PhoneFrame } from './components/PhoneFrame';
@@ -53,3 +54,6 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>
   ),
 );
+
+// The app started: a later failed download may trigger its one automatic reload again.
+recovered();

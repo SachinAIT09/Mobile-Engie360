@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { RotateCw } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
+import { isLoadFailure, reloadOnce } from '../lib/recover';
 
 function Fallback() {
   const { t } = useI18n();
@@ -17,6 +18,7 @@ function Fallback() {
 
 /**
  * Last line of defence: if a screen fails to load or render, show a way back instead of a blank page.
+ * A screen whose files could not be downloaded is recovered by one automatic reload first.
  * (Error boundaries have to be class components.)
  */
 export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -27,6 +29,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: 
   }
 
   componentDidCatch(error: unknown) {
+    if (isLoadFailure(error) && reloadOnce()) return;
     console.error('[app] screen failed', error);
   }
 
