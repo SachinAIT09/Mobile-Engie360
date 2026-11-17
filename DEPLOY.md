@@ -75,6 +75,8 @@ $env:BASE_URL = "https://<service>.development.catalystappsail.in"; npm run e2e 
 
 Both reset the demo data on the server they test.
 
+From a network that interferes with the hosted site (an antivirus web filter that re-signs HTTPS, a company proxy), run the browser suite with `$env:E2E_SHORT_STREAMS = "1"` and `$env:E2E_IGNORE_CONSOLE = "ERR_CERT_COMMON_NAME_INVALID"`: the first starts with short live streams, the second ignores the filter's own certificate errors in the browser console.
+
 Catalyst adds `X-Frame-Options: DENY` to every response. The customer app's phone column on a laptop is an iframe of the app itself; it works because pages send `Content-Security-Policy: frame-ancestors 'self'`, which browsers follow instead (`server/http.ts`). If the column is ever blocked anyway, the app shows itself without the column.
 
 What to expect on AppSail:

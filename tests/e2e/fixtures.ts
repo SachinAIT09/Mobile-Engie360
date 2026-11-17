@@ -6,7 +6,7 @@ export const test = base.extend<{ consoleErrors: string[] }>({
     async ({ page }, use) => {
       const errors: string[] = [];
       page.on('console', (m) => {
-        if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${m.type()}] ${m.text()}`);
+        if ((m.type() === 'error' || m.type() === 'warning') && !IGNORED_CONSOLE?.test(m.text())) errors.push(`[${m.type()}] ${m.text()}`);
       });
       page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
       await use(errors);
@@ -18,6 +18,15 @@ export const test = base.extend<{ consoleErrors: string[] }>({
 
 export { expect };
 
+/**
+ * For a run against a hosted site from a network that interferes (an antivirus web filter, a company proxy):
+ *   E2E_IGNORE_CONSOLE  a pattern of console messages that are the network's, not the app's
+ *                       (for example ERR_CERT_COMMON_NAME_INVALID);
+ *   E2E_SHORT_STREAMS=1 start with short live streams instead of first detecting that streams are held back.
+ */
+const IGNORED_CONSOLE = process.env.E2E_IGNORE_CONSOLE ? new RegExp(process.env.E2E_IGNORE_CONSOLE) : null;
+const SHORT_STREAMS = process.env.E2E_SHORT_STREAMS === '1';
+
 /** The demo customer's session id (see src/lib/session.ts). */
 const SESSION = 'C-2003418762';
 
@@ -28,7 +37,8 @@ const SESSION = 'C-2003418762';
  */
 export async function fresh(page: Page, path = '/app', { signedIn = true } = {}) {
   await page.addInitScript(
-    ({ session, signedIn }) => {
+    ({ session, signedIn, shortStreams }) => {
+      if (shortStreams) sessionStorage.setItem('engie-demo-short-streams', '1');
       if (sessionStorage.getItem('e2e-init')) return;
       sessionStorage.setItem('e2e-init', '1');
       sessionStorage.setItem('engie-demo-started', '1');
@@ -36,7 +46,7 @@ export async function fresh(page: Page, path = '/app', { signedIn = true } = {})
       localStorage.setItem('engie-demo-lang', 'en');
       if (signedIn) localStorage.setItem('engie-demo-session', session);
     },
-    { session: SESSION, signedIn },
+    { session: SESSION, signedIn, shortStreams: SHORT_STREAMS },
   );
   const r = await page.request.post('/api/demo/reset');
   expect(r.ok(), 'demo reset').toBe(true);

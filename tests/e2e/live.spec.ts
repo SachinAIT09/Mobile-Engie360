@@ -7,7 +7,11 @@ test.use({ viewport: { width: 390, height: 844 } });
 /** The customer portal and the staff app side by side, as in the live demo. */
 async function staffPage(browser: Browser, path = '/staff'): Promise<Page> {
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await ctx.addInitScript(() => localStorage.setItem('engie-demo-lang', 'en'));
+  await ctx.addInitScript((short) => {
+    localStorage.setItem('engie-demo-lang', 'en');
+    // See fixtures.ts: start with short live streams on a network that holds streams back.
+    if (short) sessionStorage.setItem('engie-demo-short-streams', '1');
+  }, process.env.E2E_SHORT_STREAMS === '1');
   const page = await ctx.newPage();
   page.on('pageerror', (e) => {
     throw e;

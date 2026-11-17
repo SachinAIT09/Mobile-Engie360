@@ -13,6 +13,8 @@ interface Client {
 
 /** How many past events are kept so a reconnecting stream can catch up. */
 const REPLAY = 300;
+/** The furthest back a stream may ask to be replayed by age. */
+const MAX_REPLAY_MS = 60_000;
 /** A "short" stream ends after this long; see `connect`. */
 const SHORT_MS = 2500;
 
@@ -28,7 +30,7 @@ const SHORT_MS = 2500;
  */
 export class Live {
   private readonly clients = new Set<Client>();
-  private readonly recent: { id: number; event: LiveEvent }[] = [];
+  private readonly recent: { id: number; at: number; event: LiveEvent }[] = [];
   private seq = 0;
   /** The customer count last told to staff, and the pending "someone left" announcement. */
   private announced = 0;
@@ -52,7 +54,11 @@ export class Live {
     return this.leaving ? this.announced : this.connected;
   }
 
-  connect(req: IncomingMessage, res: ServerResponse, role: Role, short = false): void {
+  /**
+   * `replayMs`: for a stream without a Last-Event-ID, also send the events of the last so many milliseconds.
+   * A client that gave up on a held-back stream uses it to get what that stream never delivered.
+   */
+  connect(req: IncomingMessage, res: ServerResponse, role: Role, short = false, replayMs = 0): void {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-cache, no-transform',
@@ -70,6 +76,10 @@ export class Live {
     const stale = last !== null && (!Number.isFinite(last) || last > this.seq || last < oldest - 1);
     res.write(`event: hello\ndata: ${JSON.stringify({ type: 'hello', serverTime: new Date().toISOString(), role, ...(stale ? { stale: true } : {}) } satisfies LiveEvent)}\n\n`);
     if (last !== null && !stale) for (const r of this.recent) if (r.id > last && this.allowed(role, r.event)) this.write(client, r.id, r.event);
+    if (last === null && replayMs > 0) {
+      const since = Date.now() - Math.min(replayMs, MAX_REPLAY_MS);
+      for (const r of this.recent) if (r.at >= since && this.allowed(role, r.event)) this.write(client, r.id, r.event);
+    }
 
     this.clients.add(client);
     if (role === 'customer') this.presenceChanged();
@@ -88,7 +98,7 @@ export class Live {
 
   emit(event: LiveEvent): void {
     const id = ++this.seq;
-    this.recent.push({ id, event });
+    this.recent.push({ id, at: Date.now(), event });
     if (this.recent.length > REPLAY) this.recent.shift();
     for (const c of this.clients) if (this.allowed(c.role, event)) this.write(c, id, event);
   }

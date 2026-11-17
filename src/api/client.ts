@@ -16,12 +16,27 @@ export class HttpError extends Error {
   }
 }
 
+/** A read that fails because the request never got through (a dropped connection) is tried again. */
+const READ_ATTEMPTS = 3;
+
+async function send(method: 'GET' | 'POST', path: string, body?: unknown): Promise<Response> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fetch(path, {
+        method,
+        headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch (e) {
+      // Only reads: repeating a write that may have arrived could do it twice.
+      if (method !== 'GET' || attempt >= READ_ATTEMPTS) throw e;
+      await new Promise((r) => setTimeout(r, 300 * attempt));
+    }
+  }
+}
+
 async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
-    method,
-    headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const res = await send(method, path, body);
   const text = await res.text();
   // A static host answers unknown paths with index.html: treat anything that isn't JSON as "no server".
   const isJson = (res.headers.get('content-type') ?? '').includes('json');
@@ -45,7 +60,7 @@ export const post = <T = void>(path: string, body: unknown = {}) => request<T>('
 /** Remembered for the tab: this network holds streamed responses back, so ask for short streams straight away. */
 const SHORT_STREAMS = 'engie-demo-short-streams';
 /** A stream that has not opened this long after the server answered a plain request is being held back. */
-const HELD_BACK_MS = 4000;
+const HELD_BACK_MS = 2500;
 
 const remembered = (): boolean => {
   try {
@@ -83,23 +98,29 @@ export function openEvents(role: 'customer' | 'staff', onEvent: (e: LiveEvent) =
     }
   };
 
-  const start = (short: boolean) => {
+  let down = false;
+  const start = (short: boolean, replayMs = 0) => {
     let opened = false;
     let broken = false;
-    es = new EventSource(`${API.events}?role=${role}${short ? '&short=1' : ''}`);
+    const began = Date.now();
+    es = new EventSource(`${API.events}?role=${role}${short ? '&short=1' : ''}${replayMs ? `&replay=${replayMs}` : ''}`);
     for (const type of LIVE_EVENT_TYPES as readonly LiveEventType[]) es.addEventListener(type, handle as EventListener);
     es.onopen = () => {
       if (watchdog) clearTimeout(watchdog);
       // The data was loaded at the start; load it again only after a real break. Short streams end on
       // purpose every few seconds and the server replays what was missed, so those are not breaks.
-      if (opened && broken && !short) onOpen?.();
+      if (down || (opened && broken && !short)) onOpen?.();
       opened = true;
       broken = false;
+      down = false;
     };
     es.onerror = () => {
       broken = true;
       // A short stream ending is expected; only a stream that never opened counts as "down".
-      if (!short || !opened) onDown?.();
+      if (!short || !opened) {
+        down = true;
+        onDown?.();
+      }
     };
     if (short) return;
     // Is the stream being held back? Only judge once the server is known to answer (it may be waking up).
@@ -114,7 +135,8 @@ export function openEvents(role: 'customer' | 'staff', onEvent: (e: LiveEvent) =
           } catch {
             /* not remembered: detected again on the next load */
           }
-          start(true);
+          // Ask for what the held-back stream never delivered: everything since it was started.
+          start(true, Date.now() - began + 1500);
         }, HELD_BACK_MS);
       })
       .catch(() => undefined);

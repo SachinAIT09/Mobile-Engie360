@@ -5,7 +5,7 @@ import type { LiveEvent } from '../shared/contract.ts';
 import { Live, type Role } from './live.ts';
 
 /** A stream as the hub sees it: what was written, and a way to close it from the client side. */
-function stream(live: Live, role: Role, opts: { lastId?: string; short?: boolean } = {}) {
+function stream(live: Live, role: Role, opts: { lastId?: string; short?: boolean; replayMs?: number } = {}) {
   const req = Object.assign(new EventEmitter(), { headers: opts.lastId === undefined ? {} : { 'last-event-id': opts.lastId } });
   const chunks: string[] = [];
   const res = Object.assign(new EventEmitter(), {
@@ -17,7 +17,7 @@ function stream(live: Live, role: Role, opts: { lastId?: string; short?: boolean
       res.emit('close');
     },
   });
-  live.connect(req as unknown as IncomingMessage, res as unknown as ServerResponse, role, opts.short);
+  live.connect(req as unknown as IncomingMessage, res as unknown as ServerResponse, role, opts.short, opts.replayMs);
   const events = () =>
     chunks
       .join('')
@@ -60,6 +60,20 @@ describe('Live: event ids and catching up after a reconnect', () => {
     expect(hello('9999')).toMatchObject({ stale: true }); // the server restarted since
     expect(hello('abc')).toMatchObject({ stale: true });
     expect(stream(live, 'staff', { lastId: '5' }).types()).toEqual(['hello']); // nothing replayed
+  });
+
+  it('replays by age for a stream that never received anything (it gave up on a held-back stream)', () => {
+    const live = new Live();
+    live.emit(plan(1)); // 10 s ago
+    vi.advanceTimersByTime(10_000);
+    live.emit(plan(2)); // 3 s ago
+    live.emit({ type: 'outbox:changed' }); // staff only
+    vi.advanceTimersByTime(3000);
+    expect(stream(live, 'customer', { replayMs: 5000 }).events().filter((e) => e.id).map((e) => e.id)).toEqual([2]);
+    expect(stream(live, 'staff', { replayMs: 5000 }).events().filter((e) => e.id).map((e) => e.id)).toEqual([2, 3]);
+    expect(stream(live, 'staff', { replayMs: 60_000 }).events().filter((e) => e.id).map((e) => e.id)).toEqual([1, 2, 3]);
+    // A stream that knows where it was uses its id, not the age.
+    expect(stream(live, 'staff', { lastId: '3', replayMs: 60_000 }).types()).toEqual(['hello']);
   });
 
   it('ends a short stream after a few seconds and asks for a quick reconnect', () => {

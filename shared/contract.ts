@@ -540,9 +540,10 @@ export interface DemoInfo {
 // ---------------------------------------------------------------- live events (SSE)
 
 /**
- * GET /api/events?role=customer|staff[&short=1]. Each SSE message has `id`, `event: <type>` and `data: <JSON of LiveEvent>`.
+ * GET /api/events?role=customer|staff[&short=1][&replay=<ms>]. Each SSE message has `id`, `event: <type>` and `data: <JSON of LiveEvent>`.
  * A reconnecting stream sends `Last-Event-ID` and gets the events it missed. `short=1` asks for streams that end
- * after a few seconds, for networks that hold a streamed response back until it ends.
+ * after a few seconds, for networks that hold a streamed response back until it ends; `replay` asks a first
+ * stream for the events of the last so many milliseconds (what a held-back stream never delivered).
  * Customer streams receive: message:new, message:read, installment:changed, billing:changed, insights:plan, demo:reset.
  * Staff streams receive everything.
  */
