@@ -283,17 +283,6 @@ button {
   background: var(--toggle-on);
   color: #fff;
 }
-.profile-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 10px 4px 4px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: 999px;
-  cursor: pointer;
-  height: 42px;
-}
 .avatar {
   width: 34px;
   height: 34px;
@@ -310,18 +299,6 @@ button {
   width: 64px;
   height: 64px;
   font-size: 22px;
-}
-.profile-btn .who {
-  text-align: left;
-  line-height: 1.15;
-}
-.profile-btn .who b {
-  display: block;
-  font-size: 13px;
-}
-.profile-btn .who span {
-  font-size: 11px;
-  color: var(--muted);
 }
 
 /* Popover menus */
@@ -405,14 +382,6 @@ button {
   background: var(--line-2);
 }
 
-/* Mobile bottom tab bar */
-.drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(11, 34, 64, 0.4);
-  z-index: 80;
-  animation: fade 0.2s;
-}
 @keyframes fade {
   from {
     opacity: 0;
@@ -498,9 +467,6 @@ button {
 }
 .card.flat {
   box-shadow: none;
-}
-.card.pad-0 {
-  padding: 0;
 }
 .card-head {
   display: flex;
@@ -699,10 +665,6 @@ button {
 }
 .btn-ghost:hover {
   background: var(--blue-50);
-}
-.btn-white {
-  background: #fff;
-  color: var(--navy);
 }
 .btn-sm {
   min-height: 40px;
@@ -1240,12 +1202,8 @@ input[type='range'] {
   .span-2 {
     grid-column: auto;
   }
-  .profile-btn .who,
   .hide-m {
     display: none !important;
-  }
-  .profile-btn {
-    padding: 3px;
   }
   .popover {
     position: fixed;

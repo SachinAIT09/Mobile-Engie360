@@ -22,6 +22,9 @@ export const customer = {
   memberSince: '2019-03-01',
 };
 
+/** The bank account as shown on screen and paper: the last six digits hidden. */
+export const maskedIban = (): string => customer.iban.replace(/\d{4} \d{2}$/, '•••• ••');
+
 export const contract = {
   product: { en: 'Dynamic Electricity & Fixed Gas', nl: 'Dynamische Stroom & Vast Gas' } as Text,
   startDate: '2025-03-01',

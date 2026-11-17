@@ -1,16 +1,15 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, ChevronLeft, ChevronRight, Clock, Flame, MessageSquareText, PiggyBank, Send, SlidersHorizontal, Smartphone, Wallet, Zap } from 'lucide-react';
-import type { Activity, AttentionFlag, Conversation, EnergyResponse, MessageTemplate, StaffOverview } from '../../shared/contract';
+import { ChevronLeft, ChevronRight, Clock, MessageSquareText, Send, Smartphone, Zap } from 'lucide-react';
+import type { Activity, AttentionFlag, Conversation, MessageTemplate, StaffOverview } from '../../shared/contract';
 import { ThemeMenu } from '../components/ThemeMenu';
-import { Card, Delta, InsightIc, Kpi } from '../components/ui';
+import { Card, InsightIc } from '../components/ui';
 import { StaffBell } from './Bell';
 import { PhonePreview } from './board';
 import { MERGE_FIELDS, fillMerge } from './merge';
 import { useToast } from '../components/toast';
 import { useI18n, type Lang, type Text } from '../lib/i18n';
 import { brand } from '../brand';
-import { STAFF_NAME, ago, clock } from './kinds';
+import { STAFF_NAME, clock } from './kinds';
 import { PAGE_SIZES, type Paged } from './paging';
 import type { Connection, StaffData } from './useStaffData';
 
@@ -63,102 +62,6 @@ export function StaffHead({ icon: Icon, title, sub, children }: { icon: typeof Z
   );
 }
 
-export function StaffKpis({ o, energy }: { o: StaffOverview; energy: EnergyResponse | null }) {
-  const { t, eur, num } = useI18n();
-  const settlement = o.kpis.expectedSettlement;
-  const m = energy?.thisMonth;
-  const vsLastYear = (now: number, prev: number) => (
-    <span className="xs muted">
-      <Delta pct={Math.round(((now - prev) / prev) * 100)} /> {t('vs last year', 't.o.v. vorig jaar')}
-    </span>
-  );
-  const foot = (text: string) => <span className="xs muted">{text}</span>;
-  const kpis = [
-    { icon: Zap, tone: 'el' as const, label: t('Electricity this month', 'Stroom deze maand'), value: num(o.kpis.electricityThisMonth), unit: 'kWh', foot: m && vsLastYear(m.electricity, m.prevElectricity) },
-    { icon: Flame, tone: 'gas' as const, label: t('Gas this month', 'Gas deze maand'), value: num(o.kpis.gasThisMonth), unit: 'm³', foot: m && vsLastYear(m.gas, m.prevGas) },
-    { icon: Wallet, tone: 'eur' as const, label: t('Cost so far', 'Kosten tot nu toe'), value: eur(o.kpis.costSoFar, 0), foot: m && foot(t(`Forecast ${eur(m.forecastCost, 0)} this month`, `Verwacht ${eur(m.forecastCost, 0)} deze maand`)) },
-    {
-      icon: SlidersHorizontal,
-      tone: 'ink' as const,
-      label: t('Expected at annual statement', 'Verwacht bij jaarnota'),
-      value: `${settlement >= 0 ? '+' : '−'}${eur(Math.abs(settlement), 0)}`,
-      foot: foot(settlement > 0 ? t('To pay in March', 'Bijbetalen in maart') : t('Back in March', 'Terug in maart')),
-    },
-    {
-      icon: PiggyBank,
-      tone: 'pur' as const,
-      label: t('Savings plan', 'Bespaarplan'),
-      value: eur(o.kpis.savingsPlanPerYear, 0),
-      unit: t('/ year', '/ jaar'),
-      foot: foot(t(`${o.plan.length} tip${o.plan.length === 1 ? '' : 's'} chosen`, `${o.plan.length} ${o.plan.length === 1 ? 'tip' : 'tips'} gekozen`)),
-    },
-  ];
-  return (
-    <div className="grid g-4 staff-kpis">
-      {kpis.map((k) => (
-        <Kpi key={k.label} icon={k.icon} tone={k.tone} label={k.label} value={k.value} unit={k.unit} foot={k.foot || undefined} />
-      ))}
-    </div>
-  );
-}
-
-export function CustomerCard({ o, now }: { o: StaffOverview; now: number }) {
-  const { t, tx, eur, lang } = useI18n();
-  const c = o.customer;
-  const online = o.online > 0;
-  const gap = o.installment.advised - (o.installment.pending?.amount ?? o.installment.current);
-  return (
-    <Card
-      title={`${c.firstName} ${c.lastName}`}
-      sub={`${t('Customer number', 'Klantnummer')} ${c.customerNo}`}
-      action={
-        <span className={`badge ${online ? 'ok' : ''}`}>
-          <i className={`staff-dot${online ? ' on' : ''}`} aria-hidden /> {online ? t('In the app now', 'Nu in de app') : t('Not in the app', 'Niet in de app')}
-        </span>
-      }
-    >
-      <dl className="kv staff-kv">
-        <dt>{t('Address', 'Adres')}</dt>
-        <dd>
-          {c.address.street}, {c.address.postcode} {c.address.city}
-        </dd>
-        <dt>{t('Contract', 'Contract')}</dt>
-        <dd>{tx(o.contract.product)}</dd>
-        <dt>{t('Monthly installment', 'Termijnbedrag')}</dt>
-        <dd className="num">
-          {eur(o.installment.current, 0)}
-          {o.installment.pending && (
-            <span className="badge info" style={{ marginLeft: 8 }}>
-              {t('New', 'Nieuw')}: {eur(o.installment.pending.amount, 0)}
-            </span>
-          )}
-        </dd>
-        <dt>{t('Advised installment', 'Geadviseerd termijnbedrag')}</dt>
-        <dd className="num">
-          {eur(o.installment.advised, 0)}
-          {gap > 0 ? <span className="badge warn" style={{ marginLeft: 8 }}>{t(`${eur(gap, 0)} too low`, `${eur(gap, 0)} te laag`)}</span> : <span className="badge ok" style={{ marginLeft: 8 }}>{t('On track', 'Passend')}</span>}
-        </dd>
-        <dt>{t('Last seen', 'Laatst gezien')}</dt>
-        <dd>{ago(o.lastSeen, lang, now)}</dd>
-        <dt>{t('Phone notifications', 'Meldingen op telefoon')}</dt>
-        <dd>
-          <Smartphone size={15} style={{ verticalAlign: -2 }} aria-hidden />{' '}
-          {o.pushDevices > 0 ? t(`On, ${o.pushDevices} device${o.pushDevices === 1 ? '' : 's'}`, `Aan, ${o.pushDevices} ${o.pushDevices === 1 ? 'apparaat' : 'apparaten'}`) : t('Not turned on', 'Niet aangezet')}
-        </dd>
-        <dt>{t('Unread messages', 'Ongelezen berichten')}</dt>
-        <dd className="num">{o.unreadMessages}</dd>
-      </dl>
-      <Link to="/staff/customer" className="btn btn-outline btn-sm mt">
-        {t('Open customer page', 'Open klantpagina')} <ArrowRight size={14} />
-      </Link>
-    </Card>
-  );
-}
-
-/**
- * Under every table: rows per page (10, 15, 30 or 50), which rows are showing, and previous/next.
- * Always shown, also when everything fits on one page, so the choice is always there.
- */
 export function Pager<T>({ paged }: { paged: Omit<Paged<T>, 'rows'> }) {
   const { t, num } = useI18n();
   if (paged.total === 0) return null;

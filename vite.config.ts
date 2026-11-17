@@ -20,6 +20,15 @@ export default defineConfig({
   plugins: [react(), lanUrl()],
   server: { port: 5173, host: true },
   preview: { host: true },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Icons are a few hundred bytes each. Left alone, every icon shared by two screens becomes its own
+        // file and its own request (about twenty of them). One small file for all icons is one request.
+        codeSplitting: { groups: [{ name: 'icons', test: /node_modules[\\/]lucide-react[\\/]/ }] },
+      },
+    },
+  },
   test: {
     include: ['src/**/*.spec.ts', 'server/**/*.spec.ts'],
     environment: 'node',

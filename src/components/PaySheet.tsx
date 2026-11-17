@@ -3,7 +3,7 @@ import { CreditCard, Download, Landmark, Lock, Smartphone, type LucideIcon } fro
 import { playPaymentDone, primeSound } from '../lib/sound';
 import type { PayMethod } from '../../shared/contract';
 import type { Invoice, Payment } from '../data/billing';
-import { customer } from '../data/customer';
+import { customer, maskedIban } from '../data/customer';
 import { useLive } from '../api/live';
 import { useI18n } from '../lib/i18n';
 import { Modal } from './ui';
@@ -30,11 +30,10 @@ export function PaySheet({ inv, onClose, onReceipt }: { inv: Invoice; onClose: (
 
   const cardOk = card.replace(/\D/g, '').length >= 12;
   const ready = method !== 'card' || cardOk;
-  const maskedIban = customer.iban.replace(/\d{4} \d{2}$/, '•••• ••');
 
   const methods: { id: PayMethod; icon: LucideIcon; label: string; desc: string }[] = [
     { id: 'ideal', icon: Smartphone, label: 'iDEAL', desc: t('Pay with your own bank app', 'Betaal met de app van je bank') },
-    { id: 'account', icon: Landmark, label: t('My bank account', 'Mijn bankrekening'), desc: maskedIban },
+    { id: 'account', icon: Landmark, label: t('My bank account', 'Mijn bankrekening'), desc: maskedIban() },
     { id: 'card', icon: CreditCard, label: t('Debit or credit card', 'Betaalpas of creditcard'), desc: t('Visa, Mastercard, Maestro', 'Visa, Mastercard, Maestro') },
   ];
 

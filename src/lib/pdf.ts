@@ -5,6 +5,8 @@
  * PDF standard fonts (Helvetica), which every reader has, and draws the wordmark as vector shapes.
  */
 
+import { saveBlob } from './download';
+
 export interface PdfPair {
   label: string;
   value: string;
@@ -241,10 +243,5 @@ export function buildPdf(doc: PdfDocument): string {
 
 /** Build the document and hand it to the browser as a .pdf download. */
 export function downloadPdf(filename: string, doc: PdfDocument): void {
-  const url = URL.createObjectURL(new Blob([buildPdf(doc)], { type: 'application/pdf' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename.endsWith('.pdf') ? filename : `${filename}.pdf`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saveBlob(new Blob([buildPdf(doc)], { type: 'application/pdf' }), filename, '.pdf');
 }

@@ -1628,15 +1628,6 @@
 .pager-range {
   margin-left: auto;
 }
-.composer-to {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.composer-to .badge {
-  gap: 6px;
-}
 @media (max-width: 960px) {
   .attention-row.queue-row {
     grid-template-columns: 64px minmax(0, 1fr);

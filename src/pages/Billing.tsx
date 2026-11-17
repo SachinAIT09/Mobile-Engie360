@@ -7,7 +7,7 @@ import { PaySheet } from '../components/PaySheet';
 import { downloadPdf } from '../lib/pdf';
 import { useI18n, type Text } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
-import { contract, customer } from '../data/customer';
+import { contract, customer, maskedIban } from '../data/customer';
 import { annualOverview, withPayments, type Invoice, type Payment } from '../data/billing';
 import { costOf, monthly } from '../data/energy';
 import { Card, Expander, Kpi, Modal, PageHead, Seg } from '../components/ui';
@@ -32,7 +32,6 @@ function StatusBadge({ s }: { s: Invoice['status'] }) {
 type Fmt = { t: (en: string, nl: string) => string; tx: (x: Text) => string; eur: (v: number) => string; date: (iso: string, o?: Intl.DateTimeFormatOptions) => string };
 
 const LONG_DATE = { day: 'numeric', month: 'long', year: 'numeric' } as const;
-const maskedIban = () => customer.iban.replace(/\d{4} \d{2}$/, '•••• ••');
 
 /** What every downloaded document shares: the wordmark, the customer's address and the footer. */
 const letterhead = (t: Fmt['t']) => ({
