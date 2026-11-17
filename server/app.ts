@@ -3,7 +3,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { config } from './config.ts';
 import { Db } from './db.ts';
-import { sendError } from './http.ts';
+import { baseSecurityHeaders, contentSecurityPolicy, sendError } from './http.ts';
 import { Live } from './live.ts';
 import { Push } from './push.ts';
 import { buildRouter, phoneUrls } from './routes.ts';
@@ -40,6 +40,7 @@ export async function createApp(server: Server): Promise<{ handler: RequestHandl
 
   const handler: RequestHandler = (req, res) => {
     const url = new URL(req.url ?? '/', 'http://local');
+    baseSecurityHeaders(res);
     void (async () => {
       try {
         if (await api.handle(req, res, url)) return;
@@ -63,7 +64,7 @@ export async function createApp(server: Server): Promise<{ handler: RequestHandl
         if (url.pathname === '/') {
           const [first, ...rest] = phoneUrls(req);
           const html = await startPage(`${first ?? `http://localhost:${config.port}`}/app`, rest.map((u) => `${u}/app`));
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }).end(html);
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': contentSecurityPolicy(html) }).end(html);
           return;
         }
         await frontend(req, res, url);

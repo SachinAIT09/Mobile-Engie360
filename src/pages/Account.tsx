@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Gauge, Home, Landmark, LogOut, Mail, MapPin, Pencil, Phone } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
@@ -8,6 +8,8 @@ import { contract, customer } from '../data/customer';
 import { Card, Expander, Modal, PageHead } from '../components/ui';
 import { useToast } from '../components/toast';
 import { useLive } from '../api/live';
+import { API, get } from '../api/client';
+import type { CustomerResponse } from '../../shared/contract';
 import { PushCard } from '../components/PushCard';
 
 function Toggle({ label, desc, defaultOn = false }: { label: string; desc?: string; defaultOn?: boolean }) {
@@ -42,6 +44,20 @@ export default function Account() {
   const [editing, setEditing] = useState(false);
   const [contact, setContact] = useState({ email: customer.email, phone: customer.phone });
   const [draft, setDraft] = useState(contact);
+  // The saved contact details live on the server; show those, not the starting values, after a reload.
+  useEffect(() => {
+    let current = true;
+    get<CustomerResponse>(API.customer).then(
+      (r) => current && setContact({ email: r.customer.email, phone: r.customer.phone }),
+      () => undefined, // no server: keep the starting values
+    );
+    return () => {
+      current = false;
+    };
+  }, []);
+  // Same rules as the server, so a mistake is caught here instead of being refused silently.
+  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(draft.email.trim());
+  const phoneOk = /^\+?[\d\s()-]+$/.test(draft.phone.trim()) && draft.phone.replace(/\D/g, '').length >= 6;
   const { saveContact, pay } = useLive();
   const { autopay } = pay;
 
@@ -222,9 +238,11 @@ export default function Account() {
               </button>
               <button
                 className="btn btn-primary"
+                disabled={!emailOk || !phoneOk}
                 onClick={() => {
-                  setContact(draft);
-                  saveContact(draft);
+                  const clean = { email: draft.email.trim(), phone: draft.phone.trim() };
+                  setContact(clean);
+                  saveContact(clean);
                   setEditing(false);
                   toast(t('Contact details updated', 'Contactgegevens bijgewerkt'));
                 }}
@@ -237,11 +255,21 @@ export default function Account() {
           <div className="stack" style={{ gap: 14 }}>
             <label className="field">
               {t('Email', 'E-mail')}
-              <input className="input" type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
+              <input className="input" type="email" autoComplete="email" aria-invalid={!emailOk} value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} />
+              {!emailOk && (
+                <span className="field-error" role="alert">
+                  {t('Enter a valid email address, like name@example.com.', 'Vul een geldig e-mailadres in, zoals naam@voorbeeld.nl.')}
+                </span>
+              )}
             </label>
             <label className="field">
               {t('Phone', 'Telefoon')}
-              <input className="input" type="tel" value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} />
+              <input className="input" type="tel" autoComplete="tel" aria-invalid={!phoneOk} value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} />
+              {!phoneOk && (
+                <span className="field-error" role="alert">
+                  {t('Enter a phone number with at least 6 digits.', 'Vul een telefoonnummer in van minstens 6 cijfers.')}
+                </span>
+              )}
             </label>
           </div>
         </Modal>

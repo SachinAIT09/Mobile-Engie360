@@ -7,9 +7,29 @@ import { isPortalPath } from './routes';
  */
 export const PHONE_FRAME_MIN_WIDTH = 700;
 
+const NO_FRAME = 'engie-demo-noframe';
+
 /** Top-level window on a wide screen: show the phone column instead of the app itself. */
 export function wantsPhoneFrame(): boolean {
+  try {
+    if (sessionStorage.getItem(NO_FRAME)) return false;
+  } catch {
+    /* no storage: try the column */
+  }
   return window.self === window.top && window.matchMedia(`(min-width: ${PHONE_FRAME_MIN_WIDTH}px)`).matches;
+}
+
+/**
+ * The phone column could not be shown because the host refuses to let the app be framed. Rather than leave
+ * an empty column, remember that for this tab and load the app itself.
+ */
+export function giveUpPhoneFrame(): void {
+  try {
+    sessionStorage.setItem(NO_FRAME, '1');
+  } catch {
+    return; // cannot remember it, so a reload would only repeat the problem
+  }
+  window.location.reload();
 }
 
 /** Keep the address bar on the screen shown in the phone column, so reload and copied links work. */

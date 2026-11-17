@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ApiError } from '../shared/contract.ts';
 import { HttpError } from './store.ts';
@@ -12,6 +13,51 @@ interface Route {
 }
 
 const MAX_BODY = 64 * 1024;
+
+/** decodeURIComponent that answers 400 for a malformed address ("%E0%A4%A") instead of failing as a server error. */
+export function decodePath(part: string): string {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    throw new HttpError(400, 'Malformed address');
+  }
+}
+
+/**
+ * Headers every response carries: no content-type guessing, no full address leaked to other sites, and
+ * framing by our own pages only (the customer app shows itself in a phone column on a laptop).
+ */
+export function baseSecurityHeaders(res: ServerResponse): void {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+}
+
+/**
+ * Content-Security-Policy for an HTML page we serve: only our own scripts, styles, fonts, images and API.
+ * The few inline scripts a page carries (the theme is applied before first paint) are allowed by their hash,
+ * so nothing injected into a page can run.
+ * `frame-ancestors 'self'` also matters for hosting: Catalyst adds `X-Frame-Options: DENY` to every response,
+ * which would block the customer app's own phone column; browsers follow frame-ancestors over that header.
+ */
+export function contentSecurityPolicy(html: string): string {
+  const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash('sha256').update(m[1]!).digest('base64')}'`);
+  return [
+    "default-src 'self'",
+    `script-src 'self'${hashes.length ? ` ${hashes.join(' ')}` : ''}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    // The bundled Lato files are small enough that the build inlines some of them into the stylesheet.
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "worker-src 'self'",
+    "frame-src 'self'",
+    "frame-ancestors 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+  ].join('; ');
+}
 
 /** Minimal router: "/api/messages/:id/read" style paths. A handler's return value is sent as JSON (undefined → 204). */
 export class Router {
@@ -36,7 +82,7 @@ export class Router {
     }
     try {
       const m = route.pattern.exec(path)!;
-      const params = Object.fromEntries(route.keys.map((k, i) => [k, decodeURIComponent(m[i + 1] ?? '')]));
+      const params = Object.fromEntries(route.keys.map((k, i) => [k, decodePath(m[i + 1] ?? '')]));
       const body = req.method === 'POST' ? await readJson(req) : undefined;
       const out = await route.handler({ req, res, url, params, body });
       if (res.headersSent) return true;

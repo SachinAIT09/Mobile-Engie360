@@ -1104,6 +1104,14 @@ input[type='range'] {
   color: var(--ink);
   background: var(--surface);
 }
+.input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.field-error {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--danger);
+}
 .input:focus {
   outline: none;
   border-color: var(--blue);
@@ -1292,6 +1300,18 @@ input[type='range'] {
   .rs-actions > .avatar,
   .rs-logo .brand-sub {
     display: none;
+  }
+  /* Phone-width staff top bar: menu, wordmark, live dot, bell, language and theme must all fit in 360 px. */
+  .rs-logo .brand-mark {
+    font-size: 22px;
+  }
+  .rs-logo .brand {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  .rs-top .lang button {
+    min-width: 34px;
+    padding: 0 7px;
   }
   .seg button {
     padding: 7px 10px;

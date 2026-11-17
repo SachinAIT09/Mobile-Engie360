@@ -47,9 +47,22 @@ test.describe('customer app: screens', () => {
     await page.locator('.app-bar').getByRole('link', { name: 'Profile' }).click();
     await expect(page).toHaveURL(/\/app\/account$/);
     await page.getByRole('button', { name: /Edit/ }).click();
+    // A wrong email or phone number is caught in the form and cannot be saved.
+    await page.locator('input[type=email]').fill('not-an-email');
+    await expect(page.locator('.modal')).toContainText('Enter a valid email address');
+    await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await page.locator('input[type=email]').fill('olivia.new@example.com');
+    await page.locator('input[type=tel]').fill('12');
+    await expect(page.locator('.modal')).toContainText('at least 6 digits');
+    await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled();
     await page.locator('input[type=tel]').fill('+31 6 1111 2222');
     await page.getByRole('button', { name: 'Save' }).click();
     await expect(page.getByText('+31 6 1111 2222')).toBeVisible();
+    // Saved on the server: still there after a reload.
+    await expect.poll(async () => (await (await page.request.get('/api/customer')).json()).customer.email).toBe('olivia.new@example.com');
+    await page.reload();
+    await expect(page.getByText('+31 6 1111 2222')).toBeVisible();
+    await expect(page.getByText('olivia.new@example.com')).toBeVisible();
   });
 
   test('language and theme persist across reloads', async ({ page }) => {

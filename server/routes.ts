@@ -12,12 +12,18 @@ import { HttpError, Store, TEMPLATES } from './store.ts';
 const ICONS: MessageIcon[] = ['ev', 'trend', 'plug', 'flame', 'sun', 'wallet', 'moon', 'washer', 'bell', 'doc'];
 const CLIENT_KINDS: ActivityKind[] = ['session', 'page', 'invoice_download', 'push_subscribed'];
 
-/** Origin as the browser sees it, also behind a proxy (Catalyst, Docker host). */
-export function publicOrigin(req: IncomingMessage): string {
+/**
+ * Origin as the browser sees it, also behind a proxy (Catalyst, Docker host).
+ * Catalyst AppSail terminates HTTPS itself and passes the host as "name:443" without saying the request was
+ * HTTPS; taken literally that gives "http://name:443", which a phone answers with 400 Bad Request. So a host
+ * on port 443, or any request while running on Catalyst, is HTTPS, and default ports are left out.
+ */
+export function publicOrigin(req: Pick<IncomingMessage, 'headers'>, hosted = Boolean(process.env.X_ZOHO_CATALYST_LISTEN_PORT)): string {
   if (config.publicUrl) return config.publicUrl;
-  const proto = String(req.headers['x-forwarded-proto'] ?? 'http').split(',')[0]!.trim();
-  const host = String(req.headers['x-forwarded-host'] ?? req.headers.host ?? `localhost:${config.port}`).split(',')[0]!.trim();
-  return `${proto}://${host}`;
+  const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)?.split(',')[0]?.trim();
+  const host = first(req.headers['x-forwarded-host']) ?? first(req.headers.host) ?? `localhost:${config.port}`;
+  const https = first(req.headers['x-forwarded-proto']) === 'https' || host.endsWith(':443') || hosted;
+  return `${https ? 'https' : 'http'}://${host.replace(https ? /:443$/ : /:80$/, '')}`;
 }
 
 /** Addresses a phone on the same network can open. Hosted → the public origin. */

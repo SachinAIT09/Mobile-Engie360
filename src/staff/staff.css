@@ -262,6 +262,10 @@
   .staff-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /* Five tiles in two columns: the last one spans the row instead of leaving a hole. */
+  .staff-kpis > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
   .staff-main {
     padding: 20px 16px 56px;
   }
@@ -270,10 +274,6 @@
   .staff-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-  }
-  /* Five tiles in two columns: the last one spans the row instead of leaving a hole. */
-  .staff-kpis > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
   }
   .staff-bubble {
     max-width: 94%;

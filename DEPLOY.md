@@ -66,6 +66,17 @@ npm run deploy:catalyst -- -SkipBuild
 
 Then, in the Catalyst console (AppSail → engie360 → Configuration), set `PUBLIC_URL` to the service URL and the two `VAPID_*` keys. Without fixed keys, each cold start makes new ones and phones have to re-enable notifications.
 
+Check the hosted site after a deploy (both run in a real browser against the address you give):
+
+```powershell
+npm run audit:site -- https://<service>.development.catalystappsail.in .audit-out   # every screen at five sizes, API, security
+$env:BASE_URL = "https://<service>.development.catalystappsail.in"; npm run e2e      # the browser suite
+```
+
+Both reset the demo data on the server they test.
+
+Catalyst adds `X-Frame-Options: DENY` to every response. The customer app's phone column on a laptop is an iframe of the app itself; it works because pages send `Content-Security-Policy: frame-ancestors 'self'`, which browsers follow instead (`server/http.ts`). If the column is ever blocked anyway, the app shows itself without the column.
+
 What to expect on AppSail:
 - **Data resets when the service sleeps** (after ~5 minutes without traffic): the SQLite file is on the instance's temporary disk. That suits a demo; the next visit shows "Starting the demo…" for a few seconds.
 - **Fast start:** the server opens its port before loading anything (AppSail requires 10 s); it's ready in about 4 s.

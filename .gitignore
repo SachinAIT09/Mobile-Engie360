@@ -11,3 +11,8 @@ playwright-report
 /Mobile Engie360/
 .data/
 .data-e2e/
+# Local data folders of test and audit servers, audit output
+.data-*/
+.audit-out/
+# Link to the Catalyst project (account and project ids): each machine creates its own with `catalyst init`
+.catalystrc

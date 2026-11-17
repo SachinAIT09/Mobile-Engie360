@@ -16,7 +16,8 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "dev:client": "vite",
     "start": "tsx server/index.ts --prod",
-    "deploy:catalyst": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-catalyst.ps1"
+    "deploy:catalyst": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-catalyst.ps1",
+    "audit:site": "node scripts/audit-site.cjs"
   },
   "dependencies": {
     "@fontsource/lato": "^5.3.0",
