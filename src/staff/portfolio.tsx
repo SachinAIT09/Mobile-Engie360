@@ -22,9 +22,14 @@ export function Initials({ name, live }: { name: string; live?: boolean }) {
 /** Where a segment's "send message" and "view customers" go. */
 const segmentLinks = (q: QueueItem) => ({ send: `/staff/messages?segment=${q.id}&template=${q.templateId ?? ''}`, list: `/staff/customers?filter=${q.id}` });
 
-/** The attention queue across the customer base: how many customers each point applies to, and one action for all of them. */
+/**
+ * The attention queue across the customer base. One tile per attention point: how many customers,
+ * how far the follow-up is (a progress bar of who was messaged today), and one action for all of them.
+ */
 export function QueuePanel({ queue, needAttention }: { queue: QueueItem[]; needAttention: number }) {
   const { t, tx, num } = useI18n();
+  const affected = queue.reduce((n, q) => n + q.count, 0);
+  const messaged = queue.reduce((n, q) => n + q.contacted, 0);
   return (
     <Card
       title={t('Needs attention', 'Vraagt aandacht')}
@@ -32,31 +37,49 @@ export function QueuePanel({ queue, needAttention }: { queue: QueueItem[]; needA
       action={<span className={`badge ${needAttention > 0 ? 'warn' : 'ok'}`}>{t(`${num(needAttention)} customers`, `${num(needAttention)} klanten`)}</span>}
       className="attention queue"
     >
-      <ul className="attention-list">
+      <ul className="queue-list">
         {queue.map((q) => {
-          const open = q.count - q.contacted;
+          const done = q.count > 0 && q.contacted >= q.count;
+          const share = q.count > 0 ? Math.round((q.contacted / q.count) * 100) : 0;
           return (
-            <li key={q.id} className={`attention-row ${open > 0 ? 'open' : 'contacted'} tone-${q.tone}`}>
-              <InsightIc icon={q.icon} kind={q.tone === 'alert' ? 'alert' : q.tone === 'warn' ? 'billing' : undefined} size={38} />
-              <div className="grow">
-                <div className="strong">
-                  <span className="queue-count num">{num(q.count)}</span> {tx(q.title)}
+            <li key={q.id} className={`attention-row queue-row tone-${q.tone}${done ? ' done' : ''}`}>
+              <div className="queue-figure">
+                <span className="queue-count num">{num(q.count)}</span>
+                <span className="xs muted">{q.count === 1 ? t('customer', 'klant') : t('customers', 'klanten')}</span>
+              </div>
+              <div className="queue-body">
+                <div className="queue-title">
+                  <InsightIc icon={q.icon} kind={q.tone === 'alert' ? 'alert' : q.tone === 'warn' ? 'billing' : undefined} size={28} />
+                  <span className="strong">{tx(q.title)}</span>
                 </div>
-                <div className="small muted">{tx(q.detail)}</div>
-                {q.contacted > 0 && (
-                  <span className="badge info attention-note">
-                    <Check size={13} aria-hidden /> {t(`${num(q.contacted)} already sent the message`, `${num(q.contacted)} hebben het bericht al gekregen`)}
-                  </span>
+                <p className="small muted">{tx(q.detail)}</p>
+                {q.templateId && (
+                  <div className="queue-progress">
+                    <span className="queue-track" role="img" aria-label={t(`${share}% messaged today`, `${share}% vandaag benaderd`)}>
+                      <span style={{ width: `${share}%` }} />
+                    </span>
+                    <span className={`xs ${done ? 'queue-done' : 'muted'}`}>
+                      {done ? (
+                        <>
+                          <Check size={13} aria-hidden /> {t(`All ${num(q.count)} messaged today`, `Alle ${num(q.count)} vandaag benaderd`)}
+                        </>
+                      ) : q.contacted > 0 ? (
+                        t(`${num(q.contacted)} of ${num(q.count)} messaged today`, `${num(q.contacted)} van ${num(q.count)} vandaag benaderd`)
+                      ) : (
+                        t('Nobody messaged yet today', 'Vandaag nog niemand benaderd')
+                      )}
+                    </span>
+                  </div>
                 )}
               </div>
               <div className="queue-actions">
                 {q.templateId ? (
                   <>
-                    <Link to={segmentLinks(q).send} className={`btn ${open > 0 ? 'btn-primary' : 'btn-outline'} btn-sm`}>
-                      <Send size={14} /> {t(`Message ${num(q.count)}`, `Bericht aan ${num(q.count)}`)}
+                    <Link to={segmentLinks(q).send} className={`btn ${done ? 'btn-outline' : 'btn-primary'} btn-sm`}>
+                      <Send size={14} /> {done ? t('Message again', 'Opnieuw berichten') : t(`Message all ${num(q.count)}`, `Bericht aan alle ${num(q.count)}`)}
                     </Link>
-                    <Link to={segmentLinks(q).list} className="btn btn-ghost btn-sm">
-                      {t('View customers', 'Bekijk klanten')}
+                    <Link to={segmentLinks(q).list} className="queue-link small">
+                      {t('View customers', 'Bekijk klanten')} <ArrowRight size={13} aria-hidden />
                     </Link>
                   </>
                 ) : (
@@ -69,6 +92,12 @@ export function QueuePanel({ queue, needAttention }: { queue: QueueItem[]; needA
           );
         })}
       </ul>
+      <div className="queue-foot small">
+        <span className="muted">{messaged > 0 ? t(`${num(messaged)} of ${num(affected)} follow-ups messaged today`, `${num(messaged)} van ${num(affected)} opvolgingen vandaag benaderd`) : t(`${num(affected)} follow-ups open across ${queue.length} points`, `${num(affected)} opvolgingen open over ${queue.length} punten`)}</span>
+        <Link to="/staff/customers?filter=attention" className="strong">
+          {t('All customers needing attention', 'Alle klanten die aandacht vragen')} <ArrowRight size={13} aria-hidden />
+        </Link>
+      </div>
     </Card>
   );
 }

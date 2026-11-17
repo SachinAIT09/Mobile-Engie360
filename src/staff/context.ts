@@ -8,7 +8,7 @@ export interface StaffCtx extends StaffData {
   confirmReset: () => void;
   /** Ticks every 15 s so "last seen" stays current. */
   now: number;
-  /** The AI assistant conversation; kept while you move between staff pages. */
+  /** The conversation with Eva (the staff assistant); kept while you move between staff pages. */
   assistant: StaffAssistant;
 }
 

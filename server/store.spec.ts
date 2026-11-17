@@ -355,6 +355,14 @@ describe('audit log', () => {
     expect(all.funnel.delivered).toBeGreaterThan(all.funnel.opened);
     expect(all.funnel.opened).toBeGreaterThan(all.funnel.acted);
     expect(all.cities.reduce((n, c) => n + c.customers, 0)).toBe(1248);
+    // Last 7 days: one point per day, and only that week's messages.
+    const week = store.reports({ week: true }, 0, 0);
+    expect(week.per).toBe('day');
+    expect(week.months).toHaveLength(7);
+    expect(week.campaigns).toHaveLength(2);
+    expect(week.months[0]!.electricityMwh).toBeLessThan(all.months[0]!.electricityMwh / 10);
+    expect(week.months[0]!.installmentsK).toBeCloseTo(all.months[0]!.installmentsK / 30, 0);
+    expect(all.per).toBe('month');
     const three = store.reports({ months: 3 }, 0, 0);
     expect(three.months).toHaveLength(3);
     expect(three.campaigns.length).toBeLessThan(9);

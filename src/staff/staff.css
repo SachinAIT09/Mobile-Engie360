@@ -875,8 +875,9 @@
 .ai-page {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - var(--topbar-h) - 56px);
-  min-height: 520px;
+  /* The page fills the window exactly (top bar and the page padding taken off), so only the conversation scrolls. */
+  height: calc(100vh - var(--topbar-h) - 92px);
+  min-height: 480px;
 }
 .ai-layout {
   flex: 1;
@@ -896,6 +897,7 @@
   min-height: 0;
   overflow-y: auto;
   scroll-behavior: smooth;
+  scrollbar-width: thin;
   padding: 4px 4px 12px;
 }
 .ai-empty {
@@ -904,7 +906,7 @@
   align-items: center;
   text-align: center;
   gap: 12px;
-  padding: 48px 16px 24px;
+  padding: 20px 16px 12px;
 }
 .ai-orb {
   width: 76px;
@@ -1178,6 +1180,8 @@
   height: 24px;
   line-height: 24px;
   resize: none;
+  overflow: hidden;
+  padding: 0;
   border: 0;
   outline: none;
   background: transparent;
@@ -1380,23 +1384,112 @@
 }
 
 /* ---------- customer base: queue, live feed, customer list ---------- */
-.queue-count {
-  display: inline-block;
-  min-width: 34px;
-  margin-right: 4px;
-  padding: 1px 8px;
-  border-radius: 8px;
-  background: var(--navy);
-  color: #fff;
-  font-size: 13px;
-  text-align: center;
-}
-.queue-actions {
-  flex: none;
-  align-self: center;
+.queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  gap: 10px;
+}
+/* One tile per attention point; the stripe on the left carries its colour. */
+.attention-row.queue-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px 14px 18px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blue);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.queue-row.tone-warn {
+  border-left-color: var(--gas);
+}
+.queue-row.tone-info {
+  border-left-color: var(--purple);
+}
+.queue-row.tone-alert {
+  border-left-color: var(--danger);
+}
+.queue-row.done {
+  border-left-color: var(--green);
+}
+.queue-figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+.queue-count {
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.queue-body {
+  min-width: 0;
+}
+.queue-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.queue-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.queue-track {
+  flex: none;
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.queue-track span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--green);
+  transition: width 0.4s var(--ease);
+}
+.queue-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ok);
+  font-weight: 700;
+}
+.queue-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.queue-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  font-weight: 700;
+}
+.queue-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+.queue-foot a {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
 }
 .cust-initials {
@@ -1545,11 +1638,17 @@
   gap: 6px;
 }
 @media (max-width: 960px) {
+  .attention-row.queue-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
   .queue-actions {
+    grid-column: 1 / -1;
     flex-direction: row;
-    flex-wrap: wrap;
-    width: 100%;
-    padding-left: 52px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .queue-count {
+    font-size: 24px;
   }
   .merge-chip {
     min-height: 44px;
@@ -1574,14 +1673,8 @@
   display: flex;
   flex-direction: column;
 }
-.card.queue .attention-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.card.queue .attention-row {
-  flex: 1;
-  align-items: center;
+.card.queue .queue-list {
+  margin-bottom: 4px;
 }
 /* Staff: activity banners sit under the top bar on the right, not on top of it. */
 body:has(.rs-top) .notices {
@@ -1592,8 +1685,7 @@ body:has(.rs-top) .notices {
 :root[data-theme='dark'] .avatar,
 :root[data-theme='dark'] .cust-avatar,
 :root[data-theme='dark'] .audit-avatar,
-:root[data-theme='dark'] .cust-initials.is-live,
-:root[data-theme='dark'] .queue-count {
+:root[data-theme='dark'] .cust-initials.is-live {
   background: #24405f;
 }
 

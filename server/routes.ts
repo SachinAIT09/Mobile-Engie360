@@ -98,7 +98,7 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
     store.logStaffAction(action, str(b, 'target'));
   });
   r.on('GET', API.staffReports, ({ url }) =>
-    store.reports({ months: Number(url.searchParams.get('months') ?? 12), city: url.searchParams.get('city') ?? '', product: url.searchParams.get('product') ?? '', group: (url.searchParams.get('group') ?? 'all') as ReportGroup }, live.customersOnline, push.devices),
+    store.reports({ months: Number(url.searchParams.get('months') ?? 12) || 12, week: url.searchParams.get('months') === 'week', city: url.searchParams.get('city') ?? '', product: url.searchParams.get('product') ?? '', group: (url.searchParams.get('group') ?? 'all') as ReportGroup }, live.customersOnline, push.devices),
   );
   r.on('GET', API.staffPortfolio, () => store.portfolio(live.customersOnline, push.devices));
   r.on('GET', API.staffFeed, () => store.feed());

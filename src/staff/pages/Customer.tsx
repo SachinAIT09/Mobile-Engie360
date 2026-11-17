@@ -128,7 +128,7 @@ export default function StaffCustomer() {
             <Send size={14} /> {t('Send message', 'Stuur bericht')}
           </Link>
           <Link to="/staff/assistant" className="btn btn-outline btn-sm">
-            <Sparkles size={14} /> {t('Ask the assistant', 'Vraag de assistent')}
+            <Sparkles size={14} /> {t(`Ask ${brand.assistant.name}`, `Vraag ${brand.assistant.name}`)}
           </Link>
         </div>
       </section>

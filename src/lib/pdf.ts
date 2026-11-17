@@ -119,19 +119,19 @@ export function buildPdf(doc: PdfDocument): string {
 
   // ---- brand: a blue band along the top edge, then the wordmark with its arc
   box(0, PAGE_H - 7, PAGE_W, 7, BLUE);
-  const LOGO = 27;
-  const LOGO_SPACING = 1.1;
+  const LOGO = 33;
+  const LOGO_SPACING = 1.3;
   const logoY = PAGE_H - 78;
   const logoW = spaced(doc.brand, LOGO, true, LOGO_SPACING);
   text(doc.brand, MARGIN, logoY, LOGO, true, BLUE, LOGO_SPACING);
   const arcY = logoY + LOGO * 0.74 + 5;
   const ax = MARGIN - 3;
   const aw = logoW + 6;
-  ops.push(`2.6 w 1 J ${BLUE} RG ${n(ax)} ${n(arcY)} m ${n(ax + aw * 0.22)} ${n(arcY + 9)} ${n(ax + aw * 0.78)} ${n(arcY + 9)} ${n(ax + aw)} ${n(arcY)} c S 0 J`);
+  ops.push(`3.1 w 1 J ${BLUE} RG ${n(ax)} ${n(arcY)} m ${n(ax + aw * 0.22)} ${n(arcY + 11)} ${n(ax + aw * 0.78)} ${n(arcY + 11)} ${n(ax + aw)} ${n(arcY)} c S 0 J`);
   if (doc.tagline) {
     const tx = MARGIN + logoW + 14;
-    line(tx, logoY - 3, tx, logoY + 20, 0.8);
-    text(doc.tagline, tx + 12, logoY + 4, 10.5, true, MUTED);
+    line(tx, logoY - 3, tx, logoY + 25, 0.8);
+    text(doc.tagline, tx + 12, logoY + 6, 11.5, true, MUTED);
   }
 
   // ---- document type and status, top right

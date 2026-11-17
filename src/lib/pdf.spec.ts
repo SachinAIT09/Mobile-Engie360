@@ -54,8 +54,8 @@ describe('buildPdf', () => {
   });
 
   it('draws the wordmark: the brand name in brand blue with the arc above it', () => {
-    expect(pdf).toContain(`0 0.667 1 rg 1.1 Tc 50.00 764.00 Td <${hex('ENGIE')}> Tj`);
-    expect(pdf).toMatch(/2\.6 w 1 J 0 0\.667 1 RG [\d. ]+ m [\d. ]+ c S/); // the arc is one curve
+    expect(pdf).toContain(`/F2 33 Tf 0 0.667 1 rg 1.3 Tc 50.00 764.00 Td <${hex('ENGIE')}> Tj`);
+    expect(pdf).toMatch(/3\.1 w 1 J 0 0\.667 1 RG [\d. ]+ m [\d. ]+ c S/); // the arc is one curve
     expect(pdf).toContain(`<${hex('MijnENGIE')}>`);
   });
 

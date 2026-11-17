@@ -14,7 +14,7 @@ test.describe('staff app: pages like the Hydro Mobile360 staff app', () => {
       ['Customer activity', /\/staff\/activity$/, 'Customer activity'],
       ['Messages', /\/staff\/messages$/, 'Messages'],
       ['Reports', /\/staff\/reports$/, 'Reports'],
-      ['AI assistant', /\/staff\/assistant$/, 'AI assistant'],
+      ['Eva', /\/staff\/assistant$/, 'Eva'],
       ['Demo control panel', /\/staff\/demo$/, 'Demo control panel'],
       ['Audit log', /\/staff\/audit$/, 'Audit log'],
     ];
@@ -120,7 +120,8 @@ test.describe('staff app: pages like the Hydro Mobile360 staff app', () => {
     // It did not go to the live customer, who no longer needs it.
     expect(await (await page.request.get('/api/messages')).json()).toHaveLength(4);
     await page.locator('.rs-rail').getByRole('link', { name: 'Dashboard', exact: true }).click();
-    await expect(queue).toContainText('already sent the message');
+    await expect(queue).toContainText(`All ${count - 1} messaged today`);
+    await expect(queue.getByRole('link', { name: 'Message again' })).toBeVisible();
   });
 
   test('customer list: search, filter, paging, open a customer', async ({ page }) => {
@@ -249,11 +250,12 @@ test.describe('staff app: pages like the Hydro Mobile360 staff app', () => {
     await expect(page.locator('.history-table')).toHaveCount(0);
   });
 
-  test('AI assistant answers about the whole customer base, and a draft opens in the composer', async ({ page }) => {
+  test('Eva (staff assistant) answers about the whole customer base, and a draft opens in the composer', async ({ page }) => {
     await fresh(page, '/staff/assistant');
     // Empty state like the Hydro assistant: orb, greeting and six suggestion chips (no "More questions").
     await expect(page.locator('.ai-orb')).toBeVisible();
-    await expect(page.locator('.ai-greet')).toContainText('Hi Lotte');
+    await expect(page.locator('.ai-title')).toHaveText('Eva');
+    await expect(page.locator('.ai-greet')).toContainText('Hi Lotte, I’m Eva');
     await expect(page.locator('.ai-chips .ai-chip')).toHaveCount(6);
     await expect(page.getByRole('button', { name: 'More questions' })).toHaveCount(0);
     await page.locator('.ai-chip', { hasText: 'How many customers have an installment that is too low?' }).click();
@@ -280,7 +282,7 @@ test.describe('staff app: pages like the Hydro Mobile360 staff app', () => {
     await expect(page.locator('.aud-group.on')).toContainText('EV charging at peak hours');
     await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Cheapest hours tonight: 02:00–05:00');
     // The conversation is still there when you come back, until "New chat".
-    await page.locator('.rs-rail').getByRole('link', { name: 'AI assistant', exact: true }).click();
+    await page.locator('.rs-rail').getByRole('link', { name: 'Eva', exact: true }).click();
     await expect(page.locator('.ai-turn')).toHaveCount(3);
     await page.getByRole('button', { name: 'New chat' }).click();
     await expect(page.locator('.ai-orb')).toBeVisible();
@@ -298,11 +300,17 @@ test.describe('staff app: pages like the Hydro Mobile360 staff app', () => {
     await expect(delivery.locator('tbody tr')).toHaveCount(9);
     await expect(delivery.locator('.pager')).toContainText('1–9 of 9');
     // Period: fewer months in every monthly chart, fewer messages.
-    const energy = page.locator('.report-card', { hasText: 'Energy delivered by month' });
+    const energy = page.locator('.report-card', { hasText: 'Energy delivered by' });
     await expect.poll(() => energy.locator('.recharts-bar-rectangle').count()).toBe(12);
     await page.getByLabel('Filter by period').selectOption('3');
     await expect.poll(() => energy.locator('.recharts-bar-rectangle').count()).toBe(3);
     await expect(delivery).toContainText('7 messages to groups in this period');
+    // Last 7 days: the monthly charts become daily ones.
+    await page.getByLabel('Filter by period').selectOption('week');
+    await expect.poll(() => energy.locator('.recharts-bar-rectangle').count()).toBe(7);
+    await expect(page.locator('.report-card', { hasText: 'Energy delivered by day' })).toBeVisible();
+    await expect(delivery).toContainText('2 messages to groups in this period');
+    await page.getByLabel('Filter by period').selectOption('3');
     // City: the whole page narrows to that city.
     await page.getByLabel('Filter by city').selectOption('Utrecht');
     await expect(page.locator('.report-scope')).toContainText(/^\d+ of 1,248 customers/);

@@ -94,7 +94,7 @@ const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
 export default function StaffReports() {
   const { t, tx, eur, num, date } = useI18n();
   const { portfolio, outbox } = useStaff();
-  const [months, setMonths] = useState<'3' | '6' | '12'>('12');
+  const [months, setMonths] = useState<'week' | '3' | '6' | '12'>('12');
   const [city, setCity] = useState('');
   const [product, setProduct] = useState('');
   const [group, setGroup] = useState<ReportGroup>('all');
@@ -131,6 +131,11 @@ export default function StaffReports() {
   const usageKey = metric === 'electricity' ? 'electricityMwh' : 'gasKm3';
   const usageUnit = metric === 'electricity' ? 'MWh' : t('thousand m³', 'duizend m³');
   const shortMonths = r.months.filter((m) => m.costK > m.installmentsK).length;
+  // The charts are per month, or per day for the last 7 days.
+  const byDay = r.per === 'day';
+  const per = byDay ? t('day', 'dag') : t('month', 'maand');
+  const pers = byDay ? t('days', 'dagen') : t('months', 'maanden');
+  const perHead = byDay ? t('Day', 'Dag') : t('Month', 'Maand');
   const foot = (text: string): ReactNode => <span className="xs muted">{text}</span>;
 
   return (
@@ -141,6 +146,7 @@ export default function StaffReports() {
         <label className="field">
           {t('Period', 'Periode')}
           <select className="input" aria-label={t('Filter by period', 'Filter op periode')} value={months} onChange={(e) => setMonths(e.target.value as typeof months)}>
+            <option value="week">{t('Last 7 days', 'Laatste 7 dagen')}</option>
             <option value="3">{t('Last 3 months', 'Laatste 3 maanden')}</option>
             <option value="6">{t('Last 6 months', 'Laatste 6 maanden')}</option>
             <option value="12">{t('Last 12 months', 'Laatste 12 maanden')}</option>
@@ -212,7 +218,7 @@ export default function StaffReports() {
 
           <div className="staff-grid even">
             <Card
-              title={t('Energy delivered by month', 'Geleverde energie per maand')}
+              title={t(`Energy delivered by ${per}`, `Geleverde energie per ${per}`)}
               sub={t(`Total for this selection, in ${usageUnit}`, `Totaal voor deze selectie, in ${usageUnit}`)}
               className="report-card"
               action={
@@ -226,7 +232,7 @@ export default function StaffReports() {
                       { value: 'gas', label: t('Gas', 'Gas') },
                     ]}
                   />
-                  <ExportButton name="energy-by-month" title={t('Energy delivered by month', 'Geleverde energie per maand')} rows={() => [[t('Month', 'Maand'), t('Electricity MWh', 'Stroom MWh'), t('Gas thousand m3', 'Gas duizend m3')], ...r.months.map((m) => [tx(m.label), m.electricityMwh, m.gasKm3])]} />
+                  <ExportButton name={`energy-by-${byDay ? 'day' : 'month'}`} title={t(`Energy delivered by ${per}`, `Geleverde energie per ${per}`)} rows={() => [[perHead, t('Electricity MWh', 'Stroom MWh'), t('Gas thousand m3', 'Gas duizend m3')], ...r.months.map((m) => [tx(m.label), m.electricityMwh, m.gasKm3])]} />
                 </span>
               }
             >
@@ -235,9 +241,9 @@ export default function StaffReports() {
 
             <Card
               title={t('Cost against installments', 'Kosten tegenover termijnen')}
-              sub={t(`Thousand €. Cost was above installments in ${shortMonths} of ${r.months.length} months`, `Duizend €. Kosten lagen boven de termijnen in ${shortMonths} van de ${r.months.length} maanden`)}
+              sub={t(`Thousand €. Cost was above installments in ${shortMonths} of ${r.months.length} ${pers}`, `Duizend €. Kosten lagen boven de termijnen in ${shortMonths} van de ${r.months.length} ${pers}`)}
               className="report-card"
-              action={<ExportButton name="cost-against-installments" title={t('Cost against installments', 'Kosten tegenover termijnen')} rows={() => [[t('Month', 'Maand'), t('Cost thousand EUR', 'Kosten duizend EUR'), t('Installments thousand EUR', 'Termijnen duizend EUR')], ...r.months.map((m) => [tx(m.label), m.costK, m.installmentsK])]} />}
+              action={<ExportButton name="cost-against-installments" title={t('Cost against installments', 'Kosten tegenover termijnen')} rows={() => [[perHead, t('Cost thousand EUR', 'Kosten duizend EUR'), t('Installments thousand EUR', 'Termijnen duizend EUR')], ...r.months.map((m) => [tx(m.label), m.costK, m.installmentsK])]} />}
             >
               <MonthChart data={monthRows} bar={{ key: 'costK', color: '#23d2b5', name: t('Cost', 'Kosten') }} line={{ key: 'installmentsK', name: t('Installments', 'Termijnen') }} unit={t('thousand €', 'duizend €')} />
               <div className="chart-legend">
@@ -265,9 +271,9 @@ export default function StaffReports() {
 
             <Card
               title={t('Customers using the app', 'Klanten die de app gebruiken')}
-              sub={t('Active app users per month', 'Actieve app-gebruikers per maand')}
+              sub={t(`Active app users per ${per}`, `Actieve app-gebruikers per ${per}`)}
               className="report-card"
-              action={<ExportButton name="app-users-by-month" title={t('Customers using the app', 'Klanten die de app gebruiken')} rows={() => [[t('Month', 'Maand'), t('Active app users', 'Actieve app-gebruikers')], ...r.months.map((m) => [tx(m.label), m.activeUsers])]} />}
+              action={<ExportButton name={`app-users-by-${byDay ? 'day' : 'month'}`} title={t('Customers using the app', 'Klanten die de app gebruiken')} rows={() => [[perHead, t('Active app users', 'Actieve app-gebruikers')], ...r.months.map((m) => [tx(m.label), m.activeUsers])]} />}
             >
               <MonthChart data={monthRows} bar={{ key: 'activeUsers', color: '#7b61ff', name: t('Active', 'Actief') }} unit={t('customers', 'klanten')} />
             </Card>

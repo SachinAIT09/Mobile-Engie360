@@ -107,7 +107,7 @@ function StaffLayout() {
     { key: 'activity', icon: Smartphone, label: t('Customer activity', 'Klantactiviteit'), to: '/staff/activity' },
     { key: 'messages', icon: Send, label: t('Messages', 'Berichten'), to: '/staff/messages' },
     { key: 'reports', icon: BarChart3, label: t('Reports', 'Rapporten'), to: '/staff/reports' },
-    { key: 'assistant', icon: Sparkles, label: t('AI assistant', 'AI-assistent'), to: '/staff/assistant' },
+    { key: 'assistant', icon: Sparkles, label: brand.assistant.name, to: '/staff/assistant' },
   ];
   const demo: RailItem[] = [
     { key: 'demo', icon: Settings, label: t('Demo control panel', 'Demo-bedieningspaneel'), to: '/staff/demo' },
@@ -119,7 +119,7 @@ function StaffLayout() {
       logo={<Brand sub={t('Customer Service', 'Klantenservice')} />}
       logoTo="/staff"
       logoLabel={`${brand.name} ${t('Customer Service', 'Klantenservice')}`}
-      ask={{ label: t('Ask the assistant…', 'Vraag de assistent…'), to: '/staff/assistant' }}
+      ask={{ label: t(`Ask ${brand.assistant.name}…`, `Vraag ${brand.assistant.name}…`), to: '/staff/assistant' }}
       sections={sections}
       demo={demo}
       navOpen={navOpen}

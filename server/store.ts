@@ -620,7 +620,7 @@ export class Store {
    * Reports for the whole customer base, or the part of it the filters select: `months` back,
    * one city, one contract, or a group (app users, EV drivers, customers needing attention).
    */
-  reports(q: { months?: number; city?: string; product?: string; group?: ReportGroup }, online: number, pushDevices: number): ReportsResponse {
+  reports(q: { months?: number; week?: boolean; city?: string; product?: string; group?: ReportGroup }, online: number, pushDevices: number): ReportsResponse {
     const all = this.summaries(online, pushDevices);
     const months = q.months === 3 || q.months === 6 ? q.months : 12;
     const scale = new Map(POPULATION.map((c) => [c.id, c.usageScale]));
@@ -633,7 +633,9 @@ export class Store {
     const installments = sel.reduce((n, c) => n + c.installment, 0);
     const low = sel.filter((c) => c.flags.includes('installment'));
     const now = this.now().getTime();
-    const since = now - months * 30.4 * DAY;
+    // "Last 7 days" reports per day; the other periods per month.
+    const week = q.week === true;
+    const since = week ? now - 7 * DAY : now - months * 30.4 * DAY;
     // More customers use the app every month; the latest month is today's figure.
     const USE = [0.5, 0.52, 0.55, 0.57, 0.58, 0.61, 0.63, 0.66, 0.68, 0.7, 0.72, 0.74];
     const active = Math.round(appUsers * USE[11]!);
@@ -653,7 +655,10 @@ export class Store {
         shortfallPerYear: low.reduce((n, c) => n + (c.advised - c.installment) * 12, 0),
         readPct: funnel.delivered ? Math.round((funnel.opened / funnel.delivered) * 100) : 0,
       },
-      months: monthly.slice(-months).map((m, i, list) => {
+      per: week ? 'day' : 'month',
+      months: (week ? daily.slice(-8, -1) : monthly.slice(-months)).map((m, i, list) => {
+        // A day carries a thirtieth of the month's fixed cost and installment, and about a third of the month's app users.
+        const part = week ? 1 / 30 : 1;
         const ev = m.ev ?? 0;
         const kwh = (m.electricity - ev) * sum + ev * sumEv;
         const m3 = m.gas * sum;
@@ -662,9 +667,9 @@ export class Store {
           label: m.label,
           electricityMwh: Math.round(kwh / 100) / 10,
           gasKm3: Math.round(m3 / 100) / 10,
-          costK: Math.round((kwh * contract.electricity.avgPrice + m3 * contract.gas.price + contract.fixedPerMonth * sel.length) / 100) / 10,
-          installmentsK: Math.round(installments / 100) / 10,
-          activeUsers: Math.round(appUsers * USE[12 - list.length + i]!),
+          costK: Math.round((kwh * contract.electricity.avgPrice + m3 * contract.gas.price + contract.fixedPerMonth * sel.length * part) / 100) / 10,
+          installmentsK: Math.round((installments * part) / 100) / 10,
+          activeUsers: week ? Math.round(appUsers * (0.22 + 0.05 * Math.sin(i * 1.7) + (i === list.length - 1 ? 0.03 : 0))) : Math.round(appUsers * USE[12 - list.length + i]!),
         };
       }),
       attention: FLAGS.map((f) => ({ id: f, label: FLAG_INFO[f].label, count: sel.filter((c) => c.flags.includes(f)).length })),

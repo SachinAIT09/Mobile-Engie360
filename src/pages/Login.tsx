@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Fingerprint, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Fingerprint, Lock, LogIn, Mail, ShieldCheck } from 'lucide-react';
 import { useI18n, type Lang } from '../lib/i18n';
 import { checkLogin, signIn } from '../lib/session';
 import { API, post } from '../api/client';
 import { brand } from '../brand';
 
-/** MijnENGIE sign-in, the first screen of the customer app (as in Hydro Mobile360's customer app). */
+/**
+ * MijnENGIE sign-in, the first screen of the customer app: a glass card over a slow-moving backdrop in the
+ * brand colours. It is always dark (brand navy), whatever theme the app itself uses.
+ */
 export default function Login() {
   const { t, lang, setLang } = useI18n();
   const navigate = useNavigate();
@@ -30,32 +33,48 @@ export default function Login() {
 
   return (
     <div className="login">
-      <div className="login-hero">
-        <div className="login-top">
-          <span className="brand">
-            <span className="brand-mark">{brand.name}</span>
-            <span className="brand-sub">{brand.portal}</span>
-          </span>
-          <div className="lang" role="group" aria-label="Language / Taal">
-            {(['nl', 'en'] as Lang[]).map((l) => (
-              <button key={l} className={lang === l ? 'on' : ''} aria-pressed={lang === l} onClick={() => setLang(l)}>
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
+      {/* Backdrop: slow-moving light in the brand colours behind the glass. Decorative only. */}
+      <div className="login-bg" aria-hidden>
+        <i className="glow g1" />
+        <i className="glow g2" />
+        <i className="glow g3" />
+        <i className="login-grid" />
+      </div>
+
+      <header className="login-top">
+        <span className="brand">
+          <span className="brand-mark">{brand.name}</span>
+          <span className="brand-sub">{brand.portal}</span>
+        </span>
+        <div className="lang" role="group" aria-label="Language / Taal">
+          {(['nl', 'en'] as Lang[]).map((l) => (
+            <button key={l} className={lang === l ? 'on' : ''} aria-pressed={lang === l} onClick={() => setLang(l)}>
+              {l.toUpperCase()}
+            </button>
+          ))}
         </div>
+      </header>
+
+      <div className="login-head">
         <span className="login-eyebrow">{t('Welcome back', 'Welkom terug')}</span>
-        <h1>{t('Sign in to your energy.', 'Log in bij je energie.')}</h1>
+        <h1>
+          {t('Sign in to your', 'Log in bij je')} <em>{t('energy', 'energie')}</em>.
+        </h1>
+        <p>{t('Your usage, bills and savings in one place.', 'Je verbruik, nota’s en besparingen op één plek.')}</p>
       </div>
 
       <form className="login-card" onSubmit={submit} noValidate>
         <label className="field">
           {t('Email or customer number', 'E-mail of klantnummer')}
-          <input className="input" type="text" inputMode="email" autoComplete="username" value={login} onChange={(e) => setLogin(e.target.value)} />
+          <span className="login-input">
+            <Mail size={18} aria-hidden />
+            <input className="input" type="text" inputMode="email" autoComplete="username" value={login} onChange={(e) => setLogin(e.target.value)} />
+          </span>
         </label>
         <label className="field">
           {t('Password', 'Wachtwoord')}
-          <span className="login-pw">
+          <span className="login-input">
+            <Lock size={18} aria-hidden />
             <input className="input" type={show ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <button type="button" className="icon-btn" onClick={() => setShow(!show)} aria-label={show ? t('Hide password', 'Verberg wachtwoord') : t('Show password', 'Toon wachtwoord')}>
               {show ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -67,12 +86,18 @@ export default function Login() {
             {error}
           </p>
         )}
-        <button type="submit" className="btn btn-primary login-submit">
+        <button type="submit" className="btn login-submit login-primary">
           <LogIn size={18} /> {t('Sign in', 'Inloggen')}
         </button>
-        <button type="button" className="btn btn-outline login-submit" onClick={enter}>
+        <span className="login-or" aria-hidden>
+          {t('or', 'of')}
+        </span>
+        <button type="button" className="btn login-submit login-glass" onClick={enter}>
           <Fingerprint size={18} /> {t('Sign in with Face ID / fingerprint', 'Inloggen met Face ID / vingerafdruk')}
         </button>
+        <p className="login-safe">
+          <ShieldCheck size={14} aria-hidden /> {t('Your sign-in is encrypted and private.', 'Je login is versleuteld en privé.')}
+        </p>
       </form>
       <p className="login-foot">{t(`© 2026 ${brand.name} Netherlands`, `© 2026 ${brand.name} Nederland`)}</p>
     </div>

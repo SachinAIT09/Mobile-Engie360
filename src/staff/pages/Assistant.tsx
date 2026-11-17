@@ -6,6 +6,7 @@ import { STAFF_SUGGESTIONS, staffPhrase } from '../../assistant/staff';
 import type { AssistantReply } from '../../assistant/types';
 import { useI18n } from '../../lib/i18n';
 import { revealWords, useTypewriter, wordCount } from '../../lib/useTypewriter';
+import { brand } from '../../brand';
 import { useStaff } from '../context';
 import { STAFF_NAME } from '../kinds';
 import { StaffHead } from '../parts';
@@ -163,7 +164,7 @@ function TurnView({ turn, latest, onAsk, onNavigate, onGrow }: { turn: Turn; lat
     <div className="ai-turn">
       <div className="ai-bubble user">{turn.question}</div>
       {turn.status === 'pending' && (
-        <div className="ai-bubble bot typing" role="status" aria-label={t('The assistant is typing', 'De assistent is aan het typen')}>
+        <div className="ai-bubble bot typing" role="status" aria-label={t(`${brand.assistant.name} is typing`, `${brand.assistant.name} is aan het typen`)}>
           <span />
           <span />
           <span />
@@ -230,20 +231,20 @@ export default function StaffAssistantPage() {
 
   return (
     <div className="ai-page">
-      <StaffHead icon={Sparkles} title={t('AI assistant', 'AI-assistent')} sub={t('Ask about the whole customer base: what needs attention, installments, EV charging, app activity and message results, or look up a customer by name.', 'Vraag naar het hele klantenbestand: wat aandacht vraagt, termijnbedragen, laden, app-activiteit en resultaten van berichten, of zoek een klant op naam.')} />
+      <StaffHead icon={Sparkles} title={brand.assistant.name} sub={t('Ask about the whole customer base: what needs attention, installments, EV charging, app activity and message results, or look up a customer by name.', 'Vraag naar het hele klantenbestand: wat aandacht vraagt, termijnbedragen, laden, app-activiteit en resultaten van berichten, of zoek een klant op naam.')} />
       <div className="ai-layout">
-        <section className="ai-main" aria-label={t('Service assistant', 'Service-assistent')}>
+        <section className="ai-main" aria-label={brand.assistant.name}>
           <div ref={logRef} className="ai-log" role="log" aria-live="polite" aria-label={t('Conversation', 'Gesprek')}>
             {turns.length === 0 ? (
               <div className="ai-empty">
                 <span className="ai-orb" aria-hidden>
                   <Sparkles size={30} />
                 </span>
-                <h2 className="ai-title">{t('Service assistant', 'Service-assistent')}</h2>
+                <h2 className="ai-title">{brand.assistant.name}</h2>
                 <p className="ai-greet">
                   {t(
-                    `Hi ${STAFF_NAME}! Ask me about your customers: who needs attention, how installments and messages are doing, or what is happening in the app. I can also look up a customer by name and draft a message.`,
-                    `Hoi ${STAFF_NAME}! Vraag me naar je klanten: wie aandacht nodig heeft, hoe het gaat met termijnbedragen en berichten, of wat er in de app gebeurt. Ik kan ook een klant opzoeken op naam en een bericht schrijven.`,
+                    `Hi ${STAFF_NAME}, I’m ${brand.assistant.name}. Ask me about your customers: who needs attention, how installments and messages are doing, or what is happening in the app. I can also look up a customer by name and draft a message.`,
+                    `Hoi ${STAFF_NAME}, ik ben ${brand.assistant.name}. Vraag me naar je klanten: wie aandacht nodig heeft, hoe het gaat met termijnbedragen en berichten, of wat er in de app gebeurt. Ik kan ook een klant opzoeken op naam en een bericht schrijven.`,
                   )}
                 </p>
                 <div className="ai-chips" role="group" aria-label={t('Suggested questions', 'Voorgestelde vragen')}>
@@ -266,7 +267,7 @@ export default function StaffAssistantPage() {
 
           <form className="ai-compose" onSubmit={submit}>
             <label htmlFor="assistant-q" className="sr-only">
-              {t('Ask the assistant a question', 'Stel de assistent een vraag')}
+              {t(`Ask ${brand.assistant.name} a question`, `Stel ${brand.assistant.name} een vraag`)}
             </label>
             <textarea
               id="assistant-q"

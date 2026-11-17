@@ -450,13 +450,15 @@ export interface Portfolio {
   messages: { sent: number; read: number };
 }
 
-/** GET /api/staff/reports?months=&city=&product=&group= : reports for the whole customer base or a selection of it. */
+/** GET /api/staff/reports?months=&city=&product=&group= (months: 3, 6, 12, or "week" for the last 7 days) : reports for the whole customer base or a selection of it. */
 export type ReportGroup = 'all' | 'app' | 'ev' | 'attention';
 export interface ReportsResponse {
   /** What can be filtered on, and how many customers the current selection has. */
   scope: { customers: number; total: number; cities: string[]; products: Text[] };
   kpis: { customers: number; appUsers: number; activePct: number; needAttention: number; avgInstallment: number; shortfallPerYear: number; readPct: number };
-  /** One point per month, oldest first. */
+  /** Whether `months` holds one point per month or (for the last 7 days) per day. */
+  per: 'month' | 'day';
+  /** One point per month or day, oldest first. */
   months: { key: string; label: Text; electricityMwh: number; gasKm3: number; costK: number; installmentsK: number; activeUsers: number }[];
   attention: { id: AttentionFlag; label: Text; count: number }[];
   cities: { city: string; customers: number; attention: number; tooLow: number; evPeak: number }[];
