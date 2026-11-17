@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { contentSecurityPolicy, decodePath } from './http.ts';
 import { HttpError } from './store.ts';
@@ -30,5 +31,11 @@ describe('contentSecurityPolicy', () => {
     // sha256 of "var a = 1;"
     expect(policy).toContain("'sha256-");
     expect(contentSecurityPolicy('<script src="/a.js"></script>')).toContain("script-src 'self';");
+  });
+
+  it('gives the same hash for a page with Windows line endings: the browser hashes the script with plain newlines', () => {
+    expect(contentSecurityPolicy(html.replace(/\n/g, '\r\n'))).toBe(policy);
+    // sha256 of "\nrun();\n", what the browser computes either way
+    expect(policy).toContain(`'sha256-${createHash('sha256').update('\nrun();\n').digest('base64')}'`);
   });
 });

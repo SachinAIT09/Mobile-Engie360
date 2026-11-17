@@ -41,7 +41,11 @@ export function baseSecurityHeaders(res: ServerResponse): void {
  * which would block the customer app's own phone column; browsers follow frame-ancestors over that header.
  */
 export function contentSecurityPolicy(html: string): string {
-  const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => `'sha256-${createHash('sha256').update(m[1]!).digest('base64')}'`);
+  // The browser reads Windows line endings as plain newlines before it checks a script against its hash,
+  // so the hash is taken the same way; a page built from a checkout with CRLF endings is then still allowed.
+  const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
+    (m) => `'sha256-${createHash('sha256').update(m[1]!.replace(/\r\n?/g, '\n')).digest('base64')}'`,
+  );
   return [
     "default-src 'self'",
     `script-src 'self'${hashes.length ? ` ${hashes.join(' ')}` : ''}`,
