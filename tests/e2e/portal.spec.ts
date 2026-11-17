@@ -5,17 +5,17 @@ import { ask, expect, fresh, openEva, test } from './fixtures';
 test.use({ viewport: { width: 390, height: 844 } });
 
 test.describe('customer app: sign-in', () => {
-  test('opens on the MijnENGIE sign-in and accepts the demo login', async ({ page }) => {
+  test('opens on the MijnENGIE sign-in and accepts the customer login', async ({ page }) => {
     await fresh(page, '/app', { signedIn: false });
     await expect(page).toHaveURL(/\/app\/login$/);
     await page.getByLabel('Email or customer number').fill('someone@else.nl');
     await page.getByLabel('Password', { exact: true }).fill('x');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-    await expect(page.getByRole('alert')).toContainText('sanne.devries@example.nl');
+    await expect(page.getByRole('alert')).toContainText('We don’t recognise that email address or customer number');
     await page.getByLabel('Email or customer number').fill('2003 418 762');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.locator('h1').first()).toHaveText(/^Good afternoon, Sanne/);
+    await expect(page.locator('h1').first()).toHaveText(/^Good afternoon, Olivia/);
     // Staff see the sign-in.
     await expect.poll(async () => JSON.stringify(await (await page.request.get('/api/staff/activity')).json())).toContain('Signed in to MijnENGIE');
   });
@@ -32,7 +32,7 @@ test.describe('customer app: sign-in', () => {
 test.describe('customer app: screens', () => {
   test('dashboard renders charts and filters', async ({ page }) => {
     await fresh(page);
-    await expect(page.locator('h1').first()).toHaveText(/^Good afternoon, Sanne/);
+    await expect(page.locator('h1').first()).toHaveText(/^Good afternoon, Olivia/);
     await expect.poll(() => page.locator('.recharts-bar-rectangle').count()).toBeGreaterThan(5);
     await page.getByRole('tab', { name: 'Day' }).first().click();
     await expect.poll(() => page.locator('.recharts-bar-rectangle').count()).toBeGreaterThanOrEqual(30);
@@ -68,7 +68,10 @@ test.describe('customer app: screens', () => {
     await fresh(page, '/app/energy');
     await page.getByRole('tab', { name: 'Hour' }).click();
     await expect.poll(() => page.locator('.recharts-bar-rectangle').count()).toBeGreaterThanOrEqual(24);
+    // The screen shows one part at a time: Usage · Breakdown · Trend.
+    await page.getByRole('tab', { name: 'Breakdown' }).click();
     await expect(page.locator('.recharts-pie-sector')).toHaveCount(8);
+    await page.getByRole('tab', { name: 'Trend' }).click();
     await page.getByRole('button', { name: 'Show monthly table' }).click();
     await expect(page.locator('table.table tbody tr')).toHaveCount(12);
   });
@@ -83,7 +86,10 @@ test.describe('customer app: screens', () => {
     await expect(page).toHaveURL(/\/billing$/);
     await page.getByRole('button', { name: /^View / }).first().click();
     const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('.modal').getByRole('button', { name: /Download/ }).click()]);
-    expect(dl.suggestedFilename()).toMatch(/-DEMO\.html$/);
+    expect(dl.suggestedFilename()).toMatch(/^[\w-]+\.pdf$/);
+    // A real PDF, not a renamed web page.
+    const { readFileSync } = await import('node:fs');
+    expect(readFileSync((await dl.path())!, 'latin1').startsWith('%PDF-1.4')).toBe(true);
     await page.keyboard.press('Escape');
     await page.getByRole('tab', { name: 'Annual' }).click();
     await expect(page.locator('#invoices tbody tr')).toHaveCount(1);
@@ -92,6 +98,9 @@ test.describe('customer app: screens', () => {
   test('insights: savings plan', async ({ page }) => {
     await fresh(page, '/app/insights');
     const before = await page.locator('.list-row').count();
+    // Insights are compact rows; the actions appear once a row is opened.
+    await expect(page.getByRole('button', { name: /Add to plan/ })).toHaveCount(0);
+    await page.locator('.insight-row:not(.planned)', { hasText: '/yr' }).first().locator('.insight-toggle').click();
     await page.getByRole('button', { name: /Add to plan/ }).first().click();
     await expect.poll(() => page.locator('.list-row').count()).toBeGreaterThan(before);
   });
@@ -165,6 +174,19 @@ test.describe('customer app: navigation like the Hydro Mobile360 customer app', 
     // Old links land on the app home instead of a dead page.
     await page.goto('/website-demo');
     await expect(page).toHaveURL(/\/app$/);
+  });
+
+  test('reads as a production app: no demo, sample-data or partner labels on any screen', async ({ page }) => {
+    await fresh(page);
+    for (const route of ['/app', '/app/energy', '/app/insights', '/app/smart-energy', '/app/billing', '/app/account', '/app/assistant']) {
+      await page.goto(route);
+      await expect(page.locator('.app-tabs')).toBeVisible();
+      await expect(page.locator('body'), route).not.toContainText(/demo|sample|simulated|prototype|scripted|fictional|Net2Grid/i);
+    }
+    await page.goto('/app');
+    await openEva(page);
+    await expect(page.locator('.chat-widget')).not.toContainText(/demo|sample|scripted|Net2Grid/i);
+    await expect(page).toHaveTitle('MijnENGIE');
   });
 
   test('old portal links move under /app', async ({ page }) => {

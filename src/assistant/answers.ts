@@ -65,8 +65,8 @@ function base(intent: Intent | 'FALLBACK', ctx: AssistantContext): AssistantRepl
     case 'BILL_WHY_HIGH':
       return {
         text: L(
-          `Your October electricity use was **${lastMonthSummary.elecVsPrevMonthPct}% higher** than September (${n(lastMonthSummary.electricity)} vs 274 kWh). Two things drove it:\n• **EV charging**: ${brand.partners.disaggregation} detected a new electric car from late August, which used ${n(lastMonthSummary.ev)} kWh in October, mostly between 18:00 and 21:00 when your dynamic price is highest.\n• **Colder weather**: gas rose to ${n(lastMonthSummary.gas)} m³ as the heating season started.\nYour monthly installment of ${eur(contract.installment, 0)} stays the same. You only see the difference at the annual statement.`,
-          `Je stroomverbruik in oktober was **${lastMonthSummary.elecVsPrevMonthPct}% hoger** dan in september (${n(lastMonthSummary.electricity)} vs 274 kWh). Dat komt door twee dingen:\n• **Laden van je auto**: ${brand.partners.disaggregation} herkent sinds eind augustus een elektrische auto, goed voor ${n(lastMonthSummary.ev)} kWh in oktober, vooral tussen 18:00 en 21:00 als je dynamische prijs het hoogst is.\n• **Kouder weer**: je gasverbruik steeg naar ${n(lastMonthSummary.gas)} m³ door het begin van het stookseizoen.\nJe termijnbedrag van ${eur(contract.installment, 0)} blijft gelijk. Het verschil zie je pas bij de jaarnota.`,
+          `Your October electricity use was **${lastMonthSummary.elecVsPrevMonthPct}% higher** than September (${n(lastMonthSummary.electricity)} vs 274 kWh). Two things drove it:\n• **EV charging**: we detected a new electric car from late August, which used ${n(lastMonthSummary.ev)} kWh in October, mostly between 18:00 and 21:00 when your dynamic price is highest.\n• **Colder weather**: gas rose to ${n(lastMonthSummary.gas)} m³ as the heating season started.\nYour monthly installment of ${eur(contract.installment, 0)} stays the same. You only see the difference at the annual statement.`,
+          `Je stroomverbruik in oktober was **${lastMonthSummary.elecVsPrevMonthPct}% hoger** dan in september (${n(lastMonthSummary.electricity)} vs 274 kWh). Dat komt door twee dingen:\n• **Laden van je auto**: we herkennen sinds eind augustus een elektrische auto, goed voor ${n(lastMonthSummary.ev)} kWh in oktober, vooral tussen 18:00 en 21:00 als je dynamische prijs het hoogst is.\n• **Kouder weer**: je gasverbruik steeg naar ${n(lastMonthSummary.gas)} m³ door het begin van het stookseizoen.\nJe termijnbedrag van ${eur(contract.installment, 0)} blijft gelijk. Het verschil zie je pas bij de jaarnota.`,
         ),
         facts: [
           { label: L('October cost', 'Kosten oktober'), value: eur(lastMonthSummary.cost), tone: 'up' },
@@ -133,7 +133,7 @@ function base(intent: Intent | 'FALLBACK', ctx: AssistantContext): AssistantRepl
           { label: L('Yearly saving', 'Besparing per jaar'), value: '≈ €610', tone: 'down' },
           { label: L('Payback', 'Terugverdientijd'), value: L('≈ 8 years', '≈ 8 jaar') },
         ],
-        actions: [{ label: L('Request a solar quote (demo)', 'Offerte zonnepanelen (demo)'), to: '/insights' }],
+        actions: [{ label: L('Request a solar quote', 'Offerte zonnepanelen'), to: '/insights' }],
       };
 
     case 'CONTRACT':
@@ -153,8 +153,8 @@ function base(intent: Intent | 'FALLBACK', ctx: AssistantContext): AssistantRepl
     case 'EV':
       return {
         text: L(
-          `${brand.partners.disaggregation} recognised **EV charging** in your home from late August: sessions of about 3.3 kW, 3–4 times a week. In October that was ${n(lastMonthSummary.ev)} kWh, ${n((lastMonthSummary.ev / lastMonthSummary.electricity) * 100)}% of your electricity.\nTonight’s cheapest hours are **02:00–05:00 (€0.17/kWh)**. With smart charging, your car charges then automatically.`,
-          `${brand.partners.disaggregation} herkent sinds eind augustus **het laden van een elektrische auto**: sessies van ongeveer 3,3 kW, 3–4 keer per week. In oktober was dat ${n(lastMonthSummary.ev)} kWh, ${n((lastMonthSummary.ev / lastMonthSummary.electricity) * 100)}% van je stroom.\nDe goedkoopste uren vannacht zijn **02:00–05:00 (€0,17/kWh)**. Met slim laden laadt je auto dan automatisch.`,
+          `We recognised **EV charging** in your home from late August: sessions of about 3.3 kW, 3–4 times a week. In October that was ${n(lastMonthSummary.ev)} kWh, ${n((lastMonthSummary.ev / lastMonthSummary.electricity) * 100)}% of your electricity.\nTonight’s cheapest hours are **02:00–05:00 (€0.17/kWh)**. With smart charging, your car charges then automatically.`,
+          `We herkennen sinds eind augustus **het laden van een elektrische auto**: sessies van ongeveer 3,3 kW, 3–4 keer per week. In oktober was dat ${n(lastMonthSummary.ev)} kWh, ${n((lastMonthSummary.ev / lastMonthSummary.electricity) * 100)}% van je stroom.\nDe goedkoopste uren vannacht zijn **02:00–05:00 (€0,17/kWh)**. Met slim laden laadt je auto dan automatisch.`,
         ),
         actions: [{ label: L('Open Smart Energy', 'Open Slimme Energie'), to: '/smart-energy' }],
       };
@@ -183,8 +183,8 @@ function base(intent: Intent | 'FALLBACK', ctx: AssistantContext): AssistantRepl
     case 'OUTAGE':
       return {
         text: L(
-          `Power cuts are handled by your network operator, not by ${brand.name}. For Utrecht that’s ${brand.partners.networkOperator}; check storingen.nl or call the national outage number 0800-9009. I can’t see any reported outage at your address right now (demo).`,
-          `Storingen worden opgelost door je netbeheerder, niet door ${brand.name}. In Utrecht is dat ${brand.partners.networkOperator}; kijk op storingen.nl of bel het landelijk storingsnummer 0800-9009. Op jouw adres zie ik nu geen gemelde storing (demo).`,
+          `Power cuts are handled by your network operator, not by ${brand.name}. For Utrecht that’s ${brand.partners.networkOperator}; check storingen.nl or call the national outage number 0800-9009. I can’t see any reported outage at your address right now.`,
+          `Storingen worden opgelost door je netbeheerder, niet door ${brand.name}. In Utrecht is dat ${brand.partners.networkOperator}; kijk op storingen.nl of bel het landelijk storingsnummer 0800-9009. Op jouw adres zie ik nu geen gemelde storing.`,
         ),
       };
 
@@ -200,10 +200,10 @@ function base(intent: Intent | 'FALLBACK', ctx: AssistantContext): AssistantRepl
     case 'HUMAN':
       return {
         text: L(
-          'Of course. Customer Service is available Monday to Friday 08:00–20:00 and Saturday 09:00–17:00. I’ll pass along this conversation so you don’t have to repeat yourself (demo: no ticket is created).',
-          'Natuurlijk. De Klantenservice is bereikbaar van maandag t/m vrijdag 08:00–20:00 en zaterdag 09:00–17:00. Ik geef dit gesprek door, zodat je niets hoeft te herhalen (demo: er wordt geen ticket aangemaakt).',
+          'Of course. Customer Service is available Monday to Friday 08:00–20:00 and Saturday 09:00–17:00. I’ll pass along this conversation so you don’t have to repeat yourself.',
+          'Natuurlijk. De Klantenservice is bereikbaar van maandag t/m vrijdag 08:00–20:00 en zaterdag 09:00–17:00. Ik geef dit gesprek door, zodat je niets hoeft te herhalen.',
         ),
-        actions: [{ label: L('Request a call back (demo)', 'Terugbelverzoek (demo)'), prompt: L('Thanks', 'Bedankt') }],
+        actions: [{ label: L('Request a call back', 'Terugbelverzoek'), prompt: L('Thanks', 'Bedankt') }],
       };
 
     case 'PRODUCTS':
@@ -237,8 +237,8 @@ function base(intent: Intent | 'FALLBACK', ctx: AssistantContext): AssistantRepl
     default:
       return {
         text: L(
-          'I’m not sure I understood that. In this demo I can help with your usage, bills and invoices, installment, contract, EV charging, solar panels and saving tips.',
-          'Dat begreep ik niet helemaal. In deze demo kan ik helpen met je verbruik, nota’s, termijnbedrag, contract, laden van je auto, zonnepanelen en bespaartips.',
+          'I’m not sure I understood that. I can help with your usage, bills and invoices, installment, contract, EV charging, solar panels and saving tips.',
+          'Dat begreep ik niet helemaal. Ik kan helpen met je verbruik, nota’s, termijnbedrag, contract, laden van je auto, zonnepanelen en bespaartips.',
         ),
         actions: [
           { label: L('My usage', 'Mijn verbruik'), prompt: L('How much energy did I consume this month?', 'Hoeveel energie heb ik deze maand verbruikt?') },

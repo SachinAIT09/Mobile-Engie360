@@ -21,26 +21,96 @@ test.describe('customer ↔ staff, live', () => {
   test('server API is up and seeded from the mock-up', async ({ page }) => {
     await fresh(page);
     const r = await page.request.get('/api/customer');
-    expect((await r.json()).customer.firstName).toBe('Sanne');
+    expect((await r.json()).customer.firstName).toBe('Olivia');
     const msgs = await (await page.request.get('/api/messages')).json();
     expect(msgs).toHaveLength(4);
   });
 
   test('installment change shows up in the staff activity feed', async ({ page, browser }) => {
     await fresh(page, '/app/billing?adjust=1');
-    const staff = await staffPage(browser);
+    const staff = await staffPage(browser, '/staff/customers/C-2003418762');
     await page.locator('.modal input[type=range]').fill('210');
     await page.getByRole('button', { name: /Confirm/ }).click();
-    await expect(staff.locator('.staff-feed')).toContainText('Changed installment to €210 from December', { timeout: 8000 });
-    await expect(staff.locator('.badge', { hasText: 'In the app now' })).toBeVisible();
+    // The customer's page shows it as part of their current visit.
+    await expect(staff.locator('.visits > li').first()).toContainText('Changed installment to €210 from December', { timeout: 8000 });
+    await expect(staff.locator('.visits > li').first()).toContainText('In the app now');
+    await expect(staff.locator('.cust-head .badge', { hasText: 'In the app now' })).toBeVisible();
     // The Customer activity table has it too, under the Billing filter.
     await staff.getByRole('link', { name: 'Customer activity' }).click();
     await staff.locator('.pills').getByRole('button', { name: 'Billing' }).click();
-    await expect(staff.locator('.staff-table tbody tr')).toHaveCount(1);
+    await expect(staff.locator('.staff-table tbody tr', { hasText: 'Olivia Carter' })).toHaveCount(1);
     // Survives a reload: it came from the server, not page state.
     await page.reload();
     await expect(page.locator('body')).toContainText('210');
     await staff.context().close();
+  });
+
+  test('paying a bill: pay sheet, tick, invoice paid, and staff see it', async ({ page, browser }) => {
+    await fresh(page, '/app/billing');
+    const staff = await staffPage(browser, '/staff/customers/C-2003418762');
+    // Automatic payment is on, so paying yourself is the secondary option.
+    await page.getByRole('button', { name: 'Pay now instead' }).click();
+    const sheet = page.locator('.modal.sheet');
+    await expect(sheet).toContainText('€185.00');
+    await sheet.getByRole('radio', { name: /iDEAL/ }).click();
+    await sheet.locator('select').selectOption('ING');
+    await sheet.getByRole('button', { name: /^Pay €185\.00/ }).click();
+    await expect(sheet).toContainText('Processing your payment');
+    // The tick and the confirmation.
+    await expect(sheet.locator('.pay-tick')).toBeVisible({ timeout: 8000 });
+    await expect(sheet).toContainText('Payment received');
+    await expect(sheet).toContainText('iDEAL · ING');
+    const [receipt] = await Promise.all([page.waitForEvent('download'), sheet.getByRole('button', { name: 'Receipt' }).click()]);
+    expect(receipt.suggestedFilename()).toMatch(/^PAY-\d+\.pdf$/);
+    await sheet.getByRole('button', { name: 'Done' }).click();
+    // The screen follows: nothing left to pay, the invoice is paid.
+    await expect(page.locator('body')).toContainText('You are all paid up');
+    await expect(page.getByRole('button', { name: /Pay now/ })).toHaveCount(0);
+    await expect(page.locator('#invoices tbody tr').first()).toContainText('Paid');
+    // Staff see the payment live.
+    await expect(staff.locator('.visits > li').first()).toContainText('Paid November 2026 · €185.00 with iDEAL · ING', { timeout: 8000 });
+    // It came from the server: a reload keeps it, and Home moves on to December.
+    await page.reload();
+    await expect(page.locator('body')).toContainText('You are all paid up');
+    await page.goto('/app');
+    await expect(page.locator('.hero-pay')).toContainText('28 Dec');
+    await staff.context().close();
+  });
+
+  test('automatic payment can be switched off and on', async ({ page }) => {
+    await fresh(page, '/app/billing');
+    const toggle = page.getByRole('switch', { name: 'Automatic payment' });
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await toggle.click();
+    await page.locator('.modal').getByRole('button', { name: 'Switch off' }).click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await expect(page.getByRole('button', { name: 'Pay now', exact: true })).toBeVisible();
+    await expect(page.locator('#invoices tbody tr').first()).toContainText('Open');
+    await page.reload();
+    await expect(page.getByRole('switch', { name: 'Automatic payment' })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  test('closing the app and opening it again starts from the original data', async ({ page, browser }) => {
+    await fresh(page, '/app/billing');
+    // The customer switches automatic payment off and changes the installment.
+    await page.getByRole('switch', { name: 'Automatic payment' }).click();
+    await page.locator('.modal').getByRole('button', { name: 'Switch off' }).click();
+    await expect.poll(async () => (await (await page.request.get('/api/billing')).json()).pay.autopay).toBe(false);
+    // A reload of the running app keeps the change…
+    await page.reload();
+    await expect(page.getByRole('switch', { name: 'Automatic payment' })).toHaveAttribute('aria-checked', 'false');
+    // …but a new launch (the app was closed: a new browser session) restores everything.
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await ctx.addInitScript(() => {
+      localStorage.setItem('engie-demo-lang', 'en');
+      localStorage.setItem('engie-demo-session', 'C-2003418762');
+    });
+    const relaunched = await ctx.newPage();
+    await relaunched.goto('/app/billing');
+    await expect(relaunched.getByRole('switch', { name: 'Automatic payment' })).toHaveAttribute('aria-checked', 'true');
+    await expect(relaunched.getByRole('button', { name: 'Pay now instead' })).toBeVisible();
+    expect((await (await page.request.get('/api/billing')).json()).pay).toEqual({ autopay: true, paid: [] });
+    await ctx.close();
   });
 
   test('Eva conversations appear live for staff', async ({ page, browser }) => {
@@ -56,7 +126,7 @@ test.describe('customer ↔ staff, live', () => {
   test('a staff message arrives in the customer app as a banner and in the inbox', async ({ page, browser }) => {
     await fresh(page);
     const staff = await staffPage(browser, '/staff/demo');
-    await expect(staff.locator('.badge', { hasText: 'Sanne is in the app' })).toBeVisible();
+    await expect(staff.locator('.badge', { hasText: 'Olivia is in the app' })).toBeVisible();
     await staff.locator('.send-card', { hasText: 'Cheapest hours tonight' }).click();
     await expect(staff.locator('.toast').last()).toContainText('Sent');
     await expect(page.locator('.toast').last()).toContainText('Cheapest hours tonight', { timeout: 8000 });
@@ -81,7 +151,7 @@ test.describe('customer ↔ staff, live', () => {
     await expect(page.getByRole('img', { name: 'PowerConnect.AI' })).toBeVisible();
     await expect(page.locator('.mark')).toHaveText('ENGIE');
     expect((await page.request.get('/fonts/lato-900.woff2')).headers()['content-type']).toBe('font/woff2');
-    for (const href of ['/staff', '/app', '/staff/demo', '/staff/preview']) await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
+    for (const href of ['/staff', '/app', '/staff/demo']) await expect(page.locator(`a[href="${href}"]`)).toBeVisible();
     await expect(page.locator('.phone svg')).toBeVisible();
     await expect(page.locator('.phone code')).toContainText('/app');
     // The old address still works.
@@ -93,12 +163,12 @@ test.describe('customer ↔ staff, live', () => {
 test('a staff message written by hand is shown as read once the customer opens it', async ({ page, browser }) => {
   await fresh(page);
   const staff = await staffPage(browser, '/staff/messages');
-  await staff.getByLabel('Title', { exact: true }).fill('Hello Sanne');
+  await staff.getByLabel('Title', { exact: true }).fill('Hello Olivia');
   await staff.getByLabel('Message', { exact: true }).fill('Thanks for being a customer.');
   await staff.getByRole('button', { name: /^Send$/ }).click();
-  await expect(page.locator('.toast').last()).toContainText('Hello Sanne', { timeout: 8000 });
+  await expect(page.locator('.toast').last()).toContainText('Hello Olivia', { timeout: 8000 });
   await page.getByRole('button', { name: /Notifications/ }).click();
-  await page.locator('.pop-item', { hasText: 'Hello Sanne' }).click();
-  await expect(staff.locator('.staff-feed')).toContainText('Read “Hello Sanne”', { timeout: 8000 });
+  await page.locator('.pop-item', { hasText: 'Hello Olivia' }).click();
+  await expect(staff.locator('.outbox li', { hasText: 'Hello Olivia' })).toContainText(/Read \d\d:\d\d/, { timeout: 8000 });
   await staff.context().close();
 });

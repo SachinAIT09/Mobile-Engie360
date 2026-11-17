@@ -21,6 +21,9 @@ const { pathname, search, hash } = window.location;
 const staff = isStaffPath(pathname);
 if (!staff && !isPortalPath(pathname)) window.history.replaceState(null, '', `${portalUrl(pathname)}${search}${hash}`);
 
+// The customer app scrolls like a phone app: no visible scrollbars (see html.customer-app in global.css).
+if (!staff) document.documentElement.classList.add('customer-app');
+
 // On a laptop the customer app is a phone-width column (an iframe of itself); the real app runs inside it.
 const framed = !staff && wantsPhoneFrame();
 

@@ -4,7 +4,6 @@ import { Eye, EyeOff, Fingerprint, LogIn } from 'lucide-react';
 import { useI18n, type Lang } from '../lib/i18n';
 import { checkLogin, signIn } from '../lib/session';
 import { API, post } from '../api/client';
-import { customer } from '../data/customer';
 import { brand } from '../brand';
 
 /** MijnENGIE sign-in, the first screen of the customer app (as in Hydro Mobile360's customer app). */
@@ -26,7 +25,7 @@ export default function Login() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (checkLogin(login, password)) enter();
-    else setError(t(`Use the demo login: ${customer.email} with any password.`, `Gebruik de demo-login: ${customer.email} met een willekeurig wachtwoord.`));
+    else setError(t('We don’t recognise that email address or customer number. Check it and try again.', 'We herkennen dit e-mailadres of klantnummer niet. Controleer het en probeer het opnieuw.'));
   };
 
   return (
@@ -74,12 +73,8 @@ export default function Login() {
         <button type="button" className="btn btn-outline login-submit" onClick={enter}>
           <Fingerprint size={18} /> {t('Sign in with Face ID / fingerprint', 'Inloggen met Face ID / vingerafdruk')}
         </button>
-        <p className="login-hint">
-          {t('Demo login:', 'Demo-login:')} <b>{customer.email}</b> {t('(or customer number', '(of klantnummer')} <b>{customer.customerNo}</b>
-          {t('), any password', '), elk wachtwoord')}
-        </p>
       </form>
-      <p className="login-foot">{t(`Concept demo · Sample data · not connected to ${brand.name} systems`, `Conceptdemo · Voorbeelddata · niet gekoppeld aan ${brand.name}-systemen`)}</p>
+      <p className="login-foot">{t(`© 2026 ${brand.name} Netherlands`, `© 2026 ${brand.name} Nederland`)}</p>
     </div>
   );
 }

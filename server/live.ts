@@ -4,7 +4,7 @@ import type { LiveEvent } from '../shared/contract.ts';
 export type Role = 'customer' | 'staff';
 
 /** Events the customer app receives; staff streams get everything. */
-const CUSTOMER_EVENTS = new Set<LiveEvent['type']>(['hello', 'message:new', 'message:read', 'installment:changed', 'insights:plan', 'demo:reset']);
+const CUSTOMER_EVENTS = new Set<LiveEvent['type']>(['hello', 'message:new', 'message:read', 'installment:changed', 'billing:changed', 'insights:plan', 'demo:reset']);
 
 interface Client {
   res: ServerResponse;

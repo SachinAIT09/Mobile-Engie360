@@ -33,9 +33,12 @@ export class Push {
     return this.db.count('push_subs');
   }
 
-  subscribe(req: PushSubscribeRequest): void {
+  /** Stores the subscription. Returns true when this device is new (not a re-registration on app start). */
+  subscribe(req: PushSubscribeRequest): boolean {
+    const isNew = !this.db.find<StoredSub>('push_subs', req.subscription.endpoint);
     const sub: StoredSub = { ...req.subscription, device: req.device ?? 'browser', created: new Date().toISOString() };
     this.db.put('push_subs', sub.endpoint, sub.created, sub);
+    return isNew;
   }
 
   unsubscribe(endpoint: string): void {

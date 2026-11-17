@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
-import type { BillingResponse, InboxMessage, InsightsResponse, InstallmentState, LiveEvent } from '../../shared/contract';
+import { useLocation, useNavigate } from 'react-router-dom';
+import type { BillingResponse, InboxMessage, InsightsResponse, InstallmentState, LiveEvent, PayMethod, PayState } from '../../shared/contract';
+import { withPayments, type Payment } from '../data/billing';
+import { DEMO_NOW } from '../lib/time';
 import { useToast } from '../components/toast';
+import { InsightIc } from '../components/ui';
 import { useI18n } from '../lib/i18n';
-import { isSignedIn } from '../lib/session';
+import { isFreshLaunch, isSignedIn } from '../lib/session';
 import { API, get, openEvents, post } from './client';
 import { LiveCtx, localDefaults, type LiveData } from './live';
+
+/**
+ * Closing the customer app and opening it again starts from the original data: the first launch restores it
+ * on the server before anything is loaded. Kept at module level so it runs once, whatever React re-runs.
+ */
+let launchReset: Promise<unknown> | null = null;
+function afterLaunchReset(): Promise<unknown> {
+  if (!launchReset) launchReset = isFreshLaunch() ? post(API.demoReset).catch(() => undefined) : Promise.resolve();
+  return launchReset;
+}
 
 /** Customer app screens whose views are reported to staff (not the sign-in screen). */
 const isCustomerRoute = (p: string) => !p.startsWith('/staff') && p !== '/login';
@@ -19,6 +32,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const { tx } = useI18n();
   const toast = useToast();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const customerApp = !pathname.startsWith('/staff');
   // Only a signed-in customer is "in the app" for staff; the sign-in screen stays offline.
   const signedIn = customerApp && isSignedIn();
@@ -26,17 +40,29 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(localDefaults);
   const [resetVersion, setResetVersion] = useState(0);
   const onlineRef = useRef(false);
+  const send = useCallback((path: string, body: unknown) => {
+    if (!onlineRef.current) return;
+    post(path, body).catch(() => undefined);
+  }, []);
+
   const txRef = useRef(tx);
   const toastRef = useRef(toast);
+  /** Tapping a message banner: mark it read and open the screen it points to. */
+  const openMessageRef = useRef<(m: InboxMessage) => void>(() => undefined);
   useEffect(() => {
     txRef.current = tx;
     toastRef.current = toast;
+    openMessageRef.current = (m) => {
+      setState((s) => ({ ...s, messages: s.messages.map((x) => (x.id === m.id ? { ...x, read: true } : x)) }));
+      send(API.messageRead(m.id), {});
+      navigate(m.to);
+    };
   });
 
   const load = useCallback(async () => {
     try {
       const [billing, insights, messages] = await Promise.all([get<BillingResponse>(API.billing), get<InsightsResponse>(API.insights), get<InboxMessage[]>(API.messages)]);
-      setState({ installment: billing.installment, plan: insights.plan, messages });
+      setState({ installment: billing.installment, pay: billing.pay, plan: insights.plan, messages });
       onlineRef.current = true;
       setOnline(true);
     } catch {
@@ -51,13 +77,24 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       switch (e.type) {
         case 'message:new':
           setState((s) => (s.messages.some((m) => m.id === e.message.id) ? s : { ...s, messages: [e.message, ...s.messages] }));
-          if (e.banner) toastRef.current(`${txRef.current(e.message.title)}: ${txRef.current(e.message.body)}`);
+          if (e.banner) {
+            const m = e.message;
+            toastRef.current({
+              title: txRef.current(m.title),
+              body: txRef.current(m.body),
+              icon: <InsightIc icon={m.icon} kind={m.icon === 'moon' ? 'alert' : m.icon === 'wallet' ? 'billing' : undefined} size={38} />,
+              onOpen: () => openMessageRef.current(m),
+            });
+          }
           break;
         case 'message:read':
           setState((s) => ({ ...s, messages: s.messages.map((m) => (e.id === 'all' || m.id === e.id ? { ...m, read: true } : m)) }));
           break;
         case 'installment:changed':
           setState((s) => ({ ...s, installment: e.installment }));
+          break;
+        case 'billing:changed':
+          setState((s) => ({ ...s, pay: e.pay }));
           break;
         case 'insights:plan':
           setState((s) => ({ ...s, plan: e.plan }));
@@ -70,14 +107,18 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       }
     };
     // The Customer Service view has its own stream; opening this one there would count staff as the customer.
-    if (!signedIn) return;
-    return openEvents('customer', onEvent, () => void load(), () => undefined);
-  }, [load, signedIn]);
-
-  const send = useCallback((path: string, body: unknown) => {
-    if (!onlineRef.current) return;
-    post(path, body).catch(() => undefined);
-  }, []);
+    if (!customerApp) return;
+    let close = () => {};
+    let cancelled = false;
+    // A fresh launch restores the data first; the stream (which loads the data) opens only after that.
+    void afterLaunchReset().then(() => {
+      if (!cancelled && signedIn) close = openEvents('customer', onEvent, () => void load(), () => undefined);
+    });
+    return () => {
+      cancelled = true;
+      close();
+    };
+  }, [load, signedIn, customerApp]);
 
   // Page views, so staff see where the customer is.
   useEffect(() => {
@@ -93,12 +134,39 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     setState((s) => ({ ...s, installment: { ...s.installment, pending: { amount, from: '2026-12', changedAt: new Date().toISOString() } } }));
   }, []);
 
+  const payRef = useRef(state.pay);
+  useEffect(() => {
+    payRef.current = state.pay;
+  });
+
+  const payInvoice = useCallback(async (invoiceId: string, method: PayMethod, bank?: string): Promise<Payment> => {
+    let pay: PayState;
+    if (onlineRef.current) {
+      pay = await post<PayState>(API.pay, { invoiceId, method, bank });
+    } else {
+      // No server: record it locally, the same way the server would.
+      const before = payRef.current;
+      const inv = withPayments(before).outstanding.find((i) => i.id === invoiceId);
+      if (!inv) throw new Error('This invoice is already paid');
+      const label = method === 'ideal' ? `iDEAL${bank ? ` · ${bank}` : ''}` : null;
+      const via = label ? { en: label, nl: label } : method === 'account' ? { en: 'Bank account', nl: 'Bankrekening' } : { en: 'Card', nl: 'Kaart' };
+      pay = { ...before, paid: [{ id: `PAY-${90400 + before.paid.length}`, date: DEMO_NOW.toISOString().slice(0, 10), amount: inv.amount, method: via, invoiceId, status: 'success' }, ...before.paid] };
+    }
+    setState((s) => ({ ...s, pay }));
+    return pay.paid.find((p) => p.invoiceId === invoiceId)!;
+  }, []);
+
   const value = useMemo<LiveData>(
     () => ({
       online,
       ...state,
       resetVersion,
       setInstallment,
+      payInvoice,
+      setAutopay: (on) => {
+        setState((s) => ({ ...s, pay: { ...s.pay, autopay: on } }));
+        send(API.autopay, { on });
+      },
       togglePlan: (id, on) => {
         setState((s) => ({ ...s, plan: on ? [...new Set([...s.plan, id])] : s.plan.filter((x) => x !== id) }));
         send(API.insightsPlan, { id, on });
@@ -124,7 +192,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
         setResetVersion((v) => v + 1);
       },
     }),
-    [online, state, resetVersion, setInstallment, send],
+    [online, state, resetVersion, setInstallment, payInvoice, send],
   );
 
   return <LiveCtx.Provider value={value}>{children}</LiveCtx.Provider>;

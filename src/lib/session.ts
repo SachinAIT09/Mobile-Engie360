@@ -28,6 +28,23 @@ export function signIn(): void {
   }
 }
 
+const STARTED = 'engie-demo-started';
+
+/**
+ * True once per app launch: the first time this is asked after the customer app was opened fresh (the app
+ * was closed or swiped away, or opened in a new tab). A reload of the running app is not a fresh launch,
+ * because the browser keeps sessionStorage for it. The staff app's own phone view never counts as a launch.
+ */
+export function isFreshLaunch(): boolean {
+  try {
+    if (sessionStorage.getItem(STARTED)) return false;
+    sessionStorage.setItem(STARTED, '1');
+    return !(window.top !== window.self && window.top?.location.pathname.startsWith('/staff'));
+  } catch {
+    return false;
+  }
+}
+
 export function signOut(): void {
   try {
     localStorage.removeItem(KEY);

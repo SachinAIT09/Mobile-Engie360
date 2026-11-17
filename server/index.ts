@@ -15,6 +15,10 @@ let handler = (req: IncomingMessage, res: ServerResponse) => {
 };
 
 const server = createServer((req, res) => handler(req, res));
+// Node closes idle keep-alive connections after 5 s by default. A client that reuses one at that
+// moment gets "connection reset", so keep them open longer than any client's own idle limit.
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 70_000;
 server.listen(config.port, config.host, () => {
   console.log(`ENGIE360 listening on http://localhost:${config.port} (${config.production ? 'production' : 'development'})`);
 });

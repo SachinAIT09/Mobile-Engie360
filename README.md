@@ -2,7 +2,7 @@
 
 Interactive demo of an ENGIE-style customer portal (MijnENGIE) with Eva, a scripted AI support assistant, Net2Grid-powered smart energy features, and an ENGIE staff app linked to it live.
 
-> **Demo only.** Fictional customer ("Sanne de Vries"), sample data, scripted assistant. Not connected to any ENGIE system or AI backend, and nothing is deployed to engie.nl.
+> **Demo only.** Fictional customer ("Olivia Carter"), sample data, scripted assistant. Not connected to any ENGIE system or AI backend, and nothing is deployed to engie.nl.
 
 ## Run
 
@@ -35,16 +35,16 @@ URLs work like the Hydro Mobile360 demo: `/` is the **start page** (both apps, p
 
 ### Customer app (`/app`): a phone app
 
-Opens on the **MijnENGIE sign-in** (`sanne.devries@example.nl` or customer number `2003 418 762`, any password). Bottom tabs **Home · Energy · Eva · Billing · Profile**, with Eva as the raised button in the middle; sub-pages have a back arrow. No demo tools in here.
+Opens on the **MijnENGIE sign-in** (`olivia.carter@example.com` or customer number `2003 418 762`, any password). Bottom tabs **Home · Energy · Eva · Billing · Profile**, with Eva as the raised button in the middle; sub-pages have a back arrow. No demo tools in here.
 
 | Route (under `/app`) | Screen |
 |---|---|
 | `/login` | Sign-in |
-| `/` | Home: greeting, KPIs, energy overview, contract, quick actions, smart insights, live power |
+| `/` | Home: greeting with next payment, quick actions, KPIs, installment advice, energy overview, top insight, live power (every customer screen is kept to about two phone screens; a mobile e2e test enforces it) |
 | `/energy` | Usage: hour/day/week/month, comparisons, Net2Grid breakdown, peak/off-peak, trend; links to Insights and Smart Energy |
 | `/insights` | Energy insights (sub-page of Energy): savings, alerts, tips, savings plan, benchmark |
 | `/smart-energy` | Smart Energy / Net2Grid (sub-page of Energy): live power, appliances, 15-minute smart charging with CO₂ |
-| `/billing` | Bills & payments: installment (`?adjust=1`), invoices, payment history, annual overview |
+| `/billing` | Bills & payments: installment (`?adjust=1`), pay an invoice (pay sheet with iDEAL / bank account / card, ending in an animated tick; simulated, recorded on our server only), automatic payment on/off, invoices and payment receipts as PDF downloads (`src/lib/pdf.ts`), payment history, annual overview |
 | `/account` | Profile: details, contract, payment, meter readings, preferences (language, theme, phone notifications), sign out |
 | `/assistant` | Eva full screen |
 
@@ -54,31 +54,34 @@ Top bar (language, theme menu Dark/Light/Match system, live status, avatar) and 
 
 | Route | Page |
 |---|---|
-| `/staff` | Dashboard: Sanne's KPIs, details ("in the app now"), latest activity |
+| `/staff` | Dashboard: Olivia's KPIs, details ("in the app now"), latest activity |
+| `/staff/customers` | Customer list: 1,248 customers (US names), search, filters, paging |
+| `/staff/customers/:id` | Customer page: attention points, cost, usage, visits, timeline, contract and billing, appliances, messages, Eva |
 | `/staff/activity` | Customer activity: live table with filters (Account, Billing, Savings & charging, Eva, Messages, Views) |
 | `/staff/conversations` | Eva conversations, live |
 | `/staff/messages` | Write a message (templates or your own), see sent and read |
+| `/staff/reports` | Reports: usage, cost against the installment, appliances, app activity, message delivery, Eva topics; CSV export per card |
+| `/staff/assistant` | AI assistant (scripted): questions about the customer, message drafts that open in the composer |
+| `/staff/audit` | Audit log: who sent, scheduled or cancelled what, automatic notifications, demo resets; live, with CSV export |
 | `/staff/demo` | **Demo control panel**: one-click *Send to phone* cards, phone pairing QR, presenter keys, Reset demo |
-| `/staff/preview` | Phone preview: the live customer app in a phone frame |
 
 ## Presenting
 
-The presenter drives the **staff app** on the laptop; the customer app runs on a phone (or in the phone preview). In the staff app press **Shift+P** for the presenter bar (or open `/staff?presenter=1`).
+The presenter drives the **staff app** on the laptop; the customer app runs on a phone (on a laptop, `/app` shows it as a phone-width column). In the staff app press **Shift+P** for the presenter bar (or open `/staff?presenter=1`).
 
 | Key | Action |
 |---|---|
 | N or → | Next step |
 | B or ← | Previous step |
-| 1–6 | Jump to a step |
+| 1–5 | Jump to a step |
 | R | Reset the demo (back to step 1) |
 | Esc | Hide the bar (when no dialog is open) |
 
-1. **Customer at a glance** (Dashboard): Sanne signs in on the phone; the badge shows she is in the app.
+1. **Customer at a glance** (Dashboard): Olivia signs in on the phone; the badge shows she is in the app.
 2. **Customer activity**: on the phone, Billing → Adjust installment → €198. It appears at once.
 3. **Eva conversations**: on the phone, tap Eva → "Why is my energy bill higher this month?" → "and last month?". Read along live.
 4. **Send to phone** (Demo control panel): "Cheapest hours tonight" → banner in the app (and a phone notification if on).
-5. **Personal message**: write your own; see when Sanne reads it.
-6. **Phone preview**: the same live app in a phone frame, for a laptop-only demo.
+5. **Personal message**: write your own; see when Olivia reads it.
 
 ## Architecture
 

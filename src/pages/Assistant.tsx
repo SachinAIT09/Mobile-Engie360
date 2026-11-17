@@ -46,6 +46,7 @@ export default function Assistant() {
 
   return (
     <div className="grid g-main" style={{ marginTop: 10 }}>
+      <h1 className="sr-only">{brand.assistant.name}</h1>
       <div style={{ height: 'calc(100vh - var(--topbar-h) - 40px)', minHeight: 520 }} className="assistant-page">
         <ChatPanel
           session={session}
@@ -74,16 +75,13 @@ export default function Assistant() {
           <div className="stack small" style={{ gap: 10 }}>
             <div className="row" style={{ alignItems: 'flex-start' }}>
               <Database size={16} color="#00aaff" style={{ flex: 'none', marginTop: 3 }} />
-              <span className="muted">{t(`Your usage, invoices, contract and ${brand.partners.disaggregation} appliance data (sample data in this demo).`, `Je verbruik, nota’s, contract en ${brand.partners.disaggregation}-apparaatdata (voorbeelddata in deze demo).`)}</span>
+              <span className="muted">{t('Your usage, invoices, contract and appliance data.', 'Je verbruik, nota’s, contract en apparaatdata.')}</span>
             </div>
             <div className="row" style={{ alignItems: 'flex-start' }}>
               <ShieldCheck size={16} color="#13855f" style={{ flex: 'none', marginTop: 3 }} />
               <span className="muted">{t('Answers stay inside your account. Hand-over to a human agent is always one question away.', 'Antwoorden blijven binnen je account. Doorverbinden met een medewerker is altijd één vraag verwijderd.')}</span>
             </div>
           </div>
-          <p className="xs muted mt" style={{ borderTop: '1px solid var(--line-2)', paddingTop: 10 }}>
-            {t('Prototype: replies are scripted. The provider interface is ready for an LLM backend.', 'Prototype: antwoorden zijn vooraf ingesteld. De provider-interface is klaar voor een LLM-backend.')}
-          </p>
         </Card>
       </div>
     </div>

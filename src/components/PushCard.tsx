@@ -32,7 +32,7 @@ export function PushCard() {
   const canSwitch = online && (state === 'on' || state === 'off') && !busy;
 
   const hint = !online
-    ? t('Needs the demo server: start the app with start-demo.cmd.', 'Heeft de demoserver nodig: start de app met start-demo.cmd.')
+    ? t('You’re offline. You can switch notifications on once you’re connected again.', 'Je bent offline. Je kunt meldingen aanzetten zodra je weer verbonden bent.')
     : state === 'needs-install'
       ? t('On iPhone: tap Share, then “Add to Home Screen”, and open the app from there.', 'Op iPhone: tik op Deel en dan “Zet op beginscherm”, en open de app vanaf daar.')
       : state === 'blocked'

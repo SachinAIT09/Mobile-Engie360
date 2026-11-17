@@ -1,4 +1,5 @@
 import { useOutletContext } from 'react-router-dom';
+import type { StaffAssistant } from './useStaffAssistant';
 import type { StaffData } from './useStaffData';
 
 /** What every staff page gets from the layout: the live data plus shared actions. */
@@ -7,6 +8,8 @@ export interface StaffCtx extends StaffData {
   confirmReset: () => void;
   /** Ticks every 15 s so "last seen" stays current. */
   now: number;
+  /** The AI assistant conversation; kept while you move between staff pages. */
+  assistant: StaffAssistant;
 }
 
 export const useStaff = () => useOutletContext<StaffCtx>();

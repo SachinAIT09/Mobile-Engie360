@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { History, Smartphone } from 'lucide-react';
 import { Card } from '../../components/ui';
 import { useI18n } from '../../lib/i18n';
@@ -10,21 +11,17 @@ import { StaffHead } from '../parts';
 /** Everything the customer does in the app, as a live table with filters (the Hydro "Customer activity" page). */
 export default function StaffActivity() {
   const { t, tx, lang, date } = useI18n();
-  const { activity, fresh, overview, now } = useStaff();
+  const { feed: activity, fresh, now } = useStaff();
   const [filter, setFilter] = useState('all');
   const cat = CATEGORIES.find((c) => c.id === filter);
   const rows = cat ? activity.filter((a) => cat.kinds.includes(a.kind)) : activity;
-  const name = overview ? `${overview.customer.firstName} ${overview.customer.lastName}` : '';
 
   return (
     <>
       <StaffHead
         icon={Smartphone}
         title={t('Customer activity', 'Klantactiviteit')}
-        sub={t(
-          `Everything the customer does in ${brand.portal} (sign-ins, installment changes, savings plan, smart charging, ${brand.assistant.name} questions and screen views) as it happens.`,
-          `Alles wat de klant doet in ${brand.portal} (inloggen, termijnbedrag, bespaarplan, slim laden, vragen aan ${brand.assistant.name} en schermen) op het moment zelf.`,
-        )}
+        sub={t(`What customers do in ${brand.portal} (sign-ins, installment changes, savings plan, smart charging, ${brand.assistant.name} questions), across the whole customer base, as it happens.`, `Wat klanten doen in ${brand.portal} (inloggen, termijnbedrag, bespaarplan, slim laden, vragen aan ${brand.assistant.name}), over het hele klantenbestand, op het moment zelf.`)}
       />
       <Card
         title={
@@ -38,7 +35,7 @@ export default function StaffActivity() {
           <button className={filter === 'all' ? 'on' : ''} aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
             {t('All', 'Alles')}
           </button>
-          {CATEGORIES.map((c) => (
+          {CATEGORIES.filter((c) => c.id !== 'views' && c.id !== 'messages').map((c) => (
             <button key={c.id} className={filter === c.id ? 'on' : ''} aria-pressed={filter === c.id} onClick={() => setFilter(c.id)}>
               {tx(c.label)}
             </button>
@@ -52,7 +49,7 @@ export default function StaffActivity() {
               <thead>
                 <tr>
                   <th>{t('When', 'Wanneer')}</th>
-                  <th className="hide-m">{t('Customer', 'Klant')}</th>
+                  <th>{t('Customer', 'Klant')}</th>
                   <th>{t('Action', 'Actie')}</th>
                   <th>{t('Details', 'Details')}</th>
                 </tr>
@@ -68,7 +65,9 @@ export default function StaffActivity() {
                           {ago(a.ts, lang, now)}
                         </span>
                       </td>
-                      <td className="hide-m strong small">{name}</td>
+                      <td className="strong small">
+                        <Link to={`/staff/customers/${a.customerId ?? ''}`}>{a.customerName}</Link>
+                      </td>
                       <td>
                         <span className={`staff-action${ACTION_KINDS.has(a.kind) ? ' change' : ''}`}>
                           <Icon size={14} aria-hidden /> {tx(KIND_LABEL[a.kind])}

@@ -31,6 +31,7 @@ export async function fresh(page: Page, path = '/app', { signedIn = true } = {})
     ({ session, signedIn }) => {
       if (sessionStorage.getItem('e2e-init')) return;
       sessionStorage.setItem('e2e-init', '1');
+      sessionStorage.setItem('engie-demo-started', '1');
       localStorage.clear();
       localStorage.setItem('engie-demo-lang', 'en');
       if (signedIn) localStorage.setItem('engie-demo-session', session);

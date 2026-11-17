@@ -15,7 +15,7 @@ export function wantsPhoneFrame(): boolean {
 /** Keep the address bar on the screen shown in the phone column, so reload and copied links work. */
 export function syncFrameUrl(): void {
   try {
-    // Only inside the phone column; the staff phone preview (parent at /staff) keeps its own address.
+    // Only when the parent is the phone column of the customer app.
     if (window.self === window.parent || !isPortalPath(window.parent.location.pathname)) return;
     const { pathname, search, hash } = window.location;
     window.parent.history.replaceState(null, '', `${pathname}${search}${hash}`);

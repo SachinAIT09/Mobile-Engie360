@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
-import type { ActivityKind, ChargingRequest, ContactRequest, InboxMessage, InstallmentState } from '../../shared/contract';
+import type { ActivityKind, ChargingRequest, ContactRequest, InboxMessage, InstallmentState, PayMethod, PayState } from '../../shared/contract';
+import { PAY_DEFAULTS, type Payment } from '../data/billing';
 import { contract } from '../data/customer';
 import { notificationsSeed } from '../data/insights';
 import { DEMO_NOW } from '../lib/time';
@@ -9,6 +10,8 @@ export interface LiveData {
   /** True while the server answers; false = running on local demo data only. */
   online: boolean;
   installment: InstallmentState;
+  /** Automatic payment on/off and the invoices paid in the app. */
+  pay: PayState;
   /** Insight ids in the savings plan. */
   plan: string[];
   /** Inbox, newest first. */
@@ -16,6 +19,9 @@ export interface LiveData {
   /** Bumped when the demo is reset, so screens remount with fresh state. */
   resetVersion: number;
   setInstallment: (amount: number) => Promise<void>;
+  /** Pay an invoice in the app; resolves with the payment (its id is the reference). */
+  payInvoice: (invoiceId: string, method: PayMethod, bank?: string) => Promise<Payment>;
+  setAutopay: (on: boolean) => void;
   togglePlan: (id: string, on: boolean) => void;
   markRead: (id: string) => void;
   markAllRead: () => void;
@@ -32,8 +38,9 @@ const HOUR = 3600000;
 const SEED_AGE_H = [5 * 24, 1, 2 * 24, 31 * 24];
 
 /** Starting state when no server is reachable: the mock-up's own data. */
-export const localDefaults = (): Pick<LiveData, 'installment' | 'plan' | 'messages'> => ({
+export const localDefaults = (): Pick<LiveData, 'installment' | 'pay' | 'plan' | 'messages'> => ({
   installment: { current: contract.installment, advised: contract.advisedInstallment, pending: null },
+  pay: { ...PAY_DEFAULTS },
   plan: ['ev-peak'],
   messages: notificationsSeed.map((n, i) => ({
     id: n.id,

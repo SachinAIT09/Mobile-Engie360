@@ -104,6 +104,28 @@ export const payments: Payment[] = invoices
     status: 'success' as const,
   }));
 
+/** The customer's own payment choices; the server keeps them, the app falls back to these without a server. */
+export interface PayChoices {
+  autopay: boolean;
+  paid: Payment[];
+}
+
+export const PAY_DEFAULTS: PayChoices = { autopay: true, paid: [] };
+
+/**
+ * Invoices and payments as the customer sees them: an invoice paid in the app is "paid", and one that is
+ * still due is "scheduled" with automatic payment on and "open" with it off. Used by the server and the app.
+ */
+export function withPayments(pay: PayChoices): { invoices: Invoice[]; payments: Payment[]; outstanding: Invoice[] } {
+  const list = invoices.map((inv): Invoice => {
+    if (inv.status === 'paid') return inv;
+    const p = pay.paid.find((x) => x.invoiceId === inv.id);
+    if (p) return { ...inv, status: 'paid', paidOn: p.date };
+    return { ...inv, status: pay.autopay ? 'scheduled' : 'open' };
+  });
+  return { invoices: list, payments: [...pay.paid, ...payments], outstanding: list.filter((i) => i.status !== 'paid') };
+}
+
 /** Annual cost overview (contract year Mar 2026 – Feb 2027) as monthly estimate vs advance paid. */
 export const annualOverview = {
   year: { en: 'Contract year Mar 2026 – Feb 2027', nl: 'Contractjaar mrt 2026 – feb 2027' } as Text,

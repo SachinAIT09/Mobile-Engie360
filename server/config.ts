@@ -28,5 +28,7 @@ export const config = {
   streamMaxMs: process.env.X_ZOHO_CATALYST_LISTEN_PORT ? 25_000 : 0,
   /** VAPID contact for web push. */
   vapidSubject: process.env.VAPID_SUBJECT ?? 'mailto:demo@example.com',
+  /** How often another (sample) customer does something in the app, for the staff feed. */
+  simulateMs: Number(process.env.SIMULATE_MS) > 0 ? Number(process.env.SIMULATE_MS) : 6000,
   version: '1.0.0',
 };

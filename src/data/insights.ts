@@ -1,5 +1,4 @@
 import type { Text } from '../lib/i18n';
-import { brand } from '../brand';
 
 export type InsightKind = 'alert' | 'saving' | 'tip' | 'billing';
 export type InsightIcon = 'ev' | 'trend' | 'plug' | 'flame' | 'sun' | 'wallet' | 'moon' | 'washer';
@@ -30,8 +29,8 @@ export const insights: Insight[] = [
       nl: '81% van het laden van je auto gebeurt tussen 18:00 en 21:00, de duurste uren van je dynamische tarief.',
     },
     detail: {
-      en: `${brand.partners.disaggregation} recognised a new EV charging pattern from late August (~3.3 kW sessions, 3–4 times a week). Moving these sessions to 01:00–06:00 lowers your average price per kWh from €0.36 to €0.20.`,
-      nl: `${brand.partners.disaggregation} herkent sinds eind augustus een nieuw laadpatroon (~3,3 kW sessies, 3–4 keer per week). Door deze sessies naar 01:00–06:00 te verplaatsen daalt je gemiddelde prijs per kWh van €0,36 naar €0,20.`,
+      en: `We recognised a new EV charging pattern from late August (~3.3 kW sessions, 3–4 times a week). Moving these sessions to 01:00–06:00 lowers your average price per kWh from €0.36 to €0.20.`,
+      nl: `We herkennen sinds eind augustus een nieuw laadpatroon (~3,3 kW sessies, 3–4 keer per week). Door deze sessies naar 01:00–06:00 te verplaatsen daalt je gemiddelde prijs per kWh van €0,36 naar €0,20.`,
     },
     saving: 142,
     to: '/smart-energy',
@@ -61,8 +60,8 @@ export const insights: Insight[] = [
       nl: 'Tussen 01:40 en 04:10 verbruikte je woning ongeveer 1,4 kW, zo’n zes keer je normale nachtverbruik. Stond er een kachel of droger aan?',
     },
     detail: {
-      en: `Detected by ${brand.partners.disaggregation} anomaly detection on your smart-meter data. Total extra use: 3.6 kWh (≈ €0.80).`,
-      nl: `Gedetecteerd door ${brand.partners.disaggregation}-afwijkingsdetectie op je slimme-meterdata. Extra verbruik: 3,6 kWh (≈ €0,80).`,
+      en: `Detected automatically from your smart-meter data. Total extra use: 3.6 kWh (≈ €0.80).`,
+      nl: `Automatisch gedetecteerd in je slimme-meterdata. Extra verbruik: 3,6 kWh (≈ €0,80).`,
     },
     source: 'net2grid',
   },

@@ -34,7 +34,7 @@ export async function startPage(phoneUrl: string, otherUrls: string[]): Promise<
 <script>(function(){try{var t=localStorage.getItem('engie-demo-theme');if(t==='system')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(t==='dark')document.documentElement.dataset.theme='dark'}catch(e){}})()</script>
 <style>
 ${fonts}
-:root{--blue:#00aaff;--blue-600:#0089d1;--blue-700:#006fa8;--blue-50:#e8f6ff;--blue-100:#cdeeff;--green:#23d2b5;--green-50:#e3faf5;--green-700:#0f8f7a;--ink:#0b2240;--ink-2:#33475e;--muted:#64758b;--line:#e3e9f0;--line-2:#eef2f6;--bg:#f4f7fa;--surface:#fff;--navy:#0b2240;--shadow:0 1px 2px rgba(11,34,64,.05),0 6px 20px rgba(11,34,64,.06);--logo:url(/brand/powerconnect-logo-trimmed.png)}
+:root{--blue:#00aaff;--blue-600:#0089d1;--blue-700:#006fa8;--blue-50:#e8f6ff;--blue-100:#cdeeff;--green:#23d2b5;--green-50:#e3faf5;--green-700:#0f8f7a;--ink:#0b2240;--ink-2:#33475e;--muted:#586a80;--line:#e3e9f0;--line-2:#eef2f6;--bg:#f4f7fa;--surface:#fff;--navy:#0b2240;--shadow:0 1px 2px rgba(11,34,64,.05),0 6px 20px rgba(11,34,64,.06);--logo:url(/brand/powerconnect-logo-trimmed.png)}
 :root[data-theme=dark]{color-scheme:dark;--blue-700:#5cc8ff;--blue-50:#0f2a42;--blue-100:#17436a;--green-50:#0f2f2b;--green-700:#4fe0c4;--ink:#e8eef6;--ink-2:#c3cfdd;--muted:#8fa1b8;--line:#24374f;--line-2:#1b2b41;--bg:#0a1524;--surface:#111f33;--shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);--logo:url(/brand/powerconnect-logo-white.png)}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;font-family:Lato,'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.5;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
@@ -60,10 +60,10 @@ main{max-width:960px;margin:-22px auto 0;padding:0 24px 32px;display:flex;flex-d
 .app .ic{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--blue-50);color:var(--blue-700)}
 .app .txt{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
 .app strong{font-size:17px;font-weight:900}.app .txt span{font-size:14px;color:var(--muted)}
-.app .go{font-size:20px;font-weight:900;color:var(--blue)}
-.app.pri{background:var(--blue);border-color:var(--blue);color:#fff}
+.app .go{font-size:20px;font-weight:900;color:var(--blue-700)}
+.app.pri{background:#0078b8;border-color:#0078b8;color:#fff}
 .app.pri .ic{background:rgba(255,255,255,.2);color:#fff}.app.pri .txt span{color:rgba(255,255,255,.9)}.app.pri .go{color:#fff}
-.app.pri:hover{background:var(--blue-600);border-color:var(--blue-600);box-shadow:0 10px 24px rgba(0,170,255,.3)}
+.app.pri:hover{background:#00659c;border-color:#00659c;box-shadow:0 10px 24px rgba(0,170,255,.3)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow)}
 .phone{display:flex;flex-wrap:wrap;gap:22px;align-items:center}
 .phone svg{width:176px;height:176px;background:#fff;border-radius:14px;padding:8px;border:1px solid var(--line)}
@@ -78,7 +78,7 @@ ol li::before{content:counter(s);width:30px;height:30px;border-radius:50%;backgr
 strong{font-weight:900}
 .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid var(--line-2)}
 button{font:inherit;font-weight:700;font-size:14px;border:0;border-radius:999px;padding:0 20px;min-height:44px;background:var(--navy);color:#fff;cursor:pointer}
-:root[data-theme=dark] button{background:var(--blue)}
+:root[data-theme=dark] button{background:#0078b8}
 button:hover{filter:brightness(1.1)}
 .links{display:flex;gap:16px;flex-wrap:wrap;font-weight:700;font-size:14px}
 footer{max-width:960px;margin:0 auto;padding:0 24px 32px;font-size:12.5px;color:var(--muted)}
@@ -109,7 +109,7 @@ ${otherUrls.length ? `<span class="muted">Other addresses for this laptop: ${oth
 <li><span><strong>Presenter:</strong> press <kbd>Shift</kbd>+<kbd>P</kbd> in the staff app for the step-by-step bar (<kbd>N</kbd> next, <kbd>R</kbd> reset).</span></li>
 </ol>
 <div class="row"><button id="reset" type="button">Reset demo</button><span id="msg" class="muted" role="status"></span>
-<span class="links" style="margin-left:auto"><a href="/staff/demo">Demo control panel</a><a href="/staff/preview">Phone preview</a></span></div></section>
+<span class="links" style="margin-left:auto"><a href="/staff/demo">Demo control panel</a></span></div></section>
 </main>
 <footer><span class="flag">Sample data · not connected to ${esc(brand.name)} systems</span></footer>
 <script>

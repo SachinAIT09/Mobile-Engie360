@@ -49,7 +49,7 @@
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: var(--blue);
+  background: var(--action);
   color: #fff;
   flex: none;
 }
@@ -116,7 +116,7 @@
   justify-content: flex-end;
 }
 .msg.user .bubble {
-  background: var(--blue);
+  background: var(--action);
   color: #fff;
   border-radius: 18px 18px 4px 18px;
   max-width: 82%;
@@ -169,7 +169,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--blue);
+  background: var(--action);
 }
 .chat-facts {
   margin: 12px 0 0;
@@ -418,7 +418,7 @@
   height: 46px;
   border-radius: 14px;
   border: 0;
-  background: var(--blue);
+  background: var(--action);
   color: #fff;
   display: grid;
   place-items: center;
@@ -473,7 +473,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--blue);
+  background: var(--action);
   position: relative;
 }
 .chat-fab .orb::after {

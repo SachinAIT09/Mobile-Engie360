@@ -1,14 +1,20 @@
-import { BellRing, CarFront, Download, Eye, Mail, MessageSquareText, Send, SlidersHorizontal, Target, UserRound, type LucideIcon } from 'lucide-react';
+import { BellRing, CarFront, CreditCard, Download, Eye, Mail, MessageSquareText, Repeat, Send, SlidersHorizontal, Target, UserRound, type LucideIcon } from 'lucide-react';
 import type { ActivityKind } from '../../shared/contract';
 import type { Lang, Text } from '../lib/i18n';
+import { customer } from '../data/customer';
 import { DEMO_TZ } from '../lib/time';
 
 export const STAFF_NAME = 'Lotte';
+
+/** The one customer whose app is real (the phone in the demo); everyone else is sample data. */
+export const LIVE_CUSTOMER_ID = customer.id;
 
 export const KIND_ICON: Record<ActivityKind, LucideIcon> = {
   session: UserRound,
   page: Eye,
   installment: SlidersHorizontal,
+  payment: CreditCard,
+  autopay: Repeat,
   invoice_download: Download,
   chat: MessageSquareText,
   plan: Target,
@@ -20,12 +26,12 @@ export const KIND_ICON: Record<ActivityKind, LucideIcon> = {
 };
 
 /** Activity kinds that are worth a second look (the customer changed something). */
-export const ACTION_KINDS: ReadonlySet<ActivityKind> = new Set(['installment', 'plan', 'charging', 'contact', 'push_subscribed', 'invoice_download']);
+export const ACTION_KINDS: ReadonlySet<ActivityKind> = new Set(['installment', 'payment', 'autopay', 'plan', 'charging', 'contact', 'push_subscribed', 'invoice_download']);
 
 /** Filter groups on the Customer activity page (the Hydro "All / Account / Billing / …" pills). */
 export const CATEGORIES: { id: string; label: Text; kinds: ActivityKind[] }[] = [
   { id: 'account', label: { en: 'Account', nl: 'Account' }, kinds: ['session', 'contact', 'push_subscribed'] },
-  { id: 'billing', label: { en: 'Billing', nl: 'Betalen' }, kinds: ['installment', 'invoice_download'] },
+  { id: 'billing', label: { en: 'Billing', nl: 'Betalen' }, kinds: ['installment', 'payment', 'autopay', 'invoice_download'] },
   { id: 'savings', label: { en: 'Savings & charging', nl: 'Besparen & laden' }, kinds: ['plan', 'charging'] },
   { id: 'eva', label: { en: 'Eva', nl: 'Eva' }, kinds: ['chat'] },
   { id: 'messages', label: { en: 'Messages', nl: 'Berichten' }, kinds: ['staff_message', 'message_read'] },
@@ -37,6 +43,8 @@ export const KIND_LABEL: Record<ActivityKind, Text> = {
   session: { en: 'Signed in', nl: 'Ingelogd' },
   page: { en: 'Viewed', nl: 'Bekeken' },
   installment: { en: 'Installment', nl: 'Termijnbedrag' },
+  payment: { en: 'Payment', nl: 'Betaling' },
+  autopay: { en: 'Automatic payment', nl: 'Automatisch betalen' },
   invoice_download: { en: 'Invoice', nl: 'Nota' },
   chat: { en: 'Asked Eva', nl: 'Vroeg Eva' },
   plan: { en: 'Savings plan', nl: 'Bespaarplan' },

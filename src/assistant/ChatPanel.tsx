@@ -18,6 +18,8 @@ interface Props {
   onExpand?: () => void;
   /** Extra content under the welcome message (e.g. sign-in hint). */
   intro?: ReactNode;
+  /** Line under the input; defaults to Eva's. */
+  disclaimer?: string;
 }
 
 /** Inline **bold**, *italic* and line breaks. Enough for scripted replies; swap for a markdown renderer later. */
@@ -132,12 +134,12 @@ function Bubble({ m, onAction, last }: { m: ChatMessage; onAction: (a: ChatActio
   );
 }
 
-export function ChatPanel({ session, variant, title, subtitle, welcome, onAction, onClose, onExpand, intro }: Props) {
+export function ChatPanel({ session, variant, title, subtitle, welcome, onAction, onClose, onExpand, intro, disclaimer }: Props) {
   const { t } = useI18n();
   const [draft, setDraft] = useState('');
   const scroller = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLTextAreaElement>(null);
-  const { messages, typing, send, reset, suggestions, provider } = session;
+  const { messages, typing, send, reset, suggestions } = session;
 
   useEffect(() => {
     const el = scroller.current;
@@ -229,7 +231,7 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
             <div className="bot-ic" aria-hidden>
               <Sparkles size={14} />
             </div>
-            <div className="bubble typing" aria-label={t(`${brand.assistant.name} is typing`, `${brand.assistant.name} is aan het typen`)}>
+            <div className="bubble typing" aria-label={t(`${title ?? brand.assistant.name} is typing`, `${title ?? brand.assistant.name} is aan het typen`)}>
               <span />
               <span />
               <span />
@@ -274,9 +276,7 @@ export function ChatPanel({ session, variant, title, subtitle, welcome, onAction
         </button>
       </form>
       <p className="chat-disclaimer">
-        {provider.isMock
-          ? t(`Demo: ${brand.assistant.name} gives scripted answers from sample data, no AI backend connected.`, `Demo: ${brand.assistant.name} geeft vooraf ingestelde antwoorden op voorbeelddata, geen AI-backend gekoppeld.`)
-          : t('AI-generated answers may contain mistakes.', 'AI-antwoorden kunnen fouten bevatten.')}
+        {disclaimer ?? t(`${brand.assistant.name} is your digital assistant. Answers may contain mistakes.`, `${brand.assistant.name} is je digitale assistent. Antwoorden kunnen fouten bevatten.`)}
       </p>
     </section>
   );

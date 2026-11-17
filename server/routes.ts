@@ -1,6 +1,6 @@
 import { networkInterfaces } from 'node:os';
 import type { IncomingMessage } from 'node:http';
-import { API, type ActivityKind, type DemoInfo, type MessageIcon, type StaffMessageResult } from '../shared/contract.ts';
+import { API, type ActivityKind, type AttentionFlag, type CustomerFilter, type DemoInfo, type InboxMessage, type MessageIcon, type OutboxItem, type ReportGroup, type PayMethod, type StaffMessageResult } from '../shared/contract.ts';
 import type { AssistantContext } from '../src/assistant/types';
 import { brand } from '../src/brand';
 import { config } from './config.ts';
@@ -43,6 +43,11 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
   r.on('GET', API.energy, () => store.energy());
   r.on('GET', API.billing, () => store.billing());
   r.on('POST', API.installment, ({ body }) => store.setInstallment(num(obj(body), 'amount')));
+  r.on('POST', API.pay, ({ body }) => {
+    const b = obj(body);
+    return store.payInvoice(str(b, 'invoiceId'), str(b, 'method') as PayMethod, str(b, 'bank', true) || undefined);
+  });
+  r.on('POST', API.autopay, ({ body }) => store.setAutopay(bool(obj(body), 'on')));
   r.on('GET', API.insights, () => store.insights());
   r.on('POST', API.insightsPlan, ({ body }) => {
     const b = obj(body);
@@ -83,14 +88,67 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
   r.on('GET', API.staffActivity, () => store.activity());
   r.on('GET', API.staffConversations, () => store.conversations());
   r.on('GET', API.staffTemplates, () => TEMPLATES);
+  r.on('GET', API.staffAttention, () => store.attention());
+  r.on('GET', API.staffOutbox, () => store.outbox());
+  r.on('GET', API.staffAudit, () => store.auditLog());
+  r.on('POST', API.staffAudit, ({ body }) => {
+    const b = obj(body);
+    const action = str(b, 'action');
+    if (action !== 'CUSTOMER_VIEWED' && action !== 'REPORT_EXPORTED') throw new HttpError(400, 'Unknown audit action');
+    store.logStaffAction(action, str(b, 'target'));
+  });
+  r.on('GET', API.staffReports, ({ url }) =>
+    store.reports({ months: Number(url.searchParams.get('months') ?? 12), city: url.searchParams.get('city') ?? '', product: url.searchParams.get('product') ?? '', group: (url.searchParams.get('group') ?? 'all') as ReportGroup }, live.customersOnline, push.devices),
+  );
+  r.on('GET', API.staffPortfolio, () => store.portfolio(live.customersOnline, push.devices));
+  r.on('GET', API.staffFeed, () => store.feed());
+  r.on('GET', API.staffCustomers, ({ url }) =>
+    store.customers({ q: url.searchParams.get('q') ?? '', filter: (url.searchParams.get('filter') ?? 'all') as CustomerFilter, page: Number(url.searchParams.get('page') ?? 1) || 1 }, live.customersOnline, push.devices),
+  );
+  r.on('GET', '/api/staff/customers/:id', ({ params }) => store.customerDetail(params.id!, live.customersOnline, push.devices));
+  r.on('POST', '/api/staff/outbox/:id/cancel', ({ params }) => store.cancelOutbox(params.id!));
+  r.on('POST', API.staffAssistant, ({ body }) => {
+    const b = obj(body);
+    const lang = str(b, 'lang');
+    if (lang !== 'en' && lang !== 'nl') throw new HttpError(400, 'lang must be en or nl');
+    return store.askStaff({ question: str(b, 'question'), lang, lastIntent: str(b, 'lastIntent', true) || undefined }, live.customersOnline, push.devices);
+  });
+
+  /** Phone notification for a delivered message; returns the outbox item with the device count. */
+  const notify = async (message: InboxMessage, wanted: boolean): Promise<{ pushed: number; outbox: OutboxItem }> => {
+    const pushed = wanted ? await push.send({ title: message.title.nl, body: message.body.nl, url: `/app${message.to === '/' ? '' : message.to}`, tag: message.id }) : 0;
+    return { pushed, outbox: store.recordPushed(message.id, pushed)! };
+  };
   r.on('POST', API.staffMessages, async ({ body }): Promise<StaffMessageResult> => {
     const b = obj(body);
     const icon = (b.icon === undefined ? 'bell' : str(b, 'icon')) as MessageIcon;
     if (!ICONS.includes(icon)) throw new HttpError(400, 'Unknown icon');
-    const message = store.sendStaffMessage({ title: text(b, 'title'), body: text(b, 'body'), icon, to: str(b, 'to', true) || undefined, push: bool(b, 'push'), sender: str(b, 'sender', true) || undefined });
-    const pushed = bool(b, 'push') ? await push.send({ title: message.title.nl, body: message.body.nl, url: `/app${message.to === '/' ? '' : message.to}`, tag: message.id }) : 0;
-    return { message, pushed };
+    const req = { title: text(b, 'title'), body: text(b, 'body'), icon, to: str(b, 'to', true) || undefined, push: bool(b, 'push'), sender: str(b, 'sender', true) || undefined, templateId: str(b, 'templateId', true) || undefined, sendAt: str(b, 'sendAt', true) || undefined, segment: (str(b, 'segment', true) || undefined) as AttentionFlag | undefined, customerId: str(b, 'customerId', true) || undefined };
+    if (req.sendAt) return { message: null, pushed: 0, outbox: store.scheduleStaffMessage(req) };
+    const { message, outboxId } = store.dispatch(req);
+    // Only the live customer has a real phone; a message that does not include them has nothing to push.
+    if (!message) return { message: null, pushed: 0, outbox: store.outboxById(outboxId)! };
+    return { message, ...(await notify(message, req.push)) };
   });
+  // Scheduled messages go out when they are due (checked every second; one instance, so no double sends).
+  setInterval(() => {
+    for (const item of store.dueOutbox()) {
+      try {
+        const message = store.sendScheduled(item.id);
+        if (message) void notify(message, item.push).catch((e) => console.error('[outbox]', e));
+      } catch (e) {
+        console.error('[outbox]', e);
+      }
+    }
+  }, 1000).unref();
+  // The rest of the customer base keeps using the app: one more action every few seconds.
+  setInterval(() => {
+    try {
+      store.simulate();
+    } catch (e) {
+      console.error('[simulate]', e);
+    }
+  }, config.simulateMs).unref();
 
   // ---- push
   r.on('GET', API.pushKey, () => ({ publicKey: push.publicKey }));
@@ -100,8 +158,9 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
     const keys = obj(sub.keys);
     const endpoint = str(sub, 'endpoint');
     if (!/^https:\/\//.test(endpoint)) throw new HttpError(400, 'Push endpoint must be https');
-    push.subscribe({ subscription: { endpoint, keys: { p256dh: str(keys, 'p256dh'), auth: str(keys, 'auth') } }, device: str(b, 'device', true).slice(0, 80) || undefined });
-    store.log('push_subscribed', { en: 'Turned on phone notifications', nl: 'Zette telefoonmeldingen aan' });
+    const isNew = push.subscribe({ subscription: { endpoint, keys: { p256dh: str(keys, 'p256dh'), auth: str(keys, 'auth') } }, device: str(b, 'device', true).slice(0, 80) || undefined });
+    // The app re-registers its subscription on every start; only a new device is something the customer did.
+    if (isNew) store.log('push_subscribed', { en: 'Turned on phone notifications', nl: 'Zette telefoonmeldingen aan' });
   });
   r.on('POST', API.pushUnsubscribe, ({ body }) => push.unsubscribe(str(obj(body), 'endpoint')));
 

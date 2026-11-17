@@ -22,6 +22,10 @@ export interface ChatMessage {
   text: string;
   facts?: Fact[];
   chart?: 'monthly' | 'breakdown';
+  /** Staff assistant: a drafted message, shown as a card with a hand-off to the composer. */
+  draft?: { templateId: string; title: string; body: string; /** Where "Open in the composer" goes. */ to?: string };
+  /** Staff assistant: a small bar chart with its own data. */
+  bars?: { caption: string; points: { label: string; value: number; hi?: boolean }[] };
   actions?: ChatAction[];
   /** Matched intent (assistant messages); echoed back as `lastIntent` for follow-ups. */
   intent?: string;

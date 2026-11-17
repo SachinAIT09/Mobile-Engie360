@@ -6,7 +6,7 @@ import { DatabaseSync } from 'node:sqlite';
  * Tiny document store on Node's built-in SQLite (no install). Each table holds JSON documents,
  * which keeps the schema in shared/contract.ts instead of in SQL.
  */
-export type Table = 'messages' | 'activity' | 'conversations' | 'push_subs';
+export type Table = 'messages' | 'activity' | 'conversations' | 'push_subs' | 'outbox' | 'audit' | 'feed';
 
 export class Db {
   private readonly sql: DatabaseSync;

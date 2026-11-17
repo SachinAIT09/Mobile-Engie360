@@ -89,9 +89,6 @@ export default function DemoPanel() {
             </div>
           </div>
           <PhoneQr path="/app" />
-          <p className="xs muted mt-s">
-            <Link to="/staff/preview">{t('No phone? Use the phone preview', 'Geen telefoon? Gebruik de telefoonweergave')}</Link>
-          </p>
         </section>
         <section className="card">
           <div className="card-head">
@@ -106,7 +103,7 @@ export default function DemoPanel() {
               <kbd>Shift</kbd>+<kbd>P</kbd> {t('presenter bar', 'presentatiebalk')}
             </li>
             <li>
-              <kbd>N</kbd> / <kbd>B</kbd> {t('next / back', 'volgende / terug')} · <kbd>1</kbd>–<kbd>6</kbd> {t('jump to a step', 'naar een stap')}
+              <kbd>N</kbd> / <kbd>B</kbd> {t('next / back', 'volgende / terug')} · <kbd>1</kbd>–<kbd>5</kbd> {t('jump to a step', 'naar een stap')}
             </li>
             <li>
               <kbd>R</kbd> {t('reset the demo', 'demo resetten')}

@@ -2,7 +2,6 @@ import { Bar, CartesianGrid, Cell, ComposedChart, Line, ResponsiveContainer, Too
 import type { UsagePoint } from '../data/energy';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
-import { brand } from '../brand';
 
 export type Metric = 'electricity' | 'gas';
 
@@ -51,7 +50,7 @@ export function UsageChart({ data, metric, compare = true, showPrice = false, sh
             tickLine={false}
             axisLine={false}
             tick={{ fontSize: 11, fill: c.tick }}
-            interval={data.length > 14 ? 'preserveStartEnd' : 0}
+            interval="preserveStartEnd"
             minTickGap={10}
           />
           <YAxis yAxisId="u" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: c.tick }} width={48} tickFormatter={(v: number) => num(v, v < 10 && v % 1 ? 1 : 0)} />
@@ -118,7 +117,7 @@ export function ChartLegend({ metric, compare, compareLabel, ev, price, forecast
       {ev && metric === 'electricity' && (
         <span>
           <i style={{ background: '#7b61ff' }} />
-          {t(`EV charging (${brand.partners.disaggregation})`, `Auto laden (${brand.partners.disaggregation})`)}
+          {t('EV charging', 'Auto laden')}
         </span>
       )}
       {compare && (

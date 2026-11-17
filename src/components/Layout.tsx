@@ -71,7 +71,7 @@ function Notifications() {
       <button className="icon-btn" aria-label={t(`Notifications, ${unread} unread`, `Meldingen, ${unread} ongelezen`)} aria-expanded={open} onClick={() => setOpen(!open)}>
         <Bell size={19} />
         {unread > 0 && <span className="dot" />}
-        <span className={`conn-dot${online ? ' on' : ''}`} title={online ? t('Live updates connected', 'Live updates verbonden') : t('Offline: sample data', 'Offline: voorbeelddata')} />
+        <span className={`conn-dot${online ? ' on' : ''}`} title={online ? t('Live updates connected', 'Live updates verbonden') : t('Offline', 'Offline')} />
       </button>
       {open && (
         <div className="popover">

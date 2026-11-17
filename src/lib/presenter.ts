@@ -1,6 +1,6 @@
 /**
  * Guided demo script for presenter mode (Shift+P in the staff app), as in Hydro Mobile360's presenter bar.
- * The presenter drives the staff app on the laptop; the customer app runs on a phone (or the phone preview).
+ * The presenter drives the staff app on the laptop; the customer app runs on a phone.
  * Progress and visibility live in localStorage so a page reload keeps the presenter's place.
  */
 import type { Text } from './i18n';
@@ -16,7 +16,7 @@ export interface DemoStep {
 export const DEMO_STEPS: DemoStep[] = [
   {
     title: { en: 'Customer at a glance', nl: 'Klant in één oogopslag' },
-    say: { en: 'Sanne’s usage, costs and installment advice. The badge shows she is in the app on her phone right now.', nl: 'Verbruik, kosten en termijnadvies van Sanne. Het label laat zien dat ze nu in de app op haar telefoon zit.' },
+    say: { en: 'Olivia’s usage, costs and installment advice. The badge shows she is in the app on her phone right now.', nl: 'Verbruik, kosten en termijnadvies van Olivia. Het label laat zien dat ze nu in de app op haar telefoon zit.' },
     route: '/staff',
   },
   {
@@ -36,13 +36,8 @@ export const DEMO_STEPS: DemoStep[] = [
   },
   {
     title: { en: 'Personal message', nl: 'Persoonlijk bericht' },
-    say: { en: 'Write your own message; see when Sanne reads it.', nl: 'Schrijf een eigen bericht en zie wanneer Sanne het leest.' },
+    say: { en: 'Write your own message; see when Olivia reads it.', nl: 'Schrijf een eigen bericht en zie wanneer Olivia het leest.' },
     route: '/staff/messages',
-  },
-  {
-    title: { en: 'Phone preview', nl: 'Telefoonweergave' },
-    say: { en: 'No phone at hand? The same live app in a phone frame.', nl: 'Geen telefoon bij de hand? Dezelfde live app in een telefoonframe.' },
-    route: '/staff/preview',
   },
 ];
 
@@ -64,7 +59,7 @@ function write(key: string, v: string) {
   }
 }
 
-/** `?presenter=1` / `?presenter=0` override the remembered choice. Never inside the phone preview iframe. */
+/** `?presenter=1` / `?presenter=0` override the remembered choice. Never inside the laptop phone column (an iframe). */
 export function initialVisible(): boolean {
   if (window.self !== window.top) return false;
   const q = new URLSearchParams(window.location.search).get('presenter');

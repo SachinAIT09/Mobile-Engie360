@@ -37,3 +37,23 @@ test('the staff app works on a phone with the drawer', async ({ page }) => {
   await expect(page).toHaveURL(/\/staff\/activity$/);
   await expect(page.locator('.rs.nav-open')).toHaveCount(0);
 });
+
+// Height budgets (in phone screens) so the customer app does not grow back into long scrolling pages.
+const BUDGET: Record<string, number> = { '/app': 2.2, '/app/energy': 2.0, '/app/billing': 2.3, '/app/insights': 2.0, '/app/smart-energy': 2.4, '/app/account': 2.0 };
+
+test('customer screens stay short: about two phone screens at most', async ({ page }) => {
+  await fresh(page);
+  for (const [route, max] of Object.entries(BUDGET)) {
+    await page.goto(route);
+    await expect(page.locator('.app-tabs')).toBeVisible();
+    await page.waitForTimeout(700);
+    const screens = await page.evaluate(() => document.documentElement.scrollHeight / window.innerHeight);
+    expect(screens, route).toBeLessThanOrEqual(max);
+  }
+});
+
+test('the customer app shows no scrollbar and a link to a section opens it', async ({ page }) => {
+  await fresh(page, '/app/insights#night-anomaly');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarWidth)).toBe('none');
+  await expect(page.locator('#night-anomaly .insight-body')).toBeVisible();
+});

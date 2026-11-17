@@ -6,10 +6,11 @@ import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/theme';
 import { contract } from '../data/customer';
 import { benchmark, breakdown, costOf, lastMonthSummary, monthly, peakSplit, series, type Period } from '../data/energy';
-import { Card, Delta, DemoFlag, Expander, Kpi, N2GBadge, PageHead, Seg } from '../components/ui';
+import { Card, Delta, Expander, Kpi, PageHead, Seg } from '../components/ui';
 import { ChartLegend, UsageChart, type Metric } from '../components/UsageChart';
 import { usePortalAssistant } from '../assistant/portalContext';
-import { brand } from '../brand';
+
+type View = 'usage' | 'breakdown' | 'trend';
 
 export default function Energy() {
   const { chart: c } = useTheme();
@@ -18,6 +19,12 @@ export default function Energy() {
   const [period, setPeriod] = useState<Period>('month');
   const [metric, setMetric] = useState<Metric>('electricity');
   const [compare, setCompare] = useState(true);
+  // One part at a time keeps the screen short: usage (tiles + chart), breakdown (appliances, peak hours), trend.
+  const [view, setView] = useState<View>('usage');
+  const show = (v: View) => {
+    setView(v);
+    window.scrollTo(0, 0);
+  };
 
   const data = series(period);
   const stats = useMemo(() => {
@@ -47,53 +54,68 @@ export default function Energy() {
       <PageHead
         eyebrow={t('Energy consumption', 'Energieverbruik')}
         title={t('Your usage in detail', 'Je verbruik in detail')}
-        sub={t(`Smart-meter data, refreshed every 15 minutes. Appliance insights by ${brand.partners.disaggregation}.`, `Slimme-meterdata, elke 15 minuten bijgewerkt. Apparaatinzichten door ${brand.partners.disaggregation}.`)}
+        sub={t('Smart-meter data, refreshed every 15 minutes, with insights per appliance.', 'Slimme-meterdata, elke 15 minuten bijgewerkt, met inzichten per apparaat.')}
+        stickyTools
       >
         <Seg
-          label={t('Energy type', 'Energiesoort')}
-          value={metric}
-          onChange={setMetric}
+          wide
+          label={t('Part of this screen', 'Onderdeel van dit scherm')}
+          value={view}
+          onChange={show}
           options={[
-            { value: 'electricity', label: t('Electricity', 'Stroom') },
-            { value: 'gas', label: 'Gas' },
-          ]}
-        />
-        <Seg
-          label={t('Period', 'Periode')}
-          value={period}
-          onChange={setPeriod}
-          options={[
-            { value: 'hour', label: t('Hour', 'Uur') },
-            { value: 'day', label: t('Day', 'Dag') },
-            { value: 'week', label: t('Week', 'Week') },
-            { value: 'month', label: t('Month', 'Maand') },
+            { value: 'usage', label: t('Usage', 'Verbruik') },
+            { value: 'breakdown', label: t('Breakdown', 'Verdeling') },
+            { value: 'trend', label: t('Trend', 'Trend') },
           ]}
         />
       </PageHead>
 
-      <div className="grid g-2 energy-links">
-        <Link to="/insights" className="link-card">
+      <div className="duo energy-links">
+        <Link to="/insights" className="link-card compact">
           <span className="kpi-ic eur">
-            <Lightbulb size={19} />
+            <Lightbulb size={17} />
           </span>
-          <span className="grow">
-            <b>{t('Energy insights', 'Energie-inzichten')}</b>
-            <span className="small muted">{t('Personal savings tips and alerts', 'Persoonlijke bespaartips en meldingen')}</span>
-          </span>
-          <ChevronRight size={18} className="muted" />
+          <b className="grow">{t('Energy insights', 'Energie-inzichten')}</b>
+          <ChevronRight size={16} className="muted" />
         </Link>
-        <Link to="/smart-energy" className="link-card">
+        <Link to="/smart-energy" className="link-card compact">
           <span className="kpi-ic pur">
-            <Zap size={19} />
+            <Zap size={17} />
           </span>
-          <span className="grow">
-            <b>{t('Smart Energy', 'Slimme Energie')}</b>
-            <span className="small muted">{t(`Live power, your appliances and smart charging (${brand.partners.disaggregation})`, `Live vermogen, je apparaten en slim laden (${brand.partners.disaggregation})`)}</span>
-          </span>
-          <ChevronRight size={18} className="muted" />
+          <b className="grow">{t('Smart Energy', 'Slimme Energie')}</b>
+          <ChevronRight size={16} className="muted" />
         </Link>
       </div>
 
+      {view !== 'breakdown' && (
+        <div className="filters">
+          <Seg
+            label={t('Energy type', 'Energiesoort')}
+            value={metric}
+            onChange={setMetric}
+            options={[
+              { value: 'electricity', label: t('Electricity', 'Stroom') },
+              { value: 'gas', label: 'Gas' },
+            ]}
+          />
+          {view === 'usage' && (
+            <Seg
+              label={t('Period', 'Periode')}
+              value={period}
+              onChange={setPeriod}
+              options={[
+                { value: 'hour', label: t('Hour', 'Uur') },
+                { value: 'day', label: t('Day', 'Dag') },
+                { value: 'week', label: t('Week', 'Week') },
+                { value: 'month', label: t('Month', 'Maand') },
+              ]}
+            />
+          )}
+        </div>
+      )}
+
+      {view === 'usage' && (
+        <>
       <div className="grid g-4">
         <Kpi icon={metric === 'electricity' ? Zap : Flame} tone={metric === 'electricity' ? 'el' : 'gas'} label={t('Total', 'Totaal') + ' · ' + periodLabel.toLowerCase()} value={num(stats.total, period === 'hour' ? 1 : 0)} unit={unit} foot={compare ? <><Delta pct={stats.change} /> {compareLabel.toLowerCase()}</> : undefined} />
         <Kpi icon={Sigma} tone="ink" label={t('Average per day', 'Gemiddeld per dag')} value={num(stats.perDay, 1)} unit={unit} />
@@ -112,7 +134,7 @@ export default function Energy() {
           </label>
         }
       >
-        <UsageChart data={data} metric={metric} compare={compare} showEv showPrice={period === 'hour' && metric === 'electricity'} height={320} compareLabel={compareLabel} />
+        <UsageChart data={data} metric={metric} compare={compare} showEv showPrice={period === 'hour' && metric === 'electricity'} height={240} compareLabel={compareLabel} />
         <div className="mt-s">
           <ChartLegend metric={metric} compare={compare} compareLabel={compareLabel} ev price={period === 'hour' && metric === 'electricity'} forecast={period === 'day' || period === 'week'} />
         </div>
@@ -146,11 +168,14 @@ export default function Energy() {
           </div>
         </div>
       </div>
+        </>
+      )}
 
-      <div className="grid g-3 mt">
-        <Card title={t('Where your electricity goes', 'Waar je stroom heen gaat')} sub={t('October 2026 · appliance-level', 'Oktober 2026 · per apparaat')} action={<N2GBadge />} className="span-2">
+      {view === 'breakdown' && (
+      <div className="grid g-3">
+        <Card title={t('Where your electricity goes', 'Waar je stroom heen gaat')} sub={t('October 2026 · appliance-level', 'Oktober 2026 · per apparaat')} className="span-2">
           <div className="grid g-2" style={{ alignItems: 'center' }}>
-            <div style={{ height: 230, position: 'relative' }}>
+            <div style={{ height: 180, position: 'relative' }}>
               <ResponsiveContainer>
                 <PieChart>
                   <Pie data={breakdown.map((b) => ({ name: tx(b.label), value: b.kwh, color: b.color }))} dataKey="value" innerRadius="62%" outerRadius="92%" paddingAngle={2} stroke="none" animationDuration={700}>
@@ -200,7 +225,7 @@ export default function Energy() {
             <span style={{ width: `${peakSplit.peakPct}%`, background: 'var(--gas)', height: '100%' }} />
             <span style={{ width: `${peakSplit.offPeakPct}%`, background: 'var(--blue)', height: '100%' }} />
           </div>
-          <div className="grid g-2 mt" style={{ gap: 12 }}>
+          <div className="duo mt">
             <div>
               <div className="row small muted strong" style={{ gap: 6 }}>
                 <Sun size={15} color="#ff8a3d" /> {t('Peak', 'Piek')} 07–23
@@ -234,8 +259,10 @@ export default function Energy() {
           </div>
         </Card>
       </div>
+      )}
 
-      <Card className="mt" title={t('Consumption trend', 'Verbruikstrend')} sub={t('12 months vs the year before', '12 maanden vs het jaar ervoor')}>
+      {view === 'trend' && (
+      <Card title={t('Consumption trend', 'Verbruikstrend')} sub={t('12 months vs the year before', '12 maanden vs het jaar ervoor')}>
         <div style={{ height: 220 }}>
           <ResponsiveContainer>
             <LineChart data={trend} margin={{ top: 8, right: 8, left: -14, bottom: 0 }}>
@@ -291,9 +318,7 @@ export default function Energy() {
           </div>
         </Expander>
       </Card>
-      <div className="row mt" style={{ justifyContent: 'center' }}>
-        <DemoFlag />
-      </div>
+      )}
     </>
   );
 }
