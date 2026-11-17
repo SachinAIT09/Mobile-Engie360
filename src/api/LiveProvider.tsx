@@ -40,10 +40,22 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState(localDefaults);
   const [resetVersion, setResetVersion] = useState(0);
   const onlineRef = useRef(false);
-  const send = useCallback((path: string, body: unknown) => {
-    if (!onlineRef.current) return;
-    post(path, body).catch(() => undefined);
-  }, []);
+  // Whether there is a server is only known once the first load has answered. An action taken before that
+  // (a tap right after the app opens) waits for the answer instead of being treated as "no server" and lost.
+  const [firstLoad] = useState(() => {
+    let done: () => void = () => undefined;
+    const promise = new Promise<void>((resolve) => (done = resolve));
+    return { promise, done };
+  });
+  const whenKnown = useCallback(() => Promise.race([firstLoad.promise, new Promise<void>((r) => setTimeout(r, 5000))]), [firstLoad]);
+  const send = useCallback(
+    (path: string, body: unknown) => {
+      void whenKnown().then(() => {
+        if (onlineRef.current) post(path, body).catch(() => undefined);
+      });
+    },
+    [whenKnown],
+  );
 
   const txRef = useRef(tx);
   const toastRef = useRef(toast);
@@ -69,7 +81,8 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       onlineRef.current = false;
       setOnline(false);
     }
-  }, []);
+    firstLoad.done();
+  }, [firstLoad]);
 
   // Live stream. Opening it (and every reconnect) loads the current data, so nothing is missed.
   useEffect(() => {
@@ -126,13 +139,14 @@ export function LiveProvider({ children }: { children: ReactNode }) {
   }, [online, signedIn, pathname, send]);
 
   const setInstallment = useCallback(async (amount: number) => {
+    await whenKnown();
     if (onlineRef.current) {
       const installment = await post<InstallmentState>(API.installment, { amount });
       setState((s) => ({ ...s, installment }));
       return;
     }
     setState((s) => ({ ...s, installment: { ...s.installment, pending: { amount, from: '2026-12', changedAt: new Date().toISOString() } } }));
-  }, []);
+  }, [whenKnown]);
 
   const payRef = useRef(state.pay);
   useEffect(() => {
@@ -141,6 +155,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
 
   const payInvoice = useCallback(async (invoiceId: string, method: PayMethod, bank?: string): Promise<Payment> => {
     let pay: PayState;
+    await whenKnown();
     if (onlineRef.current) {
       pay = await post<PayState>(API.pay, { invoiceId, method, bank });
     } else {
@@ -154,7 +169,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
     }
     setState((s) => ({ ...s, pay }));
     return pay.paid.find((p) => p.invoiceId === invoiceId)!;
-  }, []);
+  }, [whenKnown]);
 
   const value = useMemo<LiveData>(
     () => ({
@@ -183,6 +198,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       saveCharging: (c) => send(API.charging, c),
       track: (kind, route) => send(API.activity, { kind, route }),
       resetDemo: async () => {
+        await whenKnown();
         if (onlineRef.current) {
           // The server answers with `demo:reset` on the stream, which reloads and remounts.
           await post(API.demoReset);
@@ -192,7 +208,7 @@ export function LiveProvider({ children }: { children: ReactNode }) {
         setResetVersion((v) => v + 1);
       },
     }),
-    [online, state, resetVersion, setInstallment, payInvoice, send],
+    [online, state, resetVersion, setInstallment, payInvoice, send, whenKnown],
   );
 
   return <LiveCtx.Provider value={value}>{children}</LiveCtx.Provider>;
