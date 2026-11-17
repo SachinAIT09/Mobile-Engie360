@@ -90,6 +90,8 @@ test.describe('customer ↔ staff, live', () => {
     await expect(toggle).toHaveAttribute('aria-checked', 'false');
     await expect(page.getByRole('button', { name: 'Pay now', exact: true })).toBeVisible();
     await expect(page.locator('#invoices tbody tr').first()).toContainText('Open');
+    // Saved on the server (on a slow connection the request is still on its way right after the click).
+    await expect.poll(async () => (await (await page.request.get('/api/billing')).json()).pay.autopay).toBe(false);
     await page.reload();
     await expect(page.getByRole('switch', { name: 'Automatic payment' })).toHaveAttribute('aria-checked', 'false');
   });

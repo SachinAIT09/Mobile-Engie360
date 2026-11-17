@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CreditCard, Download, Landmark, Lock, Smartphone, type LucideIcon } from 'lucide-react';
+import { playPaymentDone, primeSound } from '../lib/sound';
 import type { PayMethod } from '../../shared/contract';
 import type { Invoice, Payment } from '../data/billing';
 import { customer } from '../data/customer';
@@ -39,11 +40,14 @@ export function PaySheet({ inv, onClose, onReceipt }: { inv: Invoice; onClose: (
 
   const pay = async () => {
     setFailed(false);
+    // This runs in the tap on Pay, which is what lets the "payment done" sound play a moment later.
+    primeSound();
     setStep('processing');
     try {
       const [p] = await Promise.all([payInvoice(inv.id, method, method === 'ideal' ? bank : undefined), new Promise((r) => setTimeout(r, PROCESSING_MS))]);
       setPayment(p);
       setStep('done');
+      playPaymentDone();
     } catch {
       setFailed(true);
       setStep('review');
