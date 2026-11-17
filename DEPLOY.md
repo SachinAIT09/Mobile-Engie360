@@ -81,4 +81,5 @@ What to expect on AppSail:
 - **Data resets when the service sleeps** (after ~5 minutes without traffic): the SQLite file is on the instance's temporary disk. That suits a demo; the next visit shows "Starting the demo…" for a few seconds.
 - **Fast start:** the server opens its port before loading anything (AppSail requires 10 s); it's ready in about 4 s.
 - **Live updates use plain HTTP** (Server-Sent Events). AppSail cuts requests at 30 s, so streams end at 25 s and the browser reconnects automatically.
+- **Networks that hold streams back:** some antivirus web filters and company proxies deliver a streamed response only when it ends, which would delay live updates by up to 25 s. The app notices (the stream does not open within 4 s), switches to streams of a few seconds (`/api/events?short=1`) and the server replays anything missed in between, so updates still arrive within about 3 s.
 - **One instance only:** live sync is in-process. Keep the service at one instance.

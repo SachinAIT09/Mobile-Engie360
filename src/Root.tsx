@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import App from './App';
+import { retrying } from './lib/retrying';
 
-const StaffApp = lazy(() => import('./staff/StaffApp'));
+const StaffApp = lazy(retrying(() => import('./staff/StaffApp')));
 
 /** Two apps, one bundle: the staff app at /staff, the customer portal (with presenter bar and Eva) everywhere else. */
 export default function Root({ staff }: { staff: boolean }) {

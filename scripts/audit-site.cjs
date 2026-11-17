@@ -39,6 +39,17 @@ const note = (severity, area, where, what) => {
 // Console noise that is not the app's fault.
 const IGNORE = [/Download the React DevTools/i, /\[vite\]/i, /favicon/i];
 
+/** Wait until the app has drawn its screen (heading present), then a short pause for data and charts. */
+async function settled(page) {
+  const deadline = Date.now() + 25000;
+  while (Date.now() < deadline) {
+    const frame = page.frames().find((f) => f !== page.mainFrame()) ?? page.mainFrame();
+    if (await frame.locator('h1').first().isVisible().catch(() => false)) break;
+    await page.waitForTimeout(250);
+  }
+  await page.waitForTimeout(1200);
+}
+
 async function visit(browser, route, vp, { signedIn = true, theme = 'light' } = {}) {
   const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, isMobile: vp.width < 700, hasTouch: vp.width < 700 });
   await ctx.addInitScript(
@@ -68,9 +79,10 @@ async function visit(browser, route, vp, { signedIn = true, theme = 'light' } = 
   let links = [];
   try {
     await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    // The app answers "Starting the demo…" while a sleeping service wakes; wait for the real page.
-    await page.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => undefined);
-    await page.waitForTimeout(900);
+    // The live stream keeps the network busy, so wait for the screen itself: its heading (in the phone column
+    // when there is one), then a moment for data and charts. A sleeping service first answers "Starting…".
+    await page.waitForLoadState('load', { timeout: 30000 }).catch(() => undefined);
+    await settled(page);
     stats.loadMs.push(Date.now() - t0);
     const framed = await page.locator('.phone-frame iframe').count();
     const target = framed ? page.frames().find((f) => f !== page.mainFrame()) : page.mainFrame();
@@ -185,7 +197,8 @@ const noContent = (r) => (r.status !== 204 && r.status !== 200 ? 'expected 200 o
     stats.pageChecks++;
     try {
       if (prep) await prep();
-      await p.goto(BASE + from, { waitUntil: 'networkidle', timeout: 45000 });
+      await p.goto(BASE + from, { waitUntil: 'load', timeout: 45000 });
+      await settled(p);
       await p.waitForURL((u) => expectPath.test(u.pathname + u.search), { timeout: 8000 }).catch(() => undefined);
       const got = new URL(p.url()).pathname + new URL(p.url()).search;
       if (!expectPath.test(got)) note('MEDIUM', 'routing', from, `${name}: ended at ${got}`);
@@ -204,14 +217,16 @@ const noContent = (r) => (r.status !== 204 && r.status !== 200 ? 'expected 200 o
   await route('removed staff page goes somewhere valid', '/staff/conversations', /^\/staff/);
   // back / forward and refresh
   stats.pageChecks += 2;
-  await p.goto(BASE + '/app', { waitUntil: 'networkidle' });
+  await p.goto(BASE + '/app', { waitUntil: 'load' });
+  await settled(p);
   await p.locator('.app-tabs').getByRole('link', { name: 'Energy' }).click();
   await p.locator('.app-tabs').getByRole('link', { name: 'Billing' }).click();
   await p.goBack(); await p.waitForTimeout(300);
   if (!/\/app\/energy$/.test(p.url())) note('MEDIUM', 'routing', 'back', `browser back ended at ${p.url()}`);
   await p.goForward(); await p.waitForTimeout(300);
   if (!/\/app\/billing$/.test(p.url())) note('MEDIUM', 'routing', 'forward', `browser forward ended at ${p.url()}`);
-  await p.reload({ waitUntil: 'networkidle' });
+  await p.reload({ waitUntil: 'load' });
+  await settled(p);
   if (!/\/app\/billing$/.test(p.url()) || !(await p.locator('h1').first().innerText()).includes('bills')) note('MEDIUM', 'routing', 'refresh', 'a refresh did not keep the Billing screen');
   await ctx.close();
   await browser.close();
@@ -304,13 +319,15 @@ const noContent = (r) => (r.status !== 204 && r.status !== 200 ? 'expected 200 o
     const c = await b.newContext({ viewport: { width: 390, height: 844 } });
     await c.addInitScript((s) => { localStorage.setItem('engie-demo-lang', 'en'); localStorage.setItem('engie-demo-session', s); sessionStorage.setItem('engie-demo-started', '1'); }, SESSION);
     const pg = await c.newPage();
-    await pg.goto(BASE + '/app', { waitUntil: 'networkidle' });
+    await pg.goto(BASE + '/app', { waitUntil: 'load' });
+    await settled(pg);
     await pg.getByRole('button', { name: /Notifications/ }).click();
     await pg.waitForTimeout(600);
     const ran = await pg.evaluate(() => window.__xss === 1);
     const shown = await pg.locator('.popover').innerText();
     const st = await c.newPage();
-    await st.goto(BASE + '/staff/messages', { waitUntil: 'networkidle' });
+    await st.goto(BASE + '/staff/messages', { waitUntil: 'load' });
+    await settled(st);
     await st.waitForTimeout(800);
     const ranStaff = await st.evaluate(() => window.__xss === 1);
     await b.close();

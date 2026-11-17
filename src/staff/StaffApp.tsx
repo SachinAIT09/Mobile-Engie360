@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { retrying } from '../lib/retrying';
 import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { BarChart3, History, LayoutDashboard, RotateCw, Send, Settings, Smartphone, Sparkles, Users } from 'lucide-react';
 import type { Activity, ActivityKind } from '../../shared/contract';
@@ -19,14 +20,14 @@ import './staff.css';
 // Each page is its own chunk; all of them are fetched right after the first screen, so moving
 // between pages never waits on the network (as the customer app does for its screens).
 const loaders = {
-  customers: () => import('./pages/Customers'),
-  customer: () => import('./pages/Customer'),
-  activity: () => import('./pages/Activity'),
-  messages: () => import('./pages/Messages'),
-  assistant: () => import('./pages/Assistant'),
-  reports: () => import('./pages/Reports'),
-  audit: () => import('./pages/Audit'),
-  demo: () => import('./pages/DemoPanel'),
+  customers: retrying(() => import('./pages/Customers')),
+  customer: retrying(() => import('./pages/Customer')),
+  activity: retrying(() => import('./pages/Activity')),
+  messages: retrying(() => import('./pages/Messages')),
+  assistant: retrying(() => import('./pages/Assistant')),
+  reports: retrying(() => import('./pages/Reports')),
+  audit: retrying(() => import('./pages/Audit')),
+  demo: retrying(() => import('./pages/DemoPanel')),
 };
 const StaffCustomers = lazy(loaders.customers);
 const StaffCustomer = lazy(loaders.customer);

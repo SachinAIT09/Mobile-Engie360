@@ -179,7 +179,7 @@ export function buildRouter(store: Store, live: Live, push: Push, startedAt: str
   // ---- live
   r.on('GET', API.events, ({ req, res, url }) => {
     const role = url.searchParams.get('role') === 'staff' ? 'staff' : 'customer';
-    live.connect(req, res, role);
+    live.connect(req, res, role, url.searchParams.get('short') === '1');
   });
 
   return r;

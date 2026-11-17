@@ -540,12 +540,15 @@ export interface DemoInfo {
 // ---------------------------------------------------------------- live events (SSE)
 
 /**
- * GET /api/events?role=customer|staff. Each SSE message has `event: <type>` and `data: <JSON of LiveEvent>`.
+ * GET /api/events?role=customer|staff[&short=1]. Each SSE message has `id`, `event: <type>` and `data: <JSON of LiveEvent>`.
+ * A reconnecting stream sends `Last-Event-ID` and gets the events it missed. `short=1` asks for streams that end
+ * after a few seconds, for networks that hold a streamed response back until it ends.
  * Customer streams receive: message:new, message:read, installment:changed, billing:changed, insights:plan, demo:reset.
  * Staff streams receive everything.
  */
 export type LiveEvent =
-  | { type: 'hello'; serverTime: string; role: 'customer' | 'staff' }
+  /** First event of every stream. `stale`: the client missed more than the server can replay and must reload its data. */
+  | { type: 'hello'; serverTime: string; role: 'customer' | 'staff'; stale?: boolean }
   | { type: 'activity'; activity: Activity }
   /** `banner: true` → the customer app shows it as an in-app banner/toast immediately. */
   | { type: 'message:new'; message: InboxMessage; banner: boolean }

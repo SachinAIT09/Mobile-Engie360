@@ -6,17 +6,18 @@ import { PortalAssistantProvider } from './assistant/PortalAssistant';
 import { useLive } from './api/live';
 import { syncPush } from './api/push';
 import { isSignedIn } from './lib/session';
+import { retrying } from './lib/retrying';
 
 // Route-level code splitting keeps the first load small; everything is preloaded right after.
 const loaders = {
-  dashboard: () => import('./pages/Dashboard'),
-  energy: () => import('./pages/Energy'),
-  billing: () => import('./pages/Billing'),
-  insights: () => import('./pages/Insights'),
-  smart: () => import('./pages/SmartEnergy'),
-  assistant: () => import('./pages/Assistant'),
-  account: () => import('./pages/Account'),
-  login: () => import('./pages/Login'),
+  dashboard: retrying(() => import('./pages/Dashboard')),
+  energy: retrying(() => import('./pages/Energy')),
+  billing: retrying(() => import('./pages/Billing')),
+  insights: retrying(() => import('./pages/Insights')),
+  smart: retrying(() => import('./pages/SmartEnergy')),
+  assistant: retrying(() => import('./pages/Assistant')),
+  account: retrying(() => import('./pages/Account')),
+  login: retrying(() => import('./pages/Login')),
 };
 const Dashboard = lazy(loaders.dashboard);
 const Energy = lazy(loaders.energy);

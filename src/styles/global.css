@@ -1339,6 +1339,21 @@ input[type='range'] {
   }
 }
 
+/* Shown when a screen cannot be loaded or crashes: a way back instead of a blank page. */
+.app-error {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  color: var(--ink);
+}
+.app-error p {
+  color: var(--muted);
+}
 .page-loading {
   min-height: 60vh;
 }

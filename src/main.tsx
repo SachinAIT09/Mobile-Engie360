@@ -6,6 +6,7 @@ import { ThemeProvider } from './lib/ThemeProvider';
 import { ToastProvider } from './components/ui';
 import { LiveProvider } from './api/LiveProvider';
 import Root from './Root';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { isPortalPath, isStaffPath, portalUrl } from './lib/routes';
 import { wantsPhoneFrame } from './lib/frame';
 import { PhoneFrame } from './components/PhoneFrame';
@@ -41,7 +42,9 @@ createRoot(document.getElementById('root')!).render(
       <I18nProvider>
         <ToastProvider>
           <LiveProvider>
-            <Root staff={staff} />
+            <ErrorBoundary>
+              <Root staff={staff} />
+            </ErrorBoundary>
           </LiveProvider>
         </ToastProvider>
       </I18nProvider>
